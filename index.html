@@ -2344,6 +2344,7 @@
   const Net = (window.firebase && typeof window.firebase.initializeApp === "function") ? createFirebaseNet() : createClaudeNet();
 
   /* ---------- Rules ---------- */
+  const MAX_PLAYERS = 8;
   const HEAD_START = 15;      // seconds the pugs get before the platypus spawns
   const TAG_R = 34;           // touch distance for a tag (a little forgiving for lag)
   const BLANKET_TAG_R = 40;   // touching a pug's blanket tags it
@@ -2415,7 +2416,8 @@
     catch(e){ createBtn.disabled = joinBtn.disabled = false; lobbyStatus.textContent = "Couldn't connect. Try again."; return; }
     createBtn.disabled = joinBtn.disabled = false;
     Object.assign(mp, {code, isHost: asHost, hadHost: false, g: null, lastRid: null, inGame: false});
-    const me = {n: myName(), h: asHost ? 1 : 0, role: null, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0};
+    mp.joinedAt = Date.now();
+    const me = {n: myName(), jt: mp.joinedAt, h: asHost ? 1 : 0, role: null, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0};
     if(asHost){
       mp.hostG = {ph: "lobby", rid: 0, roles: {}, tg: [], hl: HEAD_START, el: 0};
       me.g = JSON.parse(JSON.stringify(mp.hostG));
@@ -2429,6 +2431,7 @@
       }, 12000);
     }
     Net.setMe(me);
+    if(!asHost) setTimeout(() => { if(mp.code === code) onNetChange(); }, 1700);   // re-check room capacity once settled
     lobbyJoin.style.display = "none"; lobbyRoom.style.display = "";
     lobbyStatus.textContent = asHost ? "Share this code with the other players." : "Joined! Waiting for the host…";
     renderLobby();
@@ -2443,12 +2446,26 @@
     showJoinCard();
   }
 
+  // Room order: host first, then by join time. Only the first MAX_PLAYERS are in the game.
+  function roster(){
+    return Net.peers().filter(pp => pp.p && pp.p.n)
+      .sort((a, b) => (b.p.h|0) - (a.p.h|0) || (a.p.jt || 0) - (b.p.jt || 0) || (a.id < b.id ? -1 : 1));
+  }
+  function checkFull(){
+    if(mp.isHost || !mp.hadHost || mp.inGame || Date.now() - mp.joinedAt < 1500) return false;
+    const me = Net.myId();
+    const idx = roster().findIndex(pp => pp.id === me);
+    if(idx >= MAX_PLAYERS){
+      leaveRoom().then(() => showJoinCard(`That game is full (${MAX_PLAYERS} players max).`));
+      return true;
+    }
+    return false;
+  }
   function renderLobby(){
     if(!mp.code) return;
     roomCodeEl.textContent = mp.code;
     const G = mp.g;
-    const peers = Net.peers().filter(pp => pp.p && pp.p.n)
-      .sort((a, b) => (b.p.h|0) - (a.p.h|0) || (a.id < b.id ? -1 : 1));
+    const peers = roster().slice(0, MAX_PLAYERS);
     playerList.innerHTML = "";
     peers.forEach(pp => {
       const li = document.createElement("li");
@@ -2459,7 +2476,7 @@
     const idle = !G || G.ph === "lobby" || G.ph === "over";
     startBtn.style.display = mp.isHost ? "" : "none";
     startBtn.disabled = !(mp.isHost && idle && peers.length >= 2);
-    if(mp.isHost) waitNote.textContent = peers.length < 2 ? "Waiting for players to join…" : "Everyone in? Start when ready. The platypus is picked at random.";
+    if(mp.isHost) waitNote.textContent = peers.length < 2 ? "Waiting for players to join…" : `${peers.length}/${MAX_PLAYERS} players. Start when ready. The platypus is picked at random.`;
     else if(G && !idle && !(G.roles || {})[Net.myId()]) waitNote.textContent = "A round is in progress — you'll join the next one.";
     else waitNote.textContent = "Waiting for the host to start…";
     const others = peers.length - 1;
@@ -2470,7 +2487,7 @@
 
   startBtn.addEventListener("click", () => {
     if(!mp.isHost) return;
-    const ids = Net.peers().filter(pp => pp.p && pp.p.n).map(pp => pp.id);
+    const ids = roster().slice(0, MAX_PLAYERS).map(pp => pp.id);
     if(ids.length < 2) return;
     const platId = ids[Math.floor(Math.random()*ids.length)];
     const roles = {}; ids.forEach(id => { roles[id] = id === platId ? "plat" : "pug"; });
@@ -2549,6 +2566,7 @@
       if(hosts.length){ mp.hadHost = true; mp.g = hosts[0].p.g; }
       else if(mp.hadHost){ hostGone(); return; }
     }
+    if(checkFull()) return;
     mpSync();
     if(!lobbyScreen.classList.contains("hidden")) renderLobby();
   }
