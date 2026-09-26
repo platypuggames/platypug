@@ -1939,7 +1939,7 @@
     worldEl.appendChild(el);
   }
   function canDigHere(){
-    if(state.mp) return false;   // digging is classic-mode only for now
+    if(state.mp && (mp.hide || mp.myRole !== "pug" || (mp.myDigs || []).length >= 15)) return false;
     if(state.phase !== "hiding" || state.busy || state.underground || state.sliding) return false;
     const r = roomAt(state.pos.x, state.pos.y);
     return r === "frontyard" || r === "backyard";
@@ -1961,6 +1961,7 @@
       state.digs = state.digs || [];
       state.digs.push(d);
       addDigEl(d, true);
+      if(state.mp){ mp.myDigs.push(d); mp.digKeys.add(d.x + "," + d.y); sendMe(true); }   // share the hole with everyone
       state.busy = false;
     }, 550);
   });
@@ -2599,7 +2600,7 @@
   }
   function startTagRound(role){
     state.mp = true;
-    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, myRole: role, lastSent: ""});
+    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, myRole: role, lastSent: "", myDigs: [], digKeys: new Set()});
     Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
       hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set()});
@@ -2718,7 +2719,9 @@
       f: mp.face, w: state.walkingClassApplied ? 1 : 0,
       hid: h && h.type === "furn" ? h.id : null,
       bl: h && h.type === "blanket" ? {x: h.x, y: h.y, t: h.t} : null,
-      chk: mp.chk || null, ug: state.underground ? 1 : 0
+      chk: mp.chk || null, ug: state.underground ? 1 : 0,
+      dg: mp.myDigs && mp.myDigs.length ? mp.myDigs.map(d => [d.x, d.y]) : null,
+      dgr: mp.g ? mp.g.rid : 0
     };
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
@@ -2755,6 +2758,16 @@
     for(const pp of Net.peers()){
       if(pp.isMe) continue;
       const p = pp.p, role = roles[pp.id];
+      if(Array.isArray(p.dg) && mp.g && p.dgr === mp.g.rid){
+        for(const h of p.dg){
+          const key = h[0] + "," + h[1];
+          if(mp.digKeys.has(key)) continue;
+          mp.digKeys.add(key);
+          const d = {x: h[0], y: h[1]};
+          state.digs.push(d);
+          addDigEl(d, true);
+        }
+      }
       if(!role || !p.sp || p.x == null) continue;
       seen.add(pp.id);
       let r = mp.remotes.get(pp.id);
