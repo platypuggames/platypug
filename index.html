@@ -1937,9 +1937,10 @@
     el.style.left = d.x + "px"; el.style.top = d.y + "px";
     el.innerHTML = DIG_SVG;
     worldEl.appendChild(el);
+    return el;
   }
   function canDigHere(){
-    if(state.mp && (mp.hide || mp.myRole !== "pug" || (mp.myDigs || []).length >= 15)) return false;
+    if(state.mp && (mp.hide || mp.myRole !== "pug")) return false;
     if(state.phase !== "hiding" || state.busy || state.underground || state.sliding) return false;
     const r = roomAt(state.pos.x, state.pos.y);
     return r === "frontyard" || r === "backyard";
@@ -1958,10 +1959,16 @@
     setTimeout(() => {
       spriteEl.classList.remove("digging");
       const d = {x: Math.round(state.pos.x), y: Math.round(state.pos.y + 4)};
-      state.digs = state.digs || [];
-      state.digs.push(d);
-      addDigEl(d, true);
-      if(state.mp){ mp.myDigs.push(d); mp.digKeys.add(d.x + "," + d.y); sendMe(true); }   // share the hole with everyone
+      if(state.mp){
+        mp.myDigs.push(d);
+        if(mp.myDigs.length > MP_MAX_DIGS) mp.myDigs.shift();   // oldest hole fills back in
+        syncHoles();
+        sendMe(true);                                            // share with everyone
+      } else {
+        state.digs = state.digs || [];
+        state.digs.push(d);
+        addDigEl(d, true);
+      }
       state.busy = false;
     }, 550);
   });
@@ -2600,7 +2607,7 @@
   }
   function startTagRound(role){
     state.mp = true;
-    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, myRole: role, lastSent: "", myDigs: [], digKeys: new Set()});
+    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, myRole: role, lastSent: "", myDigs: [], holeEls: new Map()});
     Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
       hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set()});
@@ -2751,23 +2758,29 @@
     return {role, el, tag, lump, flip: el.querySelector(".flip"), x: p.x, y: p.y, walking: false, face: null, blanket: null, blKey: null};
   }
   function removeRemote(r){ r.el.remove(); r.tag.remove(); r.lump.remove(); if(r.blanket) r.blanket.remove(); }
+  const MP_MAX_DIGS = 20;   // per pug; digging a 21st fills in that pug's oldest hole
+  // Holes on screen = my holes + every other player's current holes (this round only)
+  function syncHoles(){
+    const want = new Map();
+    (mp.myDigs || []).forEach(d => want.set(d.x + "," + d.y, d));
+    const rid = mp.g ? mp.g.rid : null;
+    for(const pp of Net.peers()){
+      if(pp.isMe || !Array.isArray(pp.p.dg) || pp.p.dgr !== rid) continue;
+      pp.p.dg.forEach(h => { if(Array.isArray(h)) want.set(h[0] + "," + h[1], {x: h[0], y: h[1]}); });
+    }
+    for(const [k, el] of mp.holeEls){ if(!want.has(k)){ el.remove(); mp.holeEls.delete(k); } }
+    for(const [k, d] of want){ if(!mp.holeEls.has(k)) mp.holeEls.set(k, addDigEl(d, true)); }
+    state.digs = [...want.values()];
+  }
   function renderRemotes(dt){
+    syncHoles();
     const roles = (mp.g && mp.g.roles) || {};
     const seen = new Set();
     const k = Math.min(1, dt * 12);
     for(const pp of Net.peers()){
       if(pp.isMe) continue;
       const p = pp.p, role = roles[pp.id];
-      if(Array.isArray(p.dg) && mp.g && p.dgr === mp.g.rid){
-        for(const h of p.dg){
-          const key = h[0] + "," + h[1];
-          if(mp.digKeys.has(key)) continue;
-          mp.digKeys.add(key);
-          const d = {x: h[0], y: h[1]};
-          state.digs.push(d);
-          addDigEl(d, true);
-        }
-      }
+
       if(!role || !p.sp || p.x == null) continue;
       seen.add(pp.id);
       let r = mp.remotes.get(pp.id);
