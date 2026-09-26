@@ -200,10 +200,7 @@
   }
   .furniture.checked-empty { filter: grayscale(0.65) opacity(0.5); cursor: default; box-shadow: none; }
 
-  .furniture.not-here, .furniture.illustrated.not-here {
-    box-shadow: 0 0 0 5px rgba(229,57,70,0.75) !important;
-    animation: shake .45s ease;
-  }
+  .furniture.not-here, .furniture.illustrated.not-here { animation: shake .45s ease; }
   .furniture.checking { animation: shake .5s ease; }
   .furniture.found-here { box-shadow: 0 0 0 6px rgba(79,203,141,0.5), 0 5px 0 rgba(0,0,0,0.12); }
   .furniture.illustrated { background: none; border: none; box-shadow: none; border-radius: 18px; }
@@ -1603,7 +1600,7 @@
   function updateFromPointer(e){
     // Only the seeker taps furniture to walk to it; the pug just walks where you touch
     // (so you can stop anywhere, e.g. under the bed covers). Proximity still lights things up.
-    const action = state.phase === "seeking" ? resolveActionAt(e) : null;
+    const action = null;   // both characters simply walk to where you touch; the platypus searches whatever she bumps into
     if(action && action.type === "furniture"){
       const item = FURN_LIST.find(f => f.el === action.el);
       if(!item) return;
@@ -1656,6 +1653,15 @@
       const it = FURN_LIST.find(f => f.id === "blanket"); if(it) it.hidden = !vis;
     }
     if(state.busy || (state.phase !== "hiding" && state.phase !== "seeking")) return;
+    if(state.phase === "seeking"){
+      if(state.pendingSpot || confirmFab.classList.contains("show")){
+        state.pendingSpot = null;
+        confirmFab.classList.remove("show");
+        worldEl.querySelectorAll(".furniture.selected").forEach(x => x.classList.remove("selected"));
+      }
+      seekerTouch();
+      return;
+    }
     const item = nearestItem();
     const curId = state.pendingSpot ? state.pendingSpot.spotId : null;
     const newId = item ? item.id : null;
@@ -1973,30 +1979,55 @@
     }, 550);
   });
   /* ---------------- Search / hide actions ---------------- */
+  /* The platypus searches anything she bumps into, while she keeps moving.
+     Each object is searched once per contact; walk away (~20px) and touch it again to re-check. */
+  const TOUCH_D = 6, REARM_D = 22;
+  function rectHas(it, x, y, pad){ pad = pad || 4; return x >= it.x - pad && x <= it.x + it.w + pad && y >= it.y - pad && y <= it.y + it.h + pad; }
+  function wiggleEl(el){
+    if(!el) return;
+    el.classList.remove("checking"); void el.offsetWidth;
+    el.classList.add("checking");
+    clearTimeout(el._wig); el._wig = setTimeout(() => el.classList.remove("checking"), 520);
+  }
+  function seekerTouch(){
+    const px = state.pos.x, py = state.pos.y;
+    if(!state.touchLatch) state.touchLatch = new Set();
+    for(const id of [...state.touchLatch]){
+      const it = FURN_LIST.find(f => f.id === id);
+      if(!it || distToItem(it, px, py) > REARM_D) state.touchLatch.delete(id);
+    }
+    const touching = FURN_LIST.filter(it => !it.hidden && distToItem(it, px, py) <= TOUCH_D);
+    // a blanket tucked behind/under something she's touching (e.g. behind the tree) counts too
+    const bl = FURN_LIST.find(f => f.id === "blanket" && !f.hidden);
+    if(bl && !touching.includes(bl)){
+      const cx = bl.x + bl.w/2, cy = bl.y + bl.h - 6;
+      if(touching.some(it => it !== bl && rectHas(it, cx, cy))) touching.push(bl);
+    }
+    touching.sort((a, b) => (b.id === "blanket") - (a.id === "blanket"));   // blanket first
+    for(const it of touching){
+      if(state.touchLatch.has(it.id)) continue;
+      state.touchLatch.add(it.id);
+      doSearch(it.id, it.room);
+      if(state.busy) break;   // found (classic): game is ending
+    }
+  }
   function doSearch(fid, roomKey){
     if(state.mp){ mpSearch(fid); return; }
     const item = FURN_LIST.find(f => f.id === fid);
     if(!item || state.busy) return;
     const el = item.el;
-    state.busy = true;
-    confirmFab.classList.remove("show");
-    el.classList.remove("selected");
-    el.classList.add("checking");
-    setTimeout(() => {
-      el.classList.remove("checking");
-      if(roomKey === state.hidingRoom && fid === state.hidingSpot){
-        el.classList.add("found-here");
-        endGame();
-      } else {
-        if(!state.checkedIds.has(fid)){ state.checkedIds.add(fid); state.checkedSpots += 1; }
-        el.classList.add("not-here");
-        setTimeout(() => el.classList.remove("not-here"), 650);
+    wiggleEl(el);
+    if(roomKey === state.hidingRoom && fid === state.hidingSpot){
+      state.busy = true;
+      state.target = {x: state.pos.x, y: state.pos.y};
+      setTimeout(() => { el.classList.add("found-here"); endGame(); }, 480);
+    } else {
+      if(!state.checkedIds.has(fid)){
+        state.checkedIds.add(fid); state.checkedSpots += 1;
         showToast("Not here! 🔍");
         updateHud();
-        state.pendingSpot = null;
-        state.busy = false;
       }
-    }, 480);
+    }
   }
 
   confirmFab.addEventListener("click", (e) => {
@@ -2117,6 +2148,7 @@
     state.pendingSpot = null;
     state.wantId = null;
     state.checkedSpots = 0;
+    state.touchLatch = new Set();
     state.checkedIds = new Set();
     state.startTime = Date.now();
     state.busy = false;
@@ -2509,10 +2541,16 @@
     Net.setMe({g: JSON.parse(JSON.stringify(mp.hostG))});
     onNetChange();
   }
+  // touching a blanket, or touching the furniture it's tucked behind/under (e.g. the tree)
+  function blanketTouchedBy(px, py, bl){
+    if(Math.hypot(px - bl.x, py - bl.y) < BLANKET_TAG_R) return true;
+    if(bl.t) return false;
+    return FURN_LIST.some(it => it.id !== "blanket" && rectHas(it, bl.x, bl.y) && distToItem(it, px, py) <= 12);
+  }
   function isTag(pl, pg){
     if(!!pl.ug !== !!pg.ug) return false;
-    if(pg.hid) return pl.chk === pg.hid;   // hiding in furniture: platypus must check that spot
-    if(pg.bl) return Math.hypot(pl.x - pg.bl.x, pl.y - pg.bl.y) < BLANKET_TAG_R;
+    if(pg.hid) return typeof pl.chk === "string" && pl.chk.split(",").includes(pg.hid);   // hiding in furniture: platypus must touch that spot
+    if(pg.bl) return blanketTouchedBy(pl.x, pl.y, pg.bl);
     return Math.hypot(pl.x - pg.x, pl.y - pg.y) < TAG_R;
   }
   function hostTick(){
@@ -2625,10 +2663,10 @@
   }
   function startTagRound(role){
     state.mp = true;
-    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, myRole: role, lastSent: "", myDigs: [], holeEls: new Map()});
+    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map()});
     Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
-      hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set()});
+      hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set(), touchLatch: new Set()});
     confirmFab.classList.remove("show"); digBtn.classList.remove("show"); plainBtn.classList.remove("show");
     mp.remotes = new Map();                 // buildWorld wipes the old remote sprites
     state.phase = "hiding";
@@ -2714,28 +2752,24 @@
   /* ---------- Platypus checking furniture (tag mode) ---------- */
   function mpSearch(fid){
     const item = FURN_LIST.find(f => f.id === fid);
-    if(!item || state.busy) return;
-    state.busy = true;
-    confirmFab.classList.remove("show");
-    item.el.classList.remove("selected");
-    item.el.classList.add("checking");
-    setTimeout(() => {
-      item.el.classList.remove("checking");
-      const roles = (mp.g && mp.g.roles) || {};
-      const hit = Net.peers().some(pp => !pp.isMe && roles[pp.id] === "pug" && pp.p.hid === fid);
-      mp.chk = fid; mp.chkUntil = Date.now() + 1500;   // the host tags any pug hiding here
-      sendMe(true);
-      if(hit){ item.el.classList.add("found-here"); setTimeout(() => item.el.classList.remove("found-here"), 1200); }
-      else { item.el.classList.add("not-here"); setTimeout(() => item.el.classList.remove("not-here"), 650); showToast("Not here! 🔍"); }
-      state.pendingSpot = null;
-      state.busy = false;
-    }, 480);
+    if(!item) return;
+    wiggleEl(item.el);
+    const roles = (mp.g && mp.g.roles) || {};
+    const hit = Net.peers().some(pp => !pp.isMe && roles[pp.id] === "pug" && pp.p.hid === fid);
+    mp.chks = mp.chks || {};
+    mp.chks[fid] = Date.now() + 1500;   // the host tags any pug hiding here
+    sendMe(true);
+    if(hit){ item.el.classList.add("found-here"); setTimeout(() => item.el.classList.remove("found-here"), 1200); }
+    else if(!state.checkedIds.has(fid)){ state.checkedIds.add(fid); showToast("Not here! 🔍"); }
   }
 
   /* ---------- Sending my state ---------- */
   function sendMe(force){
     if(!mp.inGame) return;
-    if(mp.chk && Date.now() > mp.chkUntil) mp.chk = null;
+    const now = Date.now();
+    mp.chks = mp.chks || {};
+    for(const k in mp.chks){ if(now > mp.chks[k]) delete mp.chks[k]; }
+    const chkList = Object.keys(mp.chks).sort().join(",");
     const live = mp.spawned && state.phase !== "waiting";
     const h = mp.hide;
     const o = {
@@ -2744,7 +2778,7 @@
       f: mp.face, w: state.walkingClassApplied ? 1 : 0,
       hid: h && h.type === "furn" ? h.id : null,
       bl: h && h.type === "blanket" ? {x: h.x, y: h.y, t: h.t} : null,
-      chk: mp.chk || null, ug: state.underground ? 1 : 0,
+      chk: chkList || null, ug: state.underground ? 1 : 0,
       dg: mp.myDigs && mp.myDigs.length ? mp.myDigs.map(d => [d.x, d.y]) : null,
       dgr: mp.g ? mp.g.rid : 0
     };
@@ -2835,6 +2869,9 @@
         r.blKey = bk;
       }
       if(r.blanket) r.blanket.style.display = (p.bl && p.bl.t && !state.underground) ? "none" : "";
+      if(r.blanket && mp.myRole === "plat" && state.phase === "seeking" && !!p.bl.t === !!state.underground && blanketTouchedBy(state.pos.x, state.pos.y, p.bl)){
+        if(!r.blTouched){ r.blTouched = true; wiggleEl(r.blanket); }
+      } else r.blTouched = false;
     }
     for(const [id, r] of mp.remotes){ if(!seen.has(id)){ removeRemote(r); mp.remotes.delete(id); } }
   }
