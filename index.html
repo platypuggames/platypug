@@ -1,0 +1,2841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Platypug: Hide and Seek</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font: 'Baloo 2', 'Fredoka', system-ui, sans-serif;
+    --font-display: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+
+    --cream: #FFF6E9;
+    --cream-dark: #362B21;
+    --ink: #4A3628;
+    --ink-soft: #9A836C;
+    --panel: #FFFFFF;
+    --panel-dark: #2C241C;
+
+    --accent: #FF7E9C;
+    --accent-shadow: #DA5677;
+    --accent-2: #57C4E6;
+    --accent-2-shadow: #2E96B8;
+    --success: #4FCB8D;
+    --success-shadow: #2F9E68;
+
+    --kitchen-wall: #FFDD8E;   --kitchen-floor-a: #F7C468; --kitchen-floor-b: #F2B94F;
+    --bedroom-wall: #E4CBFF;  --bedroom-floor-a: #CBA8ED; --bedroom-floor-b: #BC94E8;
+    --garage-wall: #C9D6DE;   --garage-floor-a: #97A7B2;  --garage-floor-b: #8598A4;
+    --bathroom-wall: #B9F0E1; --bathroom-floor-a: #8FE0CB; --bathroom-floor-b: #79D5BE;
+    --livingroom-wall: #FFD3C2; --livingroom-floor-a: #E8B98C; --livingroom-floor-b: #DCA872;
+
+    --paw: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><g fill='%23000000' opacity='0.05'><ellipse cx='32' cy='40' rx='11' ry='9'/><ellipse cx='16' cy='24' rx='6' ry='5'/><ellipse cx='30' cy='16' rx='6' ry='5'/><ellipse cx='46' cy='22' rx='6' ry='5'/></g></svg>");
+
+    --shadow-soft: 0 6px 16px rgba(74,54,40,0.16);
+    --shadow-btn: 0 5px 0;
+    --radius-lg: 30px;
+    --radius-md: 20px;
+    color-scheme: light dark;
+    --bg: var(--cream);
+    --vh: 1vh;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: var(--cream-dark); --panel: var(--panel-dark);
+      --ink: #F6EBDD; --ink-soft: #C9B79E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: var(--cream-dark); --panel: var(--panel-dark);
+    --ink: #F6EBDD; --ink-soft: #C9B79E;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+  html, body {
+    height: 100vh; height: 100svh; height: calc(var(--vh) * 100);
+    margin: 0; overscroll-behavior: none;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    font-family: var(--font); background: var(--bg); color: var(--ink);
+    height: 100%; overflow: hidden; display: flex; justify-content: center;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    user-select: none;
+  }
+  #app {
+    position: relative; width: 100%; max-width: 520px; height: 100%;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 1; transition: opacity .35s ease; }
+  .screen.hidden { opacity: 0; pointer-events: none; }
+
+  /* ---------- Title screen ---------- */
+  #title-screen {
+    align-items: center; justify-content: center; text-align: center;
+    padding: 20px; gap: 12px; position: relative;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: linear-gradient(180deg, #FFF0D2 0%, var(--bg) 55%);
+  }
+  #title-screen::before { content:""; position:absolute; inset:0; background-image:var(--paw); background-size:64px 64px; opacity:.9; pointer-events:none; }
+  #title-screen::after {
+    content:""; position:absolute; left:0; right:0; bottom:0; height:34%;
+    background: linear-gradient(180deg, transparent, rgba(87,196,230,.18));
+    border-top: 6px dashed rgba(74,54,40,.12); pointer-events:none;
+  }
+  .title-badge {
+    position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 2px;
+    background: var(--panel); padding: 16px 24px 9px; border-radius: 34px;
+    box-shadow: var(--shadow-soft); border: 4px solid #ffffffaa;
+  }
+  .title-badge svg { width: 70px; height: 70px; filter: drop-shadow(0 6px 6px rgba(0,0,0,.15)); }
+  .title-badge svg:first-child { width: 90px; }
+  #title-screen h1 { position: relative; z-index: 1; font-family: var(--font-display); font-size: 30px; margin: 4px 0 0; line-height: 1.1; font-weight: 700; letter-spacing: -0.5px; }
+  #title-screen h1 span { color: var(--accent); }
+  #title-screen p.sub { position: relative; z-index: 1; margin: 0; color: var(--ink-soft); font-size: 14px; max-width: 280px; font-weight: 600; }
+
+  .big-btn {
+    position: relative; z-index: 1; font-family: var(--font-display);
+    font-weight: 600; font-size: 19px; color: white; background: var(--accent);
+    border: none; border-radius: 999px; padding: 14px 40px;
+    box-shadow: var(--shadow-btn) var(--accent-shadow), var(--shadow-soft);
+    cursor: pointer; transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .big-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--accent-shadow); }
+  .big-btn.secondary { background: var(--accent-2); box-shadow: var(--shadow-btn) var(--accent-2-shadow), var(--shadow-soft); }
+  .big-btn.secondary:active { box-shadow: 0 1px 0 var(--accent-2-shadow); }
+
+  .howto-toggle { position: relative; z-index: 1; background: none; border: none; color: var(--ink-soft); font-family: var(--font); font-weight: 700; font-size: 14px; text-decoration: underline; cursor: pointer; padding: 6px; }
+  .howto-card { position: relative; z-index: 1; background: var(--panel); border-radius: var(--radius-md); padding: 14px 16px; max-width: 300px; box-shadow: var(--shadow-soft); font-size: 13px; line-height: 1.5; text-align: left; }
+  .howto-card b { color: var(--accent); }
+
+  /* ---------- HUD ---------- */
+  #game-screen { background: var(--bg); }
+  #hud { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; gap: 10px; flex-shrink: 0; }
+  .chip {
+    font-family: var(--font-display); font-weight: 600; font-size: 13px;
+    padding: 8px 15px; border-radius: 999px; background: var(--panel); box-shadow: var(--shadow-soft);
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  #stat-pill { color: var(--ink-soft); }
+
+  /* ---------- Camera viewport ---------- */
+  #stage-wrap {
+    flex: 1; position: relative; margin: 0 12px 12px;
+    border-radius: var(--radius-lg); overflow: hidden;
+    box-shadow: var(--shadow-soft); border: 5px solid var(--panel);
+    background: #D9EEC0;
+  }
+  #stage {
+    position: absolute; inset: 0; overflow: hidden; cursor: pointer;
+  }
+  #world {
+    position: absolute; top: 0; left: 0;
+    background-color: #D9EEC0;
+    background-image: var(--paw);
+    background-size: 50px 50px;
+    will-change: transform;
+  }
+
+  .room {
+    position: absolute;
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 6px rgba(58,42,32,0.55);
+    overflow: hidden;
+  }
+  .room-wall-band { position: absolute; left:0; right:0; top:0; height:30%; background-image: var(--paw); background-size: 40px 40px; }
+
+  .room.yard { box-shadow: inset 0 0 0 8px #8C6A46, inset 0 0 0 11px #F6E7C8; }
+  .fence-band { background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='120' viewBox='0 0 40 120' preserveAspectRatio='none'><rect x='0' y='52' width='40' height='10' fill='%238C6A46'/><rect x='0' y='96' width='40' height='10' fill='%238C6A46'/><path d='M8 22 L20 8 L32 22 L32 120 L8 120 Z' fill='%23F6E7C8' stroke='%236E4E32' stroke-width='2.5'/></svg>") 0 100% / 40px 75% repeat-x,
+      linear-gradient(180deg, #A9DDF5 0%, #DDF3FB 100%) !important; }
+
+  .room-fog { position: absolute; inset: 0; background: rgba(14,10,26,0.8); z-index: 9; pointer-events: none; opacity: 0; transition: opacity .35s ease; }
+  .room-fog.on { opacity: 1; }
+
+  .room.open-yard { box-shadow: inset 0 0 0 8px #8C6A46, inset 0 0 0 11px #F6E7C8; }
+
+  .garage-door { position: absolute; z-index: 4; border: 3px solid #241811; border-radius: 5px;
+    background: repeating-linear-gradient(180deg, #E9ECEF 0 7px, #BFC6CD 7px 9px);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.18); transform-origin: 50% 0%;
+    transition: transform .7s ease, opacity .7s ease; }
+  .garage-door::after { content: ""; position: absolute; left: 44%; right: 44%; bottom: 3px; height: 4px; border-radius: 2px; background: #6E767F; }
+  .garage-door.open { transform: scaleY(0.12); opacity: 0.5; }
+  .garage-plate { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; z-index: 2;
+    background: radial-gradient(circle at 40% 35%, #B8BFC6, #7A838C); border: 2px solid rgba(36,24,17,0.55);
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25); opacity: 0.8; }
+  .garage-plate.pressed { background: radial-gradient(circle at 40% 35%, #9BE3B8, #3FA56A); box-shadow: inset 0 2px 0 rgba(0,0,0,0.3); }
+
+  .tunnel-hole { position: absolute; width: 80px; height: 54px; margin: -27px 0 0 -40px; z-index: 2; pointer-events: none; }
+  .tunnel-path { position: absolute; z-index: 10; pointer-events: none; display: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+  .tunnel-path.show { display: block; animation: tunIn .25s ease-out; }
+  @keyframes tunIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+  .critter-sprite.xray { z-index: 11 !important; filter: drop-shadow(0 0 3px #8FE8FF) drop-shadow(0 0 6px rgba(90,180,240,0.7)); }
+  .room-floor-band { position: absolute; left:0; right:0; top:30%; bottom:0; }
+  .connector-patch { position: absolute; z-index: 1; background: #DECBA0; }
+
+  /* ---------- Furniture ---------- */
+  .f-shadow { position: absolute; background: rgba(0,0,0,0.16); border-radius: 50%; filter: blur(1px); z-index: 2; }
+  .furniture {
+    position: absolute;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    border-radius: 22px; cursor: pointer; z-index: 3;
+    transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease, filter .2s ease;
+    box-shadow: 0 5px 0 rgba(0,0,0,0.12), 0 8px 14px rgba(0,0,0,0.14);
+    border: 4px solid rgba(255,255,255,0.9);
+  }
+  .furniture .f-emoji { font-size: 26px; line-height: 1; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.12)); }
+  .furniture .f-label {
+    font-family: var(--font-display); font-size: 10px; font-weight: 600;
+    color: rgba(0,0,0,0.55); background: rgba(255,255,255,0.55);
+    padding: 1px 7px; border-radius: 999px;
+  }
+  .furniture.selected {
+    box-shadow: 0 0 0 5px rgba(255,126,156,0.45), 0 5px 0 rgba(0,0,0,0.12), 0 8px 14px rgba(0,0,0,0.14);
+    filter: brightness(1.05);
+  }
+  .furniture.checked-empty { filter: grayscale(0.65) opacity(0.5); cursor: default; box-shadow: none; }
+
+  .furniture.not-here, .furniture.illustrated.not-here {
+    box-shadow: 0 0 0 5px rgba(229,57,70,0.75) !important;
+    animation: shake .45s ease;
+  }
+  .furniture.checking { animation: shake .5s ease; }
+  .furniture.found-here { box-shadow: 0 0 0 6px rgba(79,203,141,0.5), 0 5px 0 rgba(0,0,0,0.12); }
+  .furniture.illustrated { background: none; border: none; box-shadow: none; border-radius: 18px; }
+  .furniture.illustrated .custom-svg { width: 100%; height: 100%; filter: drop-shadow(0 5px 4px rgba(0,0,0,0.2)); }
+  .furniture.illustrated .custom-svg svg { width: 100%; height: 100%; display: block; }
+  .furniture.illustrated.selected { box-shadow: 0 0 0 5px rgba(255,126,156,0.45); }
+  .furniture.illustrated.found-here { box-shadow: 0 0 0 6px rgba(79,203,141,0.5); }
+  .furniture.illustrated.checked-empty { filter: grayscale(0.7) opacity(0.55); box-shadow: none; }
+  @keyframes shake {
+    0%,100% { transform: rotate(var(--rot,0deg)); }
+    20% { transform: rotate(calc(var(--rot,0deg) - 6deg)); }
+    40% { transform: rotate(calc(var(--rot,0deg) + 5deg)); }
+    60% { transform: rotate(calc(var(--rot,0deg) - 4deg)); }
+    80% { transform: rotate(calc(var(--rot,0deg) + 3deg)); }
+  }
+
+  /* ---------- Character sprite ---------- */
+  .critter-sprite {
+    position: absolute; width: 56px; height: 56px;
+    margin-left: -28px; margin-top: -44px;
+    pointer-events: none;
+    transition: opacity .3s ease, transform .3s ease;
+    filter: drop-shadow(0 6px 5px rgba(0,0,0,.2));
+    z-index: 5; transform-origin: 50% 85%;
+  }
+  .critter-sprite.pug { width: 58px; height: 47px; margin-left: -29px; margin-top: -40px; }
+
+  /* pug tongue: out and panting when idle, pulled in while walking */
+  .pug-tongue { transform-box: fill-box; transform-origin: 50% 0%; transition: transform .16s ease; }
+  .critter-sprite.idle .pug-tongue { animation: tongueOut .2s ease-out, pant .55s ease-in-out .2s infinite; }
+  .critter-sprite.walking .pug-tongue { transform: scale(0.6, 0.02); animation: none; }
+  @keyframes tongueOut { from { transform: scale(0.6, 0.02); } to { transform: scale(1, 1); } }
+  @keyframes pant { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.88); } }
+
+  /* pug legs: bottoms kick out and back in together while walking */
+  .pug-leg { transform-box: fill-box; transform-origin: 50% 0%; }
+  .critter-sprite.walking .pug-leg.leg-l { animation: legL .28s ease-in-out infinite; }
+  .critter-sprite.walking .pug-leg.leg-r { animation: legR .28s ease-in-out infinite; }
+  @keyframes legL { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(48deg); } }
+  @keyframes legR { 0%,100% { transform: rotate(8deg); } 50% { transform: rotate(-48deg); } }
+
+  /* platypus: sized box, tail wag, stepping feet, sleepy blink */
+  .critter-sprite.plat { width: 56px; height: 53px; margin-left: -28px; margin-top: -48px; }
+  .plat-tail { transform-box: fill-box; transform-origin: 0% 55%; }
+  .plat-foot { transform-box: fill-box; transform-origin: 50% 0%; }
+  .critter-sprite.walking .plat-tail { animation: platWagSlow 1s ease-in-out infinite; }
+  .critter-sprite.idle .plat-tail { animation: platWagFast .32s ease-in-out infinite; }
+  .critter-sprite.walking .pf-l { animation: platStep .36s ease-in-out infinite; }
+  .critter-sprite.walking .pf-r { animation: platStep .36s ease-in-out -.18s infinite; }
+  .critter-sprite.idle .plat-lid { animation: platBlink 3.2s ease-in-out infinite; }
+  @keyframes platWagSlow { 0%,100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+  @keyframes platWagFast { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+  @keyframes platStep { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-40%) rotate(-10deg); } }
+  @keyframes platBlink {
+    0%, 55% { transform: scaleY(0); }
+    68% { transform: scaleY(0.62); }
+    80% { transform: scaleY(0.62); }
+    86% { transform: scaleY(0.9); }
+    94%, 100% { transform: scaleY(0); }
+  }
+
+  .critter-sprite.sliding { animation: slideWob .18s ease-in-out infinite !important; }
+  .critter-sprite.sliding .pug-leg, .critter-sprite.sliding .plat-foot { animation: none !important; }
+  .critter-sprite.sliding .pug-tongue { animation: none !important; transform: none !important; }
+  @keyframes slideWob { 0%,100% { transform: rotate(-7deg) scale(1.06); } 50% { transform: rotate(7deg) scale(1.06); } }
+  .critter-sprite .flip { transition: transform .2s ease; display:block; width:100%; height:100%; }
+  .critter-sprite.idle { animation: bounce 1.7s ease-in-out infinite; }
+  .critter-sprite.walking { animation: walk .28s ease-in-out infinite; }
+  .critter-sprite.hidden-away { opacity: 0; transform: scale(0.15) translateY(10px); }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes walk { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-7px) rotate(3deg); } }
+  .foot-shadow { position: absolute; width: 32px; height: 9px; margin-left: -16px; background: rgba(0,0,0,0.2); border-radius: 50%; z-index: 4; filter: blur(1px); }
+
+  .bed-lump {
+    position: absolute; width: 62px; height: 42px;
+    margin-left: -31px; margin-top: -24px;
+    z-index: 4; pointer-events: none;
+    display: none;
+    filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));
+    animation: wiggle 0.9s ease-in-out infinite;
+  }
+  .bed-lump.show { display: block; }
+  @keyframes wiggle {
+    0%,100% { transform: rotate(-4deg) scale(1); }
+    50% { transform: rotate(4deg) scale(1.04); }
+  }
+
+  /* ---------- Confirm FAB ---------- */
+
+  /* hide-in-plain-sight blanket */
+  .plain-btn {
+    position: absolute; top: 14px; left: 14px; z-index: 12;
+    font-family: var(--font-display); font-weight: 600; font-size: 15px;
+    background: #7E9CE0; color: #fff; border: none; border-radius: 999px;
+    padding: 12px 16px; box-shadow: 0 4px 0 #5470B5, var(--shadow-soft);
+    cursor: pointer; display: none;
+  }
+  .plain-btn.show { display: block; }
+  .plain-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #5470B5; }
+  .blanket-spot { position: absolute; width: 70px; height: 46px; z-index: 3; }
+  .blanket-spot svg { width: 100%; height: 100%; display: block; }
+
+  .blanket-spot.cold { width: 80px; height: 62px; animation: shiver .12s linear infinite; }
+  @keyframes shiver { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-1.5px); } 75% { transform: translateX(1.5px); } }
+  .blanket-drop { animation: blanketDrop .45s cubic-bezier(.34,1.56,.64,1) both; transform-origin: 50% 100%; }
+  @keyframes blanketDrop { 0% { transform: translateY(-40px) scale(0.3); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  .blanket-spot.idle-wiggle { animation: wiggle 1.4s ease-in-out infinite; }
+  .confirm-fab {
+    position: absolute; top: 14px; right: 14px; z-index: 12;
+    font-family: var(--font-display);
+    background: var(--success); color: white; border: none;
+    border-radius: 999px; padding: 12px 18px; font-weight: 600; font-size: 15px;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 4px 0 var(--success-shadow), var(--shadow-soft);
+    transform: scale(0) translateY(-10px); opacity: 0;
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s ease, box-shadow .1s ease;
+    pointer-events: none; cursor: pointer;
+  }
+
+  .dig-fab { background: #B07A4C; box-shadow: 0 4px 0 #7A5236, var(--shadow-soft); }
+  .dig-fab:active { box-shadow: 0 1px 0 #7A5236; }
+  .dig-spot { position: absolute; width: 76px; height: 42px; margin: -21px 0 0 -24px; z-index: 2; pointer-events: none; }
+  .dig-spot.fresh { animation: digPop .35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes digPop { from { transform: scale(0.2); opacity: 0; } to { transform: none; opacity: 1; } }
+  .critter-sprite.digging { animation: digShake .09s linear infinite !important; }
+  @keyframes digShake { 0%,100% { transform: rotate(-8deg) translateY(0); } 50% { transform: rotate(8deg) translateY(2px); } }
+  .confirm-fab.show { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+  .confirm-fab:active { transform: scale(0.9); box-shadow: 0 1px 0 var(--success-shadow); }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%) translateY(-140%);
+    background: var(--panel); font-weight: 700; font-size: 14px; padding: 10px 20px; border-radius: 999px;
+    box-shadow: var(--shadow-soft); transition: transform .3s ease; z-index: 20; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ---------- Interstitial ---------- */
+  #interstitial {
+    position: absolute; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    z-index: 30; text-align: center; padding: 24px;
+  }
+  #interstitial h2 { margin: 0; font-family: var(--font-display); font-size: 22px; }
+  #interstitial p { margin: 0; color: var(--ink-soft); font-size: 14px; max-width: 280px; font-weight: 600; }
+  #interstitial .count { font-family: var(--font-display); font-size: 48px; font-weight: 700; color: var(--accent); }
+
+  /* ---------- Win screen ---------- */
+  #win-screen {
+    align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 18px;
+    position: relative; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: linear-gradient(180deg, #E3FBF3 0%, var(--bg) 60%);
+  }
+  #win-screen::before { content:""; position:absolute; inset:0; background-image: var(--paw); background-size: 64px 64px; pointer-events:none; }
+  #win-screen > * { position: relative; z-index: 1; }
+  #win-screen .title-badge { padding: 10px 18px 6px; }
+  #win-screen .title-badge svg { width: 50px; height: 50px; }
+  #win-screen .title-badge svg:first-child { width: 64px; }
+  #win-screen h2 { margin: 0; font-family: var(--font-display); font-size: 23px; }
+  .stat-row { display: flex; gap: 10px; }
+  .stat-card { background: var(--panel); border-radius: var(--radius-md); padding: 10px 14px; box-shadow: var(--shadow-soft); min-width: 82px; }
+  .stat-card .num { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--accent); }
+  .stat-card .lbl { font-size: 10.5px; color: var(--ink-soft); font-weight: 700; }
+
+  /* ---------- Platytag (multiplayer) ---------- */
+  .mode-btns { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; align-items: stretch; margin-top: 4px; }
+  #lobby-screen, #tagover-screen {
+    align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 20px;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: linear-gradient(180deg, #E3F6FD 0%, var(--bg) 60%);
+  }
+  /* menu screens: overlay the app (not stacked in the layout), scroll by touch, never clip the top */
+  #title-screen, #win-screen, #lobby-screen, #tagover-screen { position: absolute; inset: 0; justify-content: safe center; }
+  #title-screen, #title-screen *, #win-screen, #win-screen *, #lobby-screen, #lobby-screen *, #tagover-screen, #tagover-screen * { touch-action: pan-y; }
+  #title-screen::after { position: fixed; }
+  input { user-select: text; -webkit-user-select: text; touch-action: manipulation; }
+  #lobby-screen::before, #tagover-screen::before { content:""; position:absolute; inset:0; background-image: var(--paw); background-size: 64px 64px; pointer-events:none; }
+  #lobby-screen > *, #tagover-screen > * { position: relative; z-index: 1; }
+  #lobby-screen h2, #tagover-screen h2 { margin: 0; font-family: var(--font-display); font-size: 28px; }
+  #tagover-screen .title-badge svg { width: 50px; height: 50px; }
+  #tagover-screen .title-badge svg:first-child { width: 64px; }
+  .lobby-card { background: var(--panel); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); padding: 16px; width: min(320px, 100%); box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; }
+  .lobby-input { font-family: var(--font-display); font-size: 18px; padding: 10px 14px; border-radius: 14px; border: 3px solid rgba(154,131,108,0.35); background: var(--bg); color: var(--ink); text-align: center; width: 100%; box-sizing: border-box; min-width: 0; }
+  .lobby-row { display: flex; gap: 8px; }
+  .lobby-row .lobby-input { flex: 1; text-transform: uppercase; letter-spacing: 4px; }
+  .small-btn { font-family: var(--font-display); font-weight: 600; font-size: 16px; border: none; border-radius: 999px; padding: 10px 20px; background: var(--accent-2); color: #fff; box-shadow: 0 4px 0 var(--accent-2-shadow); cursor: pointer; }
+  .big-btn:disabled, .small-btn:disabled { opacity: 0.45; cursor: default; }
+  .room-code { font-family: var(--font-display); font-size: 42px; font-weight: 700; letter-spacing: 8px; color: var(--accent); line-height: 1; }
+  .player-list { list-style: none; margin: 0; padding: 0; text-align: left; display: flex; flex-direction: column; gap: 6px; width: min(320px, 100%); box-sizing: border-box; }
+  .player-list li { background: var(--bg); border-radius: 12px; padding: 8px 12px; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
+  #tagover-list li { background: var(--panel); box-shadow: var(--shadow-soft); }
+  .player-list .tag { color: var(--ink-soft); font-size: 12px; }
+  .lobby-note { color: var(--ink-soft); font-size: 13px; font-weight: 600; margin: 0; max-width: 300px; }
+  .name-tag { position: absolute; transform: translate(-50%, 0); font-family: var(--font-display); font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.88); color: #4A3628; padding: 1px 7px; border-radius: 999px; z-index: 8; pointer-events: none; white-space: nowrap; }
+  .name-tag.plat { background: #C9AEEA; color: #2A1E3A; }
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <div id="title-screen" class="screen">
+    <div class="title-badge" id="title-critters"></div>
+    <h1><span>Platypug</span><br>Hide and Seek</h1>
+    <p class="sub">Hide your pug somewhere cozy around the house, then switch sides and help the platypus find them!</p>
+    <div class="mode-btns">
+      <button class="big-btn" id="play-btn">🐶 Pug and Seek</button>
+      <button class="big-btn secondary" id="tag-btn">🦆 Platytag</button>
+    </div>
+    <button class="howto-toggle" id="howto-btn">How to play</button>
+    <div class="howto-card" id="howto-card" style="display:none;">
+      <b>Hiding:</b> Drag or tap anywhere and your pug follows your finger around the whole house — just keep walking through doorways from room to room. Touch furniture and your pug walks over — confirm in the corner to hide there.<br><br>
+      <b>Seeking:</b> Walk the platypus around the house the same way and touch furniture to check it. Find the pug before you run out of spots!<br><br>
+      <b>Platytag (multiplayer):</b> One player is the platypus, everyone else is a pug. Pugs get a 15-second head start. The platypus tags pugs by touching them, or by checking the furniture a pug is hiding in. Tagged pugs become platypuses and join the hunt until every pug is caught.<br><br>
+      <b>Keyboard:</b> Arrow keys or WASD to move, Space/Enter to confirm, F to dig, B for the blanket.
+    </div>
+  </div>
+
+  <div id="lobby-screen" class="screen hidden">
+    <h2>🦆 Platytag</h2>
+    <p class="lobby-note" id="lobby-status">One platypus, lots of pugs. Tagged pugs join the hunt!</p>
+    <div class="lobby-card" id="lobby-join">
+      <input class="lobby-input" id="nick-input" maxlength="14" placeholder="Your name" autocomplete="off">
+      <button class="big-btn" id="create-btn">Create game</button>
+      <div class="lobby-row">
+        <input class="lobby-input" id="code-input" maxlength="4" placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false">
+        <button class="small-btn" id="join-btn">Join</button>
+      </div>
+    </div>
+    <div class="lobby-card" id="lobby-room" style="display:none;">
+      <div class="lobby-note">Room code</div>
+      <div class="room-code" id="room-code">----</div>
+      <ul class="player-list" id="player-list"></ul>
+      <button class="big-btn" id="start-btn" style="display:none;">Start game</button>
+      <p class="lobby-note" id="wait-note">Waiting for the host to start…</p>
+      <p class="lobby-note" id="net-note" style="font-size:11px;opacity:.8;"></p>
+    </div>
+    <button class="howto-toggle" id="lobby-back">← Back</button>
+  </div>
+
+  <div id="tagover-screen" class="screen hidden">
+    <div class="title-badge" id="tagover-critters"></div>
+    <h2>All pugs tagged!</h2>
+    <p class="lobby-note" id="tagover-sub"></p>
+    <div class="stat-row">
+      <div class="stat-card"><div class="num" id="tagover-time">0s</div><div class="lbl">TIME</div></div>
+      <div class="stat-card"><div class="num" id="tagover-count">0</div><div class="lbl">PUGS TAGGED</div></div>
+    </div>
+    <ol class="player-list" id="tagover-list"></ol>
+    <button class="big-btn secondary" id="tagover-btn">Back to lobby</button>
+  </div>
+
+  <div id="game-screen" class="screen hidden">
+    <div id="hud">
+      <div class="chip" id="phase-pill">🐶 Hiding</div>
+      <div class="chip" id="stat-pill">Pick a cozy spot</div>
+    </div>
+    <div id="stage-wrap">
+      <div id="stage"><div id="world"></div></div>
+      <div id="toast"></div>
+      <button id="confirm-fab" class="confirm-fab" aria-label="Confirm hiding spot">✅ Hide!</button>
+      <button id="dig-btn" class="confirm-fab dig-fab" aria-label="Dig a hole">⛏️ Dig</button>
+      <button id="plain-btn" class="plain-btn" aria-label="Hide under a blanket right here">🧺 Blanket</button>
+      <div id="interstitial" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="win-screen" class="screen hidden">
+    <div class="title-badge" id="win-critters"></div>
+    <h2 id="win-title">Found you!</h2>
+    <p class="sub" id="win-sub">The platypus checked a few spots before spotting that wiggly tail.</p>
+    <div class="stat-row">
+      <div class="stat-card"><div class="num" id="win-time">0s</div><div class="lbl">TIME</div></div>
+      <div class="stat-card"><div class="num" id="win-checks">0</div><div class="lbl">SPOTS CHECKED</div></div>
+      <div class="stat-card"><div class="num" id="win-best">--</div><div class="lbl">BEST TIME</div></div>
+    </div>
+    <button class="big-btn secondary" id="again-btn">Play Again</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Viewport height fix (iOS Safari chrome-safe) ---------------- */
+  function setVH(){
+    document.documentElement.style.setProperty("--vh", (window.innerHeight * 0.01) + "px");
+  }
+  setVH();
+  window.addEventListener("resize", setVH);
+  window.addEventListener("orientationchange", () => setTimeout(setVH, 60));
+  if(window.visualViewport){ window.visualViewport.addEventListener("resize", setVH); }
+
+  /* ---------------- SVG critters ---------------- */
+  const PUG_TPL = "<svg viewBox=\"60 440 1340 1080\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<radialGradient id=\"hg__ID__\" cx=\"50%\" cy=\"35%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#F2CC98\"/><stop offset=\"0.7\" stop-color=\"#E3B07A\"/><stop offset=\"1\" stop-color=\"#C9925A\"/></radialGradient>\n<linearGradient id=\"bg__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#E3B07A\"/><stop offset=\"1\" stop-color=\"#C9925A\"/></linearGradient>\n<radialGradient id=\"ring__ID__\" cx=\"50%\" cy=\"60%\" r=\"60%\"><stop offset=\"0.7\" stop-color=\"#6B4428\"/><stop offset=\"1\" stop-color=\"#3A2416\"/></radialGradient>\n<radialGradient id=\"white__ID__\" cx=\"45%\" cy=\"60%\" r=\"65%\"><stop offset=\"0.6\" stop-color=\"#FFFDF8\"/><stop offset=\"1\" stop-color=\"#E8DDD0\"/></radialGradient>\n<radialGradient id=\"iris__ID__\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0.55\" stop-color=\"#A06A3C\"/><stop offset=\"1\" stop-color=\"#6E4424\"/></radialGradient>\n<radialGradient id=\"mz__ID__\" cx=\"50%\" cy=\"35%\" r=\"65%\"><stop offset=\"0.3\" stop-color=\"#F1D3A4\"/><stop offset=\"1\" stop-color=\"#E2B888\"/></radialGradient>\n<linearGradient id=\"ear__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6A4630\"/><stop offset=\"1\" stop-color=\"#4A2E1C\"/></linearGradient>\n<linearGradient id=\"tg__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#F27C97\"/><stop offset=\"1\" stop-color=\"#FF9FB3\"/></linearGradient>\n<radialGradient id=\"ns__ID__\" cx=\"40%\" cy=\"30%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#5A3C2A\"/><stop offset=\"1\" stop-color=\"#1A100A\"/></radialGradient>\n</defs>\n<ellipse cx=\"700\" cy=\"1470\" rx=\"560\" ry=\"30\" fill=\"#000\" opacity=\"0.08\"/>\n<g class=\"pug-leg leg-l\"><ellipse cx=\"491\" cy=\"1412\" rx=\"38\" ry=\"60\" fill=\"url(#bg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/><path d=\"M 479 1456 L 479 1470 M 503 1456 L 503 1470\" stroke=\"#241811\" stroke-width=\"5\" stroke-linecap=\"round\" opacity=\"0.6\"/></g><g class=\"pug-leg leg-l\"><ellipse cx=\"613\" cy=\"1412\" rx=\"38\" ry=\"60\" fill=\"url(#bg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/><path d=\"M 601 1456 L 601 1470 M 625 1456 L 625 1470\" stroke=\"#241811\" stroke-width=\"5\" stroke-linecap=\"round\" opacity=\"0.6\"/></g><g class=\"pug-leg leg-r\"><ellipse cx=\"1042\" cy=\"1412\" rx=\"38\" ry=\"60\" fill=\"url(#bg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/><path d=\"M 1030 1456 L 1030 1470 M 1054 1456 L 1054 1470\" stroke=\"#241811\" stroke-width=\"5\" stroke-linecap=\"round\" opacity=\"0.6\"/></g><g class=\"pug-leg leg-r\"><ellipse cx=\"1141\" cy=\"1412\" rx=\"38\" ry=\"60\" fill=\"url(#bg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/><path d=\"M 1129 1456 L 1129 1470 M 1153 1456 L 1153 1470\" stroke=\"#241811\" stroke-width=\"5\" stroke-linecap=\"round\" opacity=\"0.6\"/></g>\n<g stroke=\"#241811\" stroke-width=\"12\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n<path d=\"M 458 1120 C 387 1140 356 1320 440 1360 L 1172 1360 C 1223 1350 1225 1170 1205 1085 C 1184 1010 1125 995 1065 1005 L 916 1040 Z\" fill=\"url(#bg__ID__)\"/>\n</g>\n\n<path d=\"M 1011 1330 Q 1094 1340 1166 1320\" stroke=\"#C9925A\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.8\"/>\n<ellipse cx=\"1113\" cy=\"1250\" rx=\"70\" ry=\"22\" fill=\"#fff\" opacity=\"0.18\"/>\n<g stroke=\"#241811\" stroke-width=\"12\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n<path d=\"M 330 600 C 380 545 440 522 500 508 C 560 494 730 490 790 497 C 860 504 950 522 1040 580 C 1200 640 1320 760 1300 880 C 1290 990 1230 1060 1150 1078 C 900 1100 500 1135 250 1120 C 110 1110 80 980 100 870 C 110 760 200 660 330 600 Z\" fill=\"url(#hg__ID__)\"/>\n<path d=\"M 420 548 C 380 500 280 482 218 512 C 158 542 118 640 126 748 C 175 742 232 692 272 640 C 302 605 352 576 420 548 Z\" fill=\"url(#ear__ID__)\"/>\n<path d=\"M 960 548 C 1010 500 1120 480 1185 505 C 1250 530 1287 622 1274 704 C 1226 694 1180 642 1140 597 C 1100 567 1030 554 960 548 Z\" fill=\"url(#ear__ID__)\"/>\n</g>\n<g fill=\"none\" stroke=\"#8A6040\" stroke-width=\"7\" stroke-linecap=\"round\" opacity=\"0.75\">\n<path d=\"M 240 522 C 210 565 200 620 208 675\"/>\n<path d=\"M 1118 500 C 1165 540 1205 600 1220 660\"/>\n</g>\n<g fill=\"none\" stroke=\"#241811\" stroke-width=\"7\" stroke-linecap=\"round\">\n<path d=\"M 615 512 Q 603 530 615 548\"/>\n<path d=\"M 675 512 Q 687 530 675 548\"/>\n\n</g>\n<circle cx=\"527\" cy=\"700\" r=\"122\" fill=\"url(#ring__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/>\n<circle cx=\"527\" cy=\"708\" r=\"96\" fill=\"url(#white__ID__)\" stroke=\"#241811\" stroke-width=\"6\"/>\n<circle cx=\"541\" cy=\"712\" r=\"74\" fill=\"url(#iris__ID__)\"/>\n<circle cx=\"541\" cy=\"712\" r=\"56\" fill=\"#140C07\"/>\n<circle cx=\"515\" cy=\"684\" r=\"24\" fill=\"#fff\"/>\n<circle cx=\"566\" cy=\"740\" r=\"10\" fill=\"#fff\" opacity=\"0.9\"/>\n<circle cx=\"763\" cy=\"700\" r=\"122\" fill=\"url(#ring__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/>\n<circle cx=\"763\" cy=\"708\" r=\"96\" fill=\"url(#white__ID__)\" stroke=\"#241811\" stroke-width=\"6\"/>\n<circle cx=\"749\" cy=\"712\" r=\"74\" fill=\"url(#iris__ID__)\"/>\n<circle cx=\"749\" cy=\"712\" r=\"56\" fill=\"#140C07\"/>\n<circle cx=\"723\" cy=\"684\" r=\"24\" fill=\"#fff\"/>\n<circle cx=\"774\" cy=\"740\" r=\"10\" fill=\"#fff\" opacity=\"0.9\"/>\n<g fill=\"none\" stroke=\"#241811\" stroke-width=\"7\" stroke-linecap=\"round\">\n<path d=\"M 603 568 L 631 590\"/>\n<path d=\"M 687 568 L 659 590\"/>\n<path d=\"M 530 840 Q 645 812 760 840\"/>\n</g>\n<path d=\"M 298 948 C 298 900 420 894 505 894 C 580 894 575 846 645 846 C 715 846 710 894 785 894 C 870 894 992 900 992 948 C 992 1008 830 1054 645 1056 C 460 1054 298 1008 298 948 Z\" fill=\"url(#mz__ID__)\" stroke=\"#241811\" stroke-width=\"12\" stroke-linejoin=\"round\"/>\n\n<path d=\"M 645 922 L 645 984\" stroke=\"#241811\" stroke-width=\"7\" stroke-linecap=\"round\"/>\n<g class=\"pug-tongue\"><path d=\"M 526 996 L 531 996 L 535 996 L 540 996 L 545 996 L 550 996 L 555 996 L 560 996 L 565 996 L 570 995 L 575 995 L 580 995 L 584 994 L 589 994 L 594 993 L 598 993 L 603 992 L 608 992 L 612 991 L 616 990 L 621 989 L 625 989 L 629 988 L 633 987 L 637 986 L 641 985 L 645 984 L 649 985 L 653 986 L 657 987 L 661 988 L 665 989 L 669 989 L 674 990 L 678 991 L 682 992 L 687 992 L 692 993 L 696 993 L 698 993 C 702 1063 668 1128 612 1128 C 556 1128 522 1066 526 996 Z\" fill=\"url(#tg__ID__)\" stroke=\"#241811\" stroke-width=\"8\" stroke-linejoin=\"round\"/>\n<path d=\"M 612 1002 L 612 1098\" stroke=\"#C9546F\" stroke-width=\"7\" stroke-linecap=\"round\"/>\n<ellipse cx=\"574\" cy=\"1040\" rx=\"12\" ry=\"24\" fill=\"#fff\" opacity=\"0.35\"/></g>\n<path d=\"M 398 952 C 432 1004 570 1004 645 984 C 720 1004 858 1004 892 952\" fill=\"none\" stroke=\"#241811\" stroke-width=\"8\" stroke-linecap=\"round\"/>\n<path d=\"M 595 890 Q 645 870 695 890 Q 699 920 645 924 Q 591 920 595 890 Z\" fill=\"url(#ns__ID__)\" stroke=\"#241811\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\n<ellipse cx=\"625\" cy=\"903\" rx=\"9\" ry=\"6\" fill=\"#0C0704\"/>\n<ellipse cx=\"665\" cy=\"903\" rx=\"9\" ry=\"6\" fill=\"#0C0704\"/>\n<ellipse cx=\"633\" cy=\"884\" rx=\"13\" ry=\"4\" fill=\"#fff\" opacity=\"0.45\"/>\n<circle cx=\"1272\" cy=\"1040\" r=\"74\" fill=\"url(#hg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/>\n<path d=\"M 1278.0 1040.0 L 1278.5 1041.1 L 1278.8 1042.3 L 1278.9 1043.6 L 1278.7 1045.0 L 1278.3 1046.5 L 1277.5 1047.9 L 1276.4 1049.2 L 1275.0 1050.4 L 1273.4 1051.3 L 1271.6 1052.0 L 1269.6 1052.4 L 1267.4 1052.4 L 1265.2 1052.0 L 1263.0 1051.2 L 1260.9 1050.0 L 1258.9 1048.5 L 1257.2 1046.5 L 1255.7 1044.2 L 1254.7 1041.6 L 1254.0 1038.7 L 1253.9 1035.8 L 1254.2 1032.7 L 1255.1 1029.6 L 1256.6 1026.7 L 1258.5 1023.9 L 1260.9 1021.4 L 1263.8 1019.4 L 1267.1 1017.7 L 1270.7 1016.6 L 1274.5 1016.1 L 1278.4 1016.3 L 1282.4 1017.1 L 1286.3 1018.5 L 1289.9 1020.6 L 1293.3 1023.4 L 1296.2 1026.7 L 1298.6 1030.5 L 1300.3 1034.8 L 1301.4 1039.4 L 1301.7 1044.2 L 1301.2 1049.0 L 1299.9 1053.9 L 1297.9 1058.5 L 1295.0 1062.8 L 1291.4 1066.7 L 1287.1 1070.0 L 1282.3 1072.6 L 1277.1 1074.4 L 1271.5 1075.4 L 1265.7 1075.5 L 1260.0 1074.6 L 1254.3 1072.7 L 1248.9 1069.9 L 1244.0 1066.3 L 1239.7 1061.8 L 1236.1 1056.6 L 1233.3 1050.8 L 1231.5 1044.5 L 1230.6 1038.0 L 1230.9 1031.3 L 1232.3 1024.6 L 1234.7 1018.1 L 1238.3 1012.1 L 1242.8 1006.6 L 1248.2 1001.8 L 1254.3 998.0 L 1261.1 995.1 L 1268.4 993.3 L 1276.0 992.8 L 1283.6 993.4 L 1291.1 995.3 L 1298.4 998.5 L 1305.1 1002.8 L 1311.1 1008.1 L 1316.2 1014.5 L 1320.2 1021.7 L 1323.1 1029.5 L 1324.8 1037.8 L 1325.0 1046.3 L 1323.9 1054.9 L 1321.4 1063.2 L 1317.5 1071.2 L 1312.4 1078.5 L 1306.1 1084.9 L 1298.8 1090.3 L 1290.6 1094.5 L 1281.7 1097.4 L 1272.4 1098.8 L 1262.9 1098.7 L 1253.5 1097.1\" fill=\"none\" stroke=\"#241811\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n</svg>";
+  let _pugN = 0;
+  function pugSVG(){ return PUG_TPL.replace(/__ID__/g, 'p' + (++_pugN)); }
+  const PLAT_TPL = "<svg viewBox=\"0 0 1240 1180\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<clipPath id=\"sil__ID__\"><path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\"/></clipPath>\n<clipPath id=\"tl__ID__\"><path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\"/></clipPath>\n<clipPath id=\"bc__ID__\"><path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\"/></clipPath>\n<radialGradient id=\"ir__ID__\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0.6\" stop-color=\"#EE6FA8\"/><stop offset=\"1\" stop-color=\"#B83D78\"/></radialGradient>\n<linearGradient id=\"bl__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFC06A\"/><stop offset=\"1\" stop-color=\"#F59A3C\"/></linearGradient>\n</defs>\n<ellipse cx=\"600\" cy=\"1150\" rx=\"360\" ry=\"18\" fill=\"#000\" opacity=\"0.1\"/>\n<g class=\"plat-tail\"><path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\" fill=\"#8C5E3C\"/>\n<g clip-path=\"url(#tl__ID__)\" stroke=\"#4A2E1C\" stroke-width=\"13\"><line x1=\"760\" y1=\"800\" x2=\"1020\" y2=\"1100\"/><line x1=\"816\" y1=\"800\" x2=\"1076\" y2=\"1100\"/><line x1=\"872\" y1=\"800\" x2=\"1132\" y2=\"1100\"/><line x1=\"928\" y1=\"800\" x2=\"1188\" y2=\"1100\"/><line x1=\"984\" y1=\"800\" x2=\"1244\" y2=\"1100\"/><line x1=\"1040\" y1=\"800\" x2=\"1300\" y2=\"1100\"/><line x1=\"1096\" y1=\"800\" x2=\"1356\" y2=\"1100\"/><line x1=\"1152\" y1=\"800\" x2=\"1412\" y2=\"1100\"/><line x1=\"1208\" y1=\"800\" x2=\"1468\" y2=\"1100\"/><line x1=\"1264\" y1=\"800\" x2=\"1524\" y2=\"1100\"/><line x1=\"900\" y1=\"800\" x2=\"640\" y2=\"1100\"/><line x1=\"956\" y1=\"800\" x2=\"696\" y2=\"1100\"/><line x1=\"1012\" y1=\"800\" x2=\"752\" y2=\"1100\"/><line x1=\"1068\" y1=\"800\" x2=\"808\" y2=\"1100\"/><line x1=\"1124\" y1=\"800\" x2=\"864\" y2=\"1100\"/><line x1=\"1180\" y1=\"800\" x2=\"920\" y2=\"1100\"/><line x1=\"1236\" y1=\"800\" x2=\"976\" y2=\"1100\"/><line x1=\"1292\" y1=\"800\" x2=\"1032\" y2=\"1100\"/><line x1=\"1348\" y1=\"800\" x2=\"1088\" y2=\"1100\"/><line x1=\"1404\" y1=\"800\" x2=\"1144\" y2=\"1100\"/><line x1=\"1460\" y1=\"800\" x2=\"1200\" y2=\"1100\"/></g>\n<path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/></g>\n<g class=\"plat-foot pf-l\"><path d=\"M 380 1090 C 380 1130 400 1150 440 1152 C 480 1154 500 1134 498 1098 Z\" fill=\"url(#bl__ID__)\" stroke=\"#1E1418\" stroke-width=\"14\" stroke-linejoin=\"round\"/><path d=\"M 410 1120 L 412 1146 M 440 1122 L 440 1150 M 470 1120 L 468 1146\" stroke=\"#D9772A\" stroke-width=\"5\" stroke-linecap=\"round\"/></g>\n<g class=\"plat-foot pf-r\"><path d=\"M 640 1090 C 640 1130 660 1150 700 1152 C 740 1154 760 1134 758 1098 Z\" fill=\"url(#bl__ID__)\" stroke=\"#1E1418\" stroke-width=\"14\" stroke-linejoin=\"round\"/><path d=\"M 670 1120 L 672 1146 M 700 1122 L 700 1150 M 730 1120 L 728 1146\" stroke=\"#D9772A\" stroke-width=\"5\" stroke-linecap=\"round\"/></g>\n<g stroke=\"#1E1418\" stroke-width=\"12\" stroke-linejoin=\"round\">\n<path d=\"M 562 96 C 540 60 520 30 536 16 C 556 6 584 50 598 94 Z\" fill=\"#C9AEEA\"/>\n<path d=\"M 662 100 C 684 64 712 40 726 52 C 738 70 700 96 650 108 Z\" fill=\"#C9AEEA\"/>\n<path d=\"M 596 94 C 590 50 600 8 620 4 C 642 6 644 50 632 96 Z\" fill=\"#C9AEEA\"/>\n</g>\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"#A887D6\"/>\n<g clip-path=\"url(#sil__ID__)\">\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"#C9AEEA\" transform=\"translate(-34 -16)\"/>\n<path d=\"M 374 850 C 440 834 522 836 576 856 C 560 892 556 934 580 960 C 610 986 652 990 690 984 C 660 1050 560 1086 470 1082 C 400 1078 358 1042 348 992 C 368 958 378 902 374 850 Z\" fill=\"#FFF1F7\"/>\n<ellipse cx=\"880\" cy=\"520\" rx=\"40\" ry=\"140\" fill=\"#C9AEEA\" opacity=\"0.0\"/>\n</g>\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/>\n<g fill=\"#fff\">\n<ellipse cx=\"470\" cy=\"150\" rx=\"40\" ry=\"24\" transform=\"rotate(-18 470 150)\"/>\n<circle cx=\"385\" cy=\"200\" r=\"16\"/><circle cx=\"500\" cy=\"210\" r=\"12\"/><circle cx=\"362\" cy=\"245\" r=\"11\"/>\n</g>\n<g fill=\"none\" stroke=\"#1E1418\" stroke-width=\"15\" stroke-linecap=\"round\">\n<path d=\"M 350 846 C 366 880 368 930 340 962 C 322 980 296 978 284 968\"/>\n<path d=\"M 612 850 C 578 872 566 920 584 952 C 604 980 660 976 720 950\"/>\n</g>\n<path d=\"M 185 319 Q 156 305 156 275\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 160 346 Q 130 337 123 311\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 145 379 Q 116 378 102 355\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"258\" cy=\"412\" r=\"118\" fill=\"#1E1226\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<circle cx=\"262\" cy=\"418\" r=\"94\" fill=\"url(#ir__ID__)\"/>\n<circle cx=\"262\" cy=\"418\" r=\"73\" fill=\"#140C1A\"/>\n<path d=\"M 299 504 A 101 101 0 0 0 352 447\" stroke=\"#fff\" stroke-width=\"7\" fill=\"none\" opacity=\"0.55\" stroke-linecap=\"round\"/>\n<circle cx=\"220\" cy=\"377\" r=\"31\" fill=\"#fff\"/>\n<circle cx=\"264\" cy=\"367\" r=\"9\" fill=\"#fff\"/>\n<circle cx=\"244\" cy=\"418\" r=\"13\" fill=\"#fff\"/><ellipse class=\"plat-lid\" style=\"transform:scaleY(0);transform-box:fill-box;transform-origin:50% 0%\" cx=\"258\" cy=\"412\" rx=\"126\" ry=\"126\" fill=\"#C9AEEA\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<path d=\"M 793 343 Q 822 329 822 299\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 818 370 Q 848 361 855 335\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 833 403 Q 862 402 876 379\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"720\" cy=\"436\" r=\"118\" fill=\"#1E1226\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<circle cx=\"724\" cy=\"442\" r=\"94\" fill=\"url(#ir__ID__)\"/>\n<circle cx=\"724\" cy=\"442\" r=\"73\" fill=\"#140C1A\"/>\n<path d=\"M 761 528 A 101 101 0 0 0 814 471\" stroke=\"#fff\" stroke-width=\"7\" fill=\"none\" opacity=\"0.55\" stroke-linecap=\"round\"/>\n<circle cx=\"682\" cy=\"401\" r=\"31\" fill=\"#fff\"/>\n<circle cx=\"726\" cy=\"391\" r=\"9\" fill=\"#fff\"/>\n<circle cx=\"706\" cy=\"442\" r=\"13\" fill=\"#fff\"/><ellipse class=\"plat-lid\" style=\"transform:scaleY(0);transform-box:fill-box;transform-origin:50% 0%\" cx=\"720\" cy=\"436\" rx=\"126\" ry=\"126\" fill=\"#C9AEEA\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\" fill=\"url(#bl__ID__)\"/>\n<g clip-path=\"url(#bc__ID__)\">\n<path d=\"M 0 720 C 150 760 350 770 640 700 L 700 900 L 0 900 Z\" fill=\"#D9772A\"/>\n<path d=\"M 530 500 C 600 520 640 580 632 640 L 660 640 L 660 480 Z\" fill=\"#D9772A\" opacity=\"0.55\"/>\n</g>\n<path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/>\n<ellipse cx=\"376\" cy=\"572\" rx=\"12\" ry=\"16\" fill=\"#1E1418\"/><ellipse cx=\"428\" cy=\"578\" rx=\"12\" ry=\"16\" fill=\"#1E1418\"/>\n<ellipse cx=\"217\" cy=\"630\" rx=\"18\" ry=\"16\" fill=\"#fff\" opacity=\"0.85\"/>\n<path d=\"M 440 492 C 480 486 520 494 548 510\" stroke=\"#fff\" stroke-width=\"10\" fill=\"none\" opacity=\"0.6\" stroke-linecap=\"round\"/>\n</svg>";
+  let _platN = 0;
+  function platypusSVG(){ return PLAT_TPL.replace(/__ID__/g, 'q' + (++_platN)); }
+
+
+  /* ---------------- Custom furniture illustrations ---------------- */
+  function carSVG(){
+    return `<svg viewBox="0 0 180 110" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="cBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FA8DC"/><stop offset="0.55" stop-color="#3F7FBF"/><stop offset="1" stop-color="#2C5F92"/></linearGradient>
+<linearGradient id="cGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#DDF1FB"/><stop offset="1" stop-color="#8FBCD6"/></linearGradient>
+<radialGradient id="cTire" cx="50%" cy="50%" r="50%"><stop offset="0.6" stop-color="#2A2A2E"/><stop offset="1" stop-color="#111"/></radialGradient>
+<radialGradient id="cRim" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#F2F4F7"/><stop offset="1" stop-color="#9AA3AD"/></radialGradient>
+</defs>
+<ellipse cx="90" cy="102" rx="84" ry="6" fill="rgba(0,0,0,0.22)"/>
+<path d="M 8 76 C 6 64 10 56 20 53 L 46 48 C 58 32 70 24 92 22 L 116 22 C 132 22 142 30 154 46 L 166 50 C 174 53 176 62 174 76 L 172 84 L 10 84 Z" fill="url(#cBody)" stroke="#241811" stroke-width="3.5" stroke-linejoin="round"/>
+<path d="M 54 48 C 64 36 74 29 90 28 L 90 48 Z" fill="url(#cGlass)" stroke="#241811" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M 96 28 L 114 28 C 128 28 138 36 146 48 L 96 48 Z" fill="url(#cGlass)" stroke="#241811" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M 60 44 L 72 32" stroke="#fff" stroke-width="3" opacity="0.6" stroke-linecap="round"/>
+<path d="M 104 44 L 116 32" stroke="#fff" stroke-width="3" opacity="0.6" stroke-linecap="round"/>
+<path d="M 14 58 L 170 58" stroke="#ffffff" stroke-width="2" opacity="0.35"/>
+<line x1="93" y1="48" x2="93" y2="82" stroke="#241811" stroke-width="2" opacity="0.6"/>
+<line x1="52" y1="50" x2="54" y2="82" stroke="#241811" stroke-width="2" opacity="0.6"/>
+<line x1="146" y1="50" x2="144" y2="80" stroke="#241811" stroke-width="2" opacity="0.6"/>
+<rect x="78" y="56" width="10" height="3" rx="1.5" fill="#1C3C5E"/>
+<rect x="124" y="56" width="10" height="3" rx="1.5" fill="#1C3C5E"/>
+<path d="M 144 47 L 151 42 L 154 48 Z" fill="#2C5F92" stroke="#241811" stroke-width="2" stroke-linejoin="round"/>
+<path d="M 166 56 C 172 57 175 60 174 66 L 166 66 Z" fill="#FFE9A8" stroke="#241811" stroke-width="2"/>
+<path d="M 9 60 L 16 58 L 16 68 L 8 68 Z" fill="#E0474C" stroke="#241811" stroke-width="2"/>
+<rect x="6" y="76" width="168" height="8" rx="4" fill="#3A3F46" stroke="#241811" stroke-width="2.5"/>
+<path d="M 24 84 A 20 20 0 0 1 64 84" fill="#1B2533"/>
+<path d="M 118 84 A 20 20 0 0 1 158 84" fill="#1B2533"/>
+<circle cx="44" cy="86" r="17" fill="url(#cTire)" stroke="#241811" stroke-width="3"/>
+<circle cx="138" cy="86" r="17" fill="url(#cTire)" stroke="#241811" stroke-width="3"/>
+<circle cx="44" cy="86" r="9" fill="url(#cRim)" stroke="#241811" stroke-width="1.5"/>
+<circle cx="138" cy="86" r="9" fill="url(#cRim)" stroke="#241811" stroke-width="1.5"/>
+<g stroke="#6B737D" stroke-width="1.6"><path d="M44 78 L44 94 M36 86 L52 86 M38 80 L50 92 M50 80 L38 92"/><path d="M138 78 L138 94 M130 86 L146 86 M132 80 L144 92 M144 80 L132 92"/></g>
+<circle cx="44" cy="86" r="2.5" fill="#3A3F46"/><circle cx="138" cy="86" r="2.5" fill="#3A3F46"/>
+</svg>`;
+  }
+  function shelfSVG(){
+    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="shelfWood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#A9805A"/><stop offset="1" stop-color="#8C6A46"/>
+        </linearGradient>
+      </defs>
+      <rect x="12" y="8" width="9" height="88" rx="3" fill="url(#shelfWood)"/>
+      <rect x="79" y="8" width="9" height="88" rx="3" fill="url(#shelfWood)"/>
+      <rect x="8" y="20" width="84" height="7" rx="3" fill="#B08D62"/>
+      <rect x="8" y="50" width="84" height="7" rx="3" fill="#B08D62"/>
+      <rect x="8" y="80" width="84" height="7" rx="3" fill="#B08D62"/>
+      <rect x="8" y="24" width="84" height="3" fill="#00000018"/>
+      <rect x="8" y="54" width="84" height="3" fill="#00000018"/>
+      <rect x="18" y="4" width="20" height="16" rx="4" fill="#F2A65A"/>
+      <rect x="18" y="4" width="20" height="6" rx="3" fill="#ffffff" opacity="0.25"/>
+      <rect x="42" y="2" width="16" height="18" rx="4" fill="#57C4E6"/>
+      <circle cx="70" cy="11" r="9" fill="#4FCB8D"/>
+      <circle cx="67" cy="8" r="2.5" fill="#ffffff" opacity="0.4"/>
+      <rect x="16" y="30" width="24" height="20" rx="5" fill="#FF8FA3"/>
+      <rect x="46" y="28" width="18" height="22" rx="5" fill="#FFD37A"/>
+      <ellipse cx="76" cy="40" rx="11" ry="10" fill="#B5C0C7"/>
+      <ellipse cx="72" cy="36" rx="3" ry="2.5" fill="#ffffff" opacity="0.4"/>
+      <rect x="16" y="60" width="28" height="20" rx="5" fill="#D9BD8E"/>
+      <rect x="52" y="58" width="20" height="22" rx="5" fill="#8C6A46"/>
+      <path d="M18 60 L44 60 L44 65 L18 68Z" fill="#00000012"/>
+    </svg>`;
+  }
+  function boxesSVG(){
+    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="boxTop" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#EAD3A3"/><stop offset="1" stop-color="#D9BD8E"/>
+        </linearGradient>
+        <linearGradient id="boxBottom" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#DEC495"/><stop offset="1" stop-color="#C7A776"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="50" cy="94" rx="36" ry="5" fill="rgba(0,0,0,0.16)"/>
+      <rect x="14" y="42" width="74" height="48" rx="7" fill="url(#boxBottom)"/>
+      <path d="M14 49 L88 49" stroke="#00000018" stroke-width="2"/>
+      <line x1="51" y1="42" x2="51" y2="90" stroke="#8C6A46" stroke-width="2.5"/>
+      <rect x="22" y="52" width="20" height="6" fill="#8C6A46" opacity="0.55"/>
+      <rect x="58" y="52" width="20" height="6" fill="#8C6A46" opacity="0.55"/>
+      <path d="M18 64 L44 64" stroke="#ffffff" stroke-width="1.5" opacity="0.3"/>
+      <rect x="28" y="8" width="48" height="40" rx="7" fill="url(#boxTop)"/>
+      <path d="M28 15 L76 15" stroke="#00000018" stroke-width="2"/>
+      <line x1="52" y1="8" x2="52" y2="48" stroke="#8C6A46" stroke-width="2.5"/>
+      <rect x="34" y="18" width="14" height="5" fill="#8C6A46" opacity="0.55"/>
+      <rect x="56" y="18" width="14" height="5" fill="#8C6A46" opacity="0.55"/>
+      <path d="M32 30 L48 30" stroke="#ffffff" stroke-width="1.5" opacity="0.3"/>
+    </svg>`;
+  }
+  function fridgeSVG(){
+    return `<svg viewBox="0 0 70 130" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="fridgeBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E3F0F9"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="35" cy="126" rx="26" ry="5" fill="rgba(0,0,0,0.14)"/>
+      <rect x="6" y="4" width="58" height="118" rx="12" fill="url(#fridgeBody)" stroke="#CFE3F0" stroke-width="2"/>
+      <rect x="6" y="4" width="58" height="40" rx="12" fill="#EDF6FC"/>
+      <rect x="6" y="42" width="58" height="5" fill="#CFE3F0"/>
+      <rect x="13" y="12" width="6" height="22" rx="3" fill="#B9D6E8"/>
+      <rect x="13" y="56" width="6" height="34" rx="3" fill="#B9D6E8"/>
+      <circle cx="52" cy="20" r="3.4" fill="#8FB8D6"/>
+      <path d="M12 10 L58 10" stroke="#ffffff" stroke-width="4" opacity="0.5" stroke-linecap="round"/>
+      <path d="M12 52 L58 52" stroke="#ffffff" stroke-width="3" opacity="0.35" stroke-linecap="round"/>
+      <rect x="40" y="98" width="14" height="10" rx="3" fill="#FFD37A"/>
+      <rect x="40" y="98" width="14" height="4" rx="2" fill="#ffffff" opacity="0.4"/>
+    </svg>`;
+  }
+  function cabinetSVG(){
+    return `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="cabWood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#F8DFAF"/><stop offset="1" stop-color="#EAC488"/>
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="132" height="42" rx="10" fill="url(#cabWood)" stroke="#C99A55" stroke-width="2"/>
+      <line x1="70" y1="8" x2="70" y2="42" stroke="#C99A55" stroke-width="2"/>
+      <rect x="12" y="10" width="50" height="14" rx="4" fill="#ffffff" opacity="0.3"/>
+      <circle cx="58" cy="25" r="3" fill="#C99A55"/>
+      <circle cx="82" cy="25" r="3" fill="#C99A55"/>
+      <rect x="0" y="50" width="140" height="12" rx="4" fill="#E3B27C"/>
+      <rect x="0" y="50" width="140" height="4" fill="#ffffff" opacity="0.35"/>
+      <rect x="4" y="66" width="132" height="42" rx="10" fill="#F2CC93" stroke="#C99A55" stroke-width="2"/>
+      <line x1="70" y1="70" x2="70" y2="104" stroke="#C99A55" stroke-width="2"/>
+      <rect x="24" y="80" width="26" height="6" rx="3" fill="#C99A55"/>
+      <rect x="90" y="80" width="26" height="6" rx="3" fill="#C99A55"/>
+    </svg>`;
+  }
+  function tableSVG(){
+    return `<svg viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tableTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#EFC28D"/><stop offset="1" stop-color="#DFA765"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="65" cy="88" rx="52" ry="6" fill="rgba(0,0,0,0.14)"/>
+      <rect x="6" y="28" width="34" height="16" rx="6" fill="#C99A55"/>
+      <rect x="90" y="28" width="34" height="16" rx="6" fill="#C99A55"/>
+      <rect x="16" y="46" width="14" height="36" rx="4" fill="#A9784A"/>
+      <rect x="100" y="46" width="14" height="36" rx="4" fill="#A9784A"/>
+      <rect x="10" y="38" width="110" height="16" rx="7" fill="url(#tableTop)"/>
+      <rect x="10" y="38" width="110" height="5" fill="#ffffff" opacity="0.4"/>
+      <rect x="52" y="54" width="10" height="30" rx="4" fill="#A9784A"/>
+      <rect x="70" y="54" width="10" height="30" rx="4" fill="#A9784A"/>
+      <ellipse cx="65" cy="26" rx="16" ry="8" fill="#FF8FA3" opacity="0.9"/>
+      <circle cx="59" cy="21" r="4" fill="#FFD37A"/>
+      <circle cx="67" cy="19" r="4.5" fill="#4FCB8D"/>
+      <circle cx="73" cy="23" r="3.5" fill="#F2A65A"/>
+    </svg>`;
+  }
+  function closetSVG(){
+    return `<svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="closetWood" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#C9A46F"/><stop offset="1" stop-color="#B08A55"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="50" cy="146" rx="38" ry="5" fill="rgba(0,0,0,0.14)"/>
+      <rect x="6" y="4" width="88" height="138" rx="10" fill="url(#closetWood)" stroke="#8C6A46" stroke-width="2"/>
+      <line x1="50" y1="8" x2="50" y2="138" stroke="#8C6A46" stroke-width="2.5"/>
+      <rect x="14" y="14" width="30" height="60" rx="6" fill="#D9BD8E" opacity="0.55"/>
+      <rect x="56" y="14" width="30" height="60" rx="6" fill="#D9BD8E" opacity="0.55"/>
+      <circle cx="42" cy="74" r="3" fill="#5A4632"/>
+      <circle cx="58" cy="74" r="3" fill="#5A4632"/>
+      <path d="M12 8 L44 8" stroke="#ffffff" stroke-width="3" opacity="0.35" stroke-linecap="round"/>
+    </svg>`;
+  }
+  function dresserSVG(){
+    return `<svg viewBox="0 0 110 90" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="dresserWood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#D9B382"/><stop offset="1" stop-color="#C9A46F"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="55" cy="86" rx="42" ry="5" fill="rgba(0,0,0,0.14)"/>
+      <rect x="4" y="6" width="102" height="76" rx="10" fill="url(#dresserWood)" stroke="#9A7A4E" stroke-width="2"/>
+      <rect x="12" y="16" width="86" height="18" rx="5" fill="#B98F65"/>
+      <rect x="12" y="40" width="86" height="18" rx="5" fill="#B98F65"/>
+      <rect x="12" y="64" width="86" height="12" rx="5" fill="#B98F65"/>
+      <circle cx="40" cy="25" r="3" fill="#5A4632"/>
+      <circle cx="70" cy="25" r="3" fill="#5A4632"/>
+      <circle cx="40" cy="49" r="3" fill="#5A4632"/>
+      <circle cx="70" cy="49" r="3" fill="#5A4632"/>
+      <ellipse cx="82" cy="4" rx="9" ry="7" fill="#4FCB8D"/>
+      <rect x="78" y="0" width="8" height="4" fill="#3A7D53"/>
+    </svg>`;
+  }
+  function bedSVG(){
+    return `<svg viewBox="0 0 160 130" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bedQuilt" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#FFE0EA"/><stop offset="1" stop-color="#FCC7DA"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="82" cy="122" rx="66" ry="6" fill="rgba(0,0,0,0.14)"/>
+      <rect x="6" y="6" width="30" height="112" rx="10" fill="#C9A46F"/>
+      <rect x="10" y="10" width="22" height="50" rx="6" fill="#D9BD8E" opacity="0.6"/>
+      <rect x="26" y="30" width="130" height="86" rx="14" fill="url(#bedQuilt)"/>
+      <rect x="26" y="30" width="130" height="18" rx="10" fill="#ffffff"/>
+      <rect x="34" y="34" width="40" height="12" rx="6" fill="#F6EBF0"/>
+      <path d="M40 60 Q70 68 100 60" stroke="#F2A6C4" stroke-width="3" fill="none" opacity="0.6"/>
+      <path d="M40 78 Q70 86 100 78" stroke="#F2A6C4" stroke-width="3" fill="none" opacity="0.6"/>
+      <path d="M110 56 Q130 64 150 56" stroke="#F2A6C4" stroke-width="3" fill="none" opacity="0.5"/>
+      <rect x="26" y="108" width="130" height="10" rx="5" fill="#F6A9C4"/>
+    </svg>`;
+  }
+  function tubSVG(){
+    return `<svg viewBox="0 0 140 90" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tubBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4F1F7"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="70" cy="82" rx="60" ry="6" fill="rgba(0,0,0,0.14)"/>
+      <rect x="6" y="26" width="128" height="48" rx="24" fill="url(#tubBody)" stroke="#CFE3F0" stroke-width="3"/>
+      <rect x="16" y="34" width="108" height="18" rx="9" fill="#CDEBFA"/>
+      <circle cx="40" cy="43" r="3" fill="#ffffff" opacity="0.8"/>
+      <circle cx="60" cy="40" r="2.2" fill="#ffffff" opacity="0.7"/>
+      <circle cx="80" cy="44" r="2.6" fill="#ffffff" opacity="0.8"/>
+      <rect x="4" y="60" width="10" height="16" rx="4" fill="#CFE3F0"/>
+      <rect x="126" y="60" width="10" height="16" rx="4" fill="#CFE3F0"/>
+      <rect x="60" y="8" width="10" height="20" rx="4" fill="#B9D6E8"/>
+      <circle cx="65" cy="8" r="7" fill="#CFE3F0"/>
+    </svg>`;
+  }
+  function cabinet2SVG(){
+    return `<svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="vanityTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#E8F6F0"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="60" cy="96" rx="46" ry="5" fill="rgba(0,0,0,0.12)"/>
+      <rect x="8" y="40" width="104" height="52" rx="10" fill="#CDEAD9" stroke="#9FCBB2" stroke-width="2"/>
+      <rect x="16" y="50" width="40" height="14" rx="4" fill="#9FCBB2"/>
+      <rect x="64" y="50" width="40" height="14" rx="4" fill="#9FCBB2"/>
+      <circle cx="36" cy="57" r="2.4" fill="#4F7E63"/>
+      <circle cx="84" cy="57" r="2.4" fill="#4F7E63"/>
+      <rect x="4" y="30" width="112" height="14" rx="6" fill="url(#vanityTop)"/>
+      <ellipse cx="34" cy="30" rx="14" ry="8" fill="#DCEFF7"/>
+      <rect x="30" y="12" width="8" height="16" rx="3" fill="#B9D6E8"/>
+      <circle cx="34" cy="12" r="6" fill="#CFE3F0"/>
+      <rect x="82" y="8" width="24" height="26" rx="4" fill="#EAF7FF" stroke="#CFE3F0" stroke-width="2"/>
+    </svg>`;
+  }
+  function basketSVG(){
+    return `<svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="86" rx="36" ry="5" fill="rgba(0,0,0,0.14)"/>
+      <path d="M18 34 L82 34 L74 80 Q50 88 26 80 Z" fill="#DDBE8E"/>
+      <path d="M22 42 L78 42 M20 52 L80 52 M22 62 L78 62 M25 72 L75 72" stroke="#B4905F" stroke-width="2.2" opacity="0.7"/>
+      <path d="M24 40 L30 76 M40 38 L44 80 M60 38 L58 80 M76 40 L70 76" stroke="#B4905F" stroke-width="2.2" opacity="0.5"/>
+      <path d="M14 30 Q50 18 86 30 L82 38 Q50 28 18 38 Z" fill="#C9A46F"/>
+      <path d="M34 20 Q40 4 52 10 Q58 -2 66 8 Q72 2 74 14" fill="none" stroke="#FF8FA3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M40 18 Q46 6 54 12" fill="none" stroke="#57C4E6" stroke-width="6" stroke-linecap="round"/>
+    </svg>`;
+  }
+  function couchSVG(){
+    return `<svg viewBox="0 0 170 110" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="cuBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FB39A"/><stop offset="1" stop-color="#5E9780"/></linearGradient>
+<linearGradient id="cuSeat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8CC2A8"/><stop offset="1" stop-color="#679F87"/></linearGradient>
+<linearGradient id="cuArm" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5A917A"/><stop offset="0.5" stop-color="#76AC93"/><stop offset="1" stop-color="#5A917A"/></linearGradient>
+<linearGradient id="cuPil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7C66B"/><stop offset="1" stop-color="#E0A43E"/></linearGradient>
+</defs>
+<ellipse cx="85" cy="104" rx="80" ry="5" fill="rgba(0,0,0,0.2)"/>
+<path d="M 20 14 Q 20 6 30 6 L 140 6 Q 150 6 150 14 L 150 62 L 20 62 Z" fill="url(#cuBack)" stroke="#241811" stroke-width="3" stroke-linejoin="round"/>
+<path d="M 26 12 Q 26 10 30 10 L 83 10 L 83 56 L 26 56 Z" fill="#79AE95" stroke="#4E826C" stroke-width="1.5"/>
+<path d="M 87 10 L 140 10 Q 144 10 144 12 L 144 56 L 87 56 Z" fill="#79AE95" stroke="#4E826C" stroke-width="1.5"/>
+<g fill="#4E826C"><circle cx="42" cy="24" r="1.8"/><circle cx="67" cy="24" r="1.8"/><circle cx="42" cy="42" r="1.8"/><circle cx="67" cy="42" r="1.8"/><circle cx="103" cy="24" r="1.8"/><circle cx="128" cy="24" r="1.8"/><circle cx="103" cy="42" r="1.8"/><circle cx="128" cy="42" r="1.8"/></g>
+<path d="M 30 14 L 80 14" stroke="#fff" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+<path d="M 24 60 Q 24 54 30 54 L 83 54 Q 86 54 86 58 L 86 74 L 24 74 Z" fill="url(#cuSeat)" stroke="#241811" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M 84 58 Q 84 54 88 54 L 140 54 Q 146 54 146 60 L 146 74 L 84 74 Z" fill="url(#cuSeat)" stroke="#241811" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M 30 58 L 80 58 M 90 58 L 140 58" stroke="#fff" stroke-width="1.8" opacity="0.35" stroke-linecap="round"/>
+<rect x="18" y="72" width="134" height="18" rx="4" fill="#5E9780" stroke="#241811" stroke-width="3"/>
+<path d="M 22 78 L 148 78" stroke="#4E826C" stroke-width="1.2" stroke-dasharray="3 3"/>
+<path d="M 4 44 Q 4 32 14 32 L 20 32 Q 30 32 30 44 L 30 90 L 4 90 Z" fill="url(#cuArm)" stroke="#241811" stroke-width="3" stroke-linejoin="round"/>
+<path d="M 140 44 Q 140 32 150 32 L 156 32 Q 166 32 166 44 L 166 90 L 140 90 Z" fill="url(#cuArm)" stroke="#241811" stroke-width="3" stroke-linejoin="round"/>
+<ellipse cx="17" cy="38" rx="9" ry="4" fill="#fff" opacity="0.25"/>
+<ellipse cx="153" cy="38" rx="9" ry="4" fill="#fff" opacity="0.25"/>
+<path d="M 32 34 Q 34 26 42 28 L 54 30 Q 60 32 58 40 L 56 50 Q 54 56 46 54 L 36 52 Q 30 50 30 44 Z" fill="url(#cuPil)" stroke="#241811" stroke-width="2.2" stroke-linejoin="round" transform="rotate(-6 44 42)"/>
+<path d="M 138 34 Q 136 26 128 28 L 116 30 Q 110 32 112 40 L 114 50 Q 116 56 124 54 L 134 52 Q 140 50 140 44 Z" fill="#E88FA6" stroke="#241811" stroke-width="2.2" stroke-linejoin="round" transform="rotate(6 126 42)"/>
+<path d="M 118 36 Q 126 42 134 38" stroke="#C9637E" stroke-width="1.5" fill="none" transform="rotate(6 126 42)"/>
+<rect x="12" y="90" width="8" height="12" rx="2" fill="#8C5E36" stroke="#241811" stroke-width="2.2"/>
+<rect x="150" y="90" width="8" height="12" rx="2" fill="#8C5E36" stroke="#241811" stroke-width="2.2"/>
+</svg>`;
+  }
+  function tvStandSVG(){
+    return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="tvGlow" cx="50%" cy="40%" r="70%">
+          <stop offset="0" stop-color="#9FE7F7"/><stop offset="1" stop-color="#57C4E6"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="60" cy="114" rx="46" ry="5" fill="rgba(0,0,0,0.13)"/>
+      <rect x="8" y="6" width="104" height="60" rx="8" fill="#3A2A20"/>
+      <rect x="16" y="14" width="88" height="44" rx="4" fill="url(#tvGlow)"/>
+      <path d="M20 20 L60 20 L20 46 Z" fill="#ffffff" opacity="0.18"/>
+      <rect x="50" y="66" width="20" height="8" fill="#3A2A20"/>
+      <rect x="6" y="76" width="108" height="36" rx="10" fill="#B98F65"/>
+      <rect x="6" y="76" width="108" height="6" fill="#ffffff" opacity="0.25"/>
+      <rect x="16" y="88" width="34" height="16" rx="4" fill="#8C6A46"/>
+      <rect x="70" y="88" width="34" height="16" rx="4" fill="#8C6A46"/>
+      <circle cx="33" cy="96" r="2" fill="#5A4632"/>
+      <circle cx="87" cy="96" r="2" fill="#5A4632"/>
+    </svg>`;
+  }
+  function bookshelfSVG(){
+    return `<svg viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="shelfCase" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#C9A46F"/><stop offset="1" stop-color="#B08A55"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="50" cy="136" rx="38" ry="5" fill="rgba(0,0,0,0.14)"/>
+      <rect x="8" y="4" width="84" height="128" rx="8" fill="url(#shelfCase)"/>
+      <rect x="14" y="10" width="72" height="34" rx="4" fill="#8C6A46"/>
+      <rect x="14" y="52" width="72" height="34" rx="4" fill="#8C6A46"/>
+      <rect x="14" y="94" width="72" height="30" rx="4" fill="#8C6A46"/>
+      <rect x="18" y="14" width="6" height="26" fill="#FF8FA3"/>
+      <rect x="26" y="14" width="6" height="26" fill="#FFD37A"/>
+      <rect x="34" y="14" width="6" height="26" fill="#4FCB8D"/>
+      <rect x="42" y="14" width="5" height="26" fill="#57C4E6"/>
+      <rect x="18" y="56" width="6" height="26" fill="#57C4E6"/>
+      <rect x="26" y="56" width="6" height="26" fill="#FF8FA3"/>
+      <rect x="34" y="56" width="5" height="26" fill="#FFD37A"/>
+      <circle cx="66" cy="70" r="9" fill="#E3B27C"/>
+      <path d="M60 68 Q66 62 72 68" stroke="#8C6A46" stroke-width="2" fill="none"/>
+      <rect x="20" y="98" width="50" height="6" fill="#FFD37A" opacity="0.8"/>
+      <rect x="20" y="106" width="40" height="6" fill="#FF8FA3" opacity="0.8"/>
+    </svg>`;
+  }
+  function shedSVG(){ return `<svg viewBox="0 0 170 170" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="shW" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C98F5E"/><stop offset="1" stop-color="#B07A4C"/></linearGradient></defs>
+<ellipse cx="85" cy="164" rx="76" ry="6" fill="rgba(0,0,0,0.15)"/>
+<rect x="16" y="62" width="138" height="98" rx="4" fill="url(#shW)" stroke="#241811" stroke-width="4"/>
+<g stroke="#8C5E36" stroke-width="2" opacity="0.7"><line x1="16" y1="82" x2="154" y2="82"/><line x1="16" y1="102" x2="154" y2="102"/><line x1="16" y1="122" x2="154" y2="122"/><line x1="16" y1="142" x2="154" y2="142"/></g>
+<path d="M 6 66 L 85 14 L 164 66 Z" fill="#6FA86A" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 20 58 L 85 20 L 150 58" fill="none" stroke="#fff" stroke-width="3" opacity="0.3"/>
+<rect x="60" y="88" width="50" height="72" rx="3" fill="#8C5E36" stroke="#241811" stroke-width="4"/>
+<line x1="85" y1="88" x2="85" y2="160" stroke="#241811" stroke-width="3"/>
+<path d="M 62 92 L 108 156 M 108 92 L 62 156" stroke="#6E4424" stroke-width="3"/>
+<circle cx="80" cy="126" r="3" fill="#E8C35A"/><circle cx="90" cy="126" r="3" fill="#E8C35A"/>
+<rect x="26" y="76" width="24" height="20" rx="2" fill="#CDEBFA" stroke="#241811" stroke-width="3"/>
+<line x1="38" y1="76" x2="38" y2="96" stroke="#241811" stroke-width="2"/>
+</svg>`; }
+  function doghouseSVG(){ return `<svg viewBox="0 0 140 130" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="dhW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E88A6A"/><stop offset="1" stop-color="#CC6B4C"/></linearGradient></defs>
+<ellipse cx="70" cy="124" rx="64" ry="6" fill="rgba(0,0,0,0.16)"/>
+<rect x="16" y="52" width="108" height="70" rx="4" fill="url(#dhW)" stroke="#241811" stroke-width="4"/>
+<g stroke="#A94F34" stroke-width="2" opacity="0.7"><line x1="16" y1="72" x2="124" y2="72"/><line x1="16" y1="92" x2="124" y2="92"/><line x1="16" y1="110" x2="124" y2="110"/></g>
+<path d="M 4 58 L 70 8 L 136 58 L 124 62 L 70 22 L 16 62 Z" fill="#5A7FB8" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 46 122 L 46 88 Q 70 62 94 88 L 94 122 Z" fill="#2A1A10" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<rect x="52" y="30" width="36" height="16" rx="4" fill="#FFF3D6" stroke="#241811" stroke-width="3"/>
+<circle cx="62" cy="38" r="3" fill="#C98A4B"/><circle cx="70" cy="38" r="3" fill="#C98A4B"/><circle cx="78" cy="38" r="3" fill="#C98A4B"/>
+<ellipse cx="108" cy="118" rx="14" ry="5" fill="#D9D9E0" stroke="#241811" stroke-width="3"/>
+</svg>`; }
+  function treeSVG(){ return `<svg viewBox="0 0 180 230" xmlns="http://www.w3.org/2000/svg">
+<defs><radialGradient id="trL" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#8FD37A"/><stop offset="1" stop-color="#4E9A45"/></radialGradient></defs>
+<ellipse cx="90" cy="222" rx="70" ry="8" fill="rgba(0,0,0,0.18)"/>
+<path d="M 76 220 C 80 190 78 160 74 132 L 106 132 C 102 160 100 190 104 220 Z" fill="#8C5E36" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 84 150 L 90 208 M 96 140 L 98 186" stroke="#6E4424" stroke-width="2.5" opacity="0.8"/>
+<path d="M 90 20 C 120 4 158 22 160 56 C 180 72 178 112 154 124 C 150 150 118 158 100 144 C 84 160 46 156 38 132 C 10 126 2 90 22 72 C 16 40 54 14 90 20 Z" fill="url(#trL)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 52 66 Q 64 52 80 58 M 108 48 Q 124 42 134 54 M 118 96 Q 132 90 142 100 M 48 104 Q 58 96 70 102" stroke="#3E7F37" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8"/>
+<circle cx="60" cy="84" r="6" fill="#FF6F6F" stroke="#241811" stroke-width="2"/><circle cx="126" cy="74" r="6" fill="#FF6F6F" stroke="#241811" stroke-width="2"/><circle cx="100" cy="118" r="6" fill="#FF6F6F" stroke="#241811" stroke-width="2"/>
+<ellipse cx="70" cy="44" rx="18" ry="8" fill="#fff" opacity="0.25"/>
+</svg>`; }
+  function bushSVG(){ return `<svg viewBox="0 0 110 80" xmlns="http://www.w3.org/2000/svg">
+<defs><radialGradient id="bsL" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#7CC96A"/><stop offset="1" stop-color="#3F8A3A"/></radialGradient></defs>
+<ellipse cx="55" cy="75" rx="50" ry="5" fill="rgba(0,0,0,0.16)"/>
+<path d="M 10 72 C 0 56 8 38 24 38 C 26 20 48 12 60 24 C 72 10 98 18 96 38 C 110 44 108 66 98 72 Z" fill="url(#bsL)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 30 50 Q 38 44 46 50 M 62 40 Q 70 34 78 40 M 70 60 Q 78 54 86 60" stroke="#2F6E2B" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<circle cx="34" cy="36" r="4" fill="#FFD1E0" stroke="#241811" stroke-width="1.5"/><circle cx="84" cy="30" r="4" fill="#FFD1E0" stroke="#241811" stroke-width="1.5"/><circle cx="56" cy="58" r="4" fill="#FFF3B0" stroke="#241811" stroke-width="1.5"/>
+</svg>`; }
+  function trunkSVG(){ return `<svg viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="tkW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B7824F"/><stop offset="1" stop-color="#8C5E36"/></linearGradient></defs>
+<ellipse cx="65" cy="95" rx="60" ry="5" fill="rgba(0,0,0,0.2)"/>
+<path d="M 10 40 Q 10 12 65 10 Q 120 12 120 40 Z" fill="url(#tkW)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<rect x="8" y="40" width="114" height="52" rx="5" fill="url(#tkW)" stroke="#241811" stroke-width="4"/>
+<rect x="8" y="38" width="114" height="8" fill="#5A3A22" stroke="#241811" stroke-width="3"/>
+<g fill="#D9A93F" stroke="#241811" stroke-width="2.5"><rect x="26" y="12" width="10" height="80" rx="2"/><rect x="94" y="12" width="10" height="80" rx="2"/></g>
+<rect x="56" y="44" width="18" height="20" rx="3" fill="#E8C35A" stroke="#241811" stroke-width="3"/>
+<circle cx="65" cy="54" r="3" fill="#241811"/>
+<path d="M 16 24 Q 40 16 60 15" stroke="#fff" stroke-width="3" fill="none" opacity="0.3" stroke-linecap="round"/>
+<g stroke="#6E4424" stroke-width="1.5" opacity="0.6"><line x1="40" y1="56" x2="54" y2="56"/><line x1="76" y1="72" x2="90" y2="72"/><line x1="40" y1="80" x2="52" y2="80"/></g>
+</svg>`; }
+  function wardrobeSVG(){ return `<svg viewBox="0 0 110 160" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="wdW" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9A7A9E"/><stop offset="1" stop-color="#7E5E84"/></linearGradient></defs>
+<ellipse cx="55" cy="155" rx="50" ry="5" fill="rgba(0,0,0,0.18)"/>
+<path d="M 6 20 Q 55 0 104 20 L 104 30 L 6 30 Z" fill="#6A4C70" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<rect x="8" y="28" width="94" height="118" rx="5" fill="url(#wdW)" stroke="#241811" stroke-width="4"/>
+<line x1="55" y1="30" x2="55" y2="144" stroke="#241811" stroke-width="3"/>
+<rect x="16" y="38" width="32" height="46" rx="4" fill="#8E6E94" stroke="#5A3E60" stroke-width="2"/>
+<rect x="62" y="38" width="32" height="46" rx="4" fill="#8E6E94" stroke="#5A3E60" stroke-width="2"/>
+<rect x="16" y="92" width="32" height="46" rx="4" fill="#8E6E94" stroke="#5A3E60" stroke-width="2"/>
+<rect x="62" y="92" width="32" height="46" rx="4" fill="#8E6E94" stroke="#5A3E60" stroke-width="2"/>
+<circle cx="49" cy="88" r="3.5" fill="#E8C35A" stroke="#241811" stroke-width="1.5"/><circle cx="61" cy="88" r="3.5" fill="#E8C35A" stroke="#241811" stroke-width="1.5"/>
+<rect x="12" y="146" width="10" height="8" rx="2" fill="#5A3E60" stroke="#241811" stroke-width="2"/><rect x="88" y="146" width="10" height="8" rx="2" fill="#5A3E60" stroke="#241811" stroke-width="2"/>
+<g fill="#fff" opacity="0.5"><circle cx="30" cy="20" r="1.5"/><circle cx="80" cy="16" r="1.2"/><circle cx="70" cy="60" r="1"/></g>
+</svg>`; }
+  function horseSVG(){ return `<svg viewBox="0 0 130 110" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="65" cy="104" rx="56" ry="5" fill="rgba(0,0,0,0.18)"/>
+<path d="M 8 92 Q 65 112 122 92" stroke="#8C5E36" stroke-width="9" fill="none" stroke-linecap="round"/>
+<path d="M 8 92 Q 65 112 122 92" stroke="#241811" stroke-width="2.5" fill="none" opacity="0.6"/>
+<g stroke="#241811" stroke-width="4" stroke-linecap="round"><line x1="34" y1="62" x2="26" y2="96"/><line x1="44" y1="64" x2="42" y2="100"/><line x1="86" y1="64" x2="88" y2="100"/><line x1="96" y1="62" x2="104" y2="96"/></g>
+<g stroke="#F6E7C8" stroke-width="2.5" stroke-linecap="round"><line x1="34" y1="62" x2="26" y2="96"/><line x1="44" y1="64" x2="42" y2="100"/><line x1="86" y1="64" x2="88" y2="100"/><line x1="96" y1="62" x2="104" y2="96"/></g>
+<path d="M 28 50 Q 30 40 46 42 L 90 42 Q 104 44 102 58 Q 98 70 84 68 L 44 68 Q 30 66 28 50 Z" fill="#F6E7C8" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 52 42 L 78 42 L 76 58 L 54 58 Z" fill="#E0474C" stroke="#241811" stroke-width="3" stroke-linejoin="round"/>
+<path d="M 92 48 L 104 18 Q 108 8 118 12 Q 128 16 124 28 L 114 36 Q 110 44 100 50 Z" fill="#F6E7C8" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 104 16 L 100 6 L 110 12 Z" fill="#F6E7C8" stroke="#241811" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="113" cy="20" r="2.5" fill="#241811"/>
+<path d="M 98 22 Q 90 30 94 44 Q 96 36 100 30 Z" fill="#8C5E36" stroke="#241811" stroke-width="2.5"/>
+<path d="M 30 48 Q 18 46 16 60 Q 22 54 30 56 Z" fill="#8C5E36" stroke="#241811" stroke-width="2.5"/>
+<g fill="#E88FA6"><circle cx="48" cy="52" r="3"/><circle cx="84" cy="54" r="3"/></g>
+</svg>`; }
+  function binsSVG(){ return `<svg viewBox="0 0 130 110" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="bnG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4FA36A"/><stop offset="1" stop-color="#3A7E52"/></linearGradient><linearGradient id="bnB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5A8FD6"/><stop offset="1" stop-color="#3F6FB0"/></linearGradient></defs>
+<ellipse cx="65" cy="104" rx="60" ry="5" fill="rgba(0,0,0,0.2)"/>
+<path d="M 8 30 L 60 30 L 56 98 L 12 98 Z" fill="url(#bnG)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<rect x="4" y="20" width="60" height="12" rx="4" fill="#3A7E52" stroke="#241811" stroke-width="4"/>
+<g stroke="#2E6242" stroke-width="2.5"><line x1="22" y1="40" x2="22" y2="90"/><line x1="34" y1="40" x2="34" y2="90"/><line x1="46" y1="40" x2="46" y2="90"/></g>
+<path d="M 70 26 L 122 26 L 118 98 L 74 98 Z" fill="url(#bnB)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 66 26 Q 96 6 126 26 Z" fill="#3F6FB0" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 84 58 l 12 -14 l 12 14 m -18 12 l -6 10 h 20 l -6 -10" stroke="#fff" stroke-width="3" fill="none" stroke-linejoin="round" opacity="0.85"/>
+<circle cx="16" cy="100" r="5" fill="#333" stroke="#241811" stroke-width="2"/><circle cx="52" cy="100" r="5" fill="#333" stroke="#241811" stroke-width="2"/>
+</svg>`; }
+  function decorSVG(){ return `<svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="70" cy="114" rx="66" ry="6" fill="rgba(0,0,0,0.2)"/>
+<rect x="14" y="58" width="58" height="52" rx="4" fill="#D9BD8E" stroke="#241811" stroke-width="3.5"/>
+<path d="M 14 70 L 72 70" stroke="#8C6A46" stroke-width="2"/>
+<rect x="24" y="80" width="38" height="12" rx="2" fill="#fff" opacity="0.7"/>
+<text x="43" y="89.5" font-size="8" font-family="Arial" font-weight="700" text-anchor="middle" fill="#B83D3D">XMAS</text>
+<path d="M 28 58 L 20 44 M 46 58 L 44 40 M 60 58 L 66 46" stroke="#E8C35A" stroke-width="3" stroke-linecap="round"/>
+<circle cx="20" cy="42" r="6" fill="#E0474C" stroke="#241811" stroke-width="2.5"/>
+<circle cx="44" cy="38" r="6" fill="#3F7FBF" stroke="#241811" stroke-width="2.5"/>
+<circle cx="66" cy="44" r="6" fill="#4FCB8D" stroke="#241811" stroke-width="2.5"/>
+<path d="M 96 22 L 118 60 L 108 60 L 126 90 L 66 90 L 84 60 L 74 60 Z" fill="#4F9A5A" stroke="#241811" stroke-width="3.5" stroke-linejoin="round"/>
+<rect x="89" y="90" width="14" height="10" fill="#8C5E36" stroke="#241811" stroke-width="3"/>
+<path d="M 96 14 l 3 6 l 7 1 l -5 5 l 1 7 l -6 -3 l -6 3 l 1 -7 l -5 -5 l 7 -1 z" fill="#FFD84D" stroke="#241811" stroke-width="2"/>
+<g><circle cx="90" cy="54" r="3.5" fill="#E0474C"/><circle cx="104" cy="70" r="3.5" fill="#FFD84D"/><circle cx="86" cy="80" r="3.5" fill="#57C4E6"/><circle cx="112" cy="84" r="3.5" fill="#E88FA6"/></g>
+<ellipse cx="108" cy="102" rx="24" ry="14" fill="#F2892C" stroke="#241811" stroke-width="3.5"/>
+<path d="M 96 92 Q 94 102 96 112 M 108 90 L 108 114 M 120 92 Q 122 102 120 112" stroke="#C7661B" stroke-width="2" fill="none"/>
+<rect x="105" y="84" width="6" height="7" rx="2" fill="#4F7A3A" stroke="#241811" stroke-width="2"/>
+<path d="M 100 100 l 4 -4 l 4 4 z M 112 100 l 4 -4 l 4 4 z" fill="#3A2210"/>
+<path d="M 100 106 Q 108 112 118 106" stroke="#3A2210" stroke-width="2.5" fill="none"/>
+<path d="M 6 104 Q 20 94 34 104 Q 48 114 62 104" stroke="#2F6E2B" stroke-width="2.5" fill="none"/>
+<g><circle cx="12" cy="100" r="3" fill="#FFD84D"/><circle cx="28" cy="100" r="3" fill="#E0474C"/><circle cx="44" cy="108" r="3" fill="#57C4E6"/><circle cx="58" cy="104" r="3" fill="#4FCB8D"/></g>
+</svg>`; }
+  function typewriterSVG(){ return `<svg viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="60" cy="105" rx="56" ry="5" fill="rgba(0,0,0,0.2)"/>
+<rect x="10" y="58" width="100" height="10" rx="3" fill="#A9784A" stroke="#241811" stroke-width="3.5"/>
+<rect x="16" y="68" width="8" height="36" rx="2" fill="#8C5E36" stroke="#241811" stroke-width="3"/>
+<rect x="96" y="68" width="8" height="36" rx="2" fill="#8C5E36" stroke="#241811" stroke-width="3"/>
+<rect x="24" y="84" width="72" height="5" fill="#8C5E36" stroke="#241811" stroke-width="2"/>
+<rect x="28" y="12" width="64" height="22" rx="3" fill="#F6F2E6" stroke="#241811" stroke-width="2.5"/>
+<g stroke="#9AA3AD" stroke-width="1.5"><line x1="34" y1="18" x2="80" y2="18"/><line x1="34" y1="23" x2="72" y2="23"/><line x1="34" y1="28" x2="76" y2="28"/></g>
+<rect x="18" y="30" width="84" height="10" rx="5" fill="#3A3F46" stroke="#241811" stroke-width="3"/>
+<circle cx="16" cy="35" r="5" fill="#9AA3AD" stroke="#241811" stroke-width="2.5"/>
+<path d="M 22 40 L 98 40 L 104 58 L 16 58 Z" fill="#4A6B5A" stroke="#241811" stroke-width="3.5" stroke-linejoin="round"/>
+<g fill="#F6F2E6" stroke="#241811" stroke-width="1.2"><circle cx="28" cy="47" r="3"/><circle cx="37" cy="47" r="3"/><circle cx="46" cy="47" r="3"/><circle cx="55" cy="47" r="3"/><circle cx="64" cy="47" r="3"/><circle cx="73" cy="47" r="3"/><circle cx="82" cy="47" r="3"/><circle cx="91" cy="47" r="3"/><circle cx="32" cy="53" r="3"/><circle cx="41" cy="53" r="3"/><circle cx="50" cy="53" r="3"/><circle cx="59" cy="53" r="3"/><circle cx="68" cy="53" r="3"/><circle cx="77" cy="53" r="3"/><circle cx="86" cy="53" r="3"/></g>
+<path d="M 30 42 L 80 42" stroke="#fff" stroke-width="2" opacity="0.3"/>
+</svg>`; }
+  const ATTIC_DECALS = `<svg viewBox="0 0 260 330" width="260" height="330" xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:0;top:0;pointer-events:none;z-index:1">
+<g stroke="#5A3A22" stroke-width="2.5" fill="none" stroke-linecap="round">
+<path d="M 40 150 l 30 0 M 36 162 l 38 0"/>
+</g>
+<path d="M 60 236 L 104 236 L 100 244 L 92 240 L 84 248 L 74 241 L 64 246 Z" fill="#2A1A10" stroke="#241811" stroke-width="2"/>
+<path d="M 170 116 L 214 116 L 212 124 L 202 120 L 194 128 L 184 121 L 174 126 Z" fill="#2A1A10" stroke="#241811" stroke-width="2"/>
+<path d="M 188 292 L 224 292 L 220 300 L 210 296 L 200 302 L 192 298 Z" fill="#2A1A10" stroke="#241811" stroke-width="2"/>
+<g stroke="#5A3A22" stroke-width="2" fill="none" stroke-linecap="round">
+<path d="M 110 300 L 118 290 L 124 298 L 132 286"/>
+<path d="M 30 280 L 38 272 L 44 280"/>
+</g>
+</svg>`;
+  function slideSVG(){ return `<svg viewBox="0 0 200 340" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="sBed" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE08A"/><stop offset="1" stop-color="#FFB93E"/></linearGradient>
+<linearGradient id="sWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0584F"/><stop offset="1" stop-color="#C73B35"/></linearGradient>
+<linearGradient id="sBlue" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6CC7F6"/><stop offset="1" stop-color="#3486C6"/></linearGradient>
+</defs>
+<path d="M 6 326 Q 100 346 196 316" stroke="rgba(0,0,0,0.16)" stroke-width="14" fill="none" stroke-linecap="round"/>
+<!-- back ladder rail + support post -->
+<path d="M 30 324 L 68 50" stroke="#241811" stroke-width="11" stroke-linecap="round"/>
+<path d="M 30 324 L 68 50" stroke="#3486C6" stroke-width="6" stroke-linecap="round"/>
+<path d="M 136 222 L 136 322" stroke="#241811" stroke-width="11" stroke-linecap="round"/>
+<path d="M 136 222 L 136 322" stroke="#4FA6E0" stroke-width="6" stroke-linecap="round"/>
+<!-- rungs -->
+<g stroke="#241811" stroke-width="8" stroke-linecap="round"><line x1="15" y1="290" x2="35" y2="290"/><line x1="20" y1="250" x2="40" y2="250"/><line x1="26" y1="210" x2="46" y2="210"/><line x1="31" y1="170" x2="51" y2="170"/><line x1="37" y1="130" x2="57" y2="130"/><line x1="43" y1="90" x2="63" y2="90"/></g>
+<g stroke="#A8743F" stroke-width="4.5" stroke-linecap="round"><line x1="15" y1="290" x2="35" y2="290"/><line x1="20" y1="250" x2="40" y2="250"/><line x1="26" y1="210" x2="46" y2="210"/><line x1="31" y1="170" x2="51" y2="170"/><line x1="37" y1="130" x2="57" y2="130"/><line x1="43" y1="90" x2="63" y2="90"/></g>
+<!-- platform + hand rails -->
+<path d="M 44 44 L 104 44 L 104 58 L 48 58 Z" fill="#3486C6" stroke="#241811" stroke-width="3.5" stroke-linejoin="round"/>
+<path d="M 54 44 C 50 22 64 12 78 20" fill="none" stroke="#241811" stroke-width="9" stroke-linecap="round"/>
+<path d="M 54 44 C 50 22 64 12 78 20" fill="none" stroke="#6CC7F6" stroke-width="5" stroke-linecap="round"/>
+<path d="M 92 44 C 90 24 102 16 114 26" fill="none" stroke="#241811" stroke-width="9" stroke-linecap="round"/>
+<path d="M 92 44 C 90 24 102 16 114 26" fill="none" stroke="#6CC7F6" stroke-width="5" stroke-linecap="round"/>
+<!-- chute side wall (profile) -->
+<path d="M 76 56 C 102 78 114 132 122 180 C 130 228 138 274 160 294 L 198 306 L 198 320 L 158 308 C 134 288 124 240 116 190 C 108 142 98 92 76 70 Z" fill="url(#sWall)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<!-- front ladder rail -->
+<path d="M 12 324 L 50 50" stroke="#241811" stroke-width="11" stroke-linecap="round"/>
+<path d="M 12 324 L 50 50" stroke="#4FA6E0" stroke-width="6" stroke-linecap="round"/>
+<!-- chute bed (the sliding surface) -->
+<path d="M 104 44 C 130 66 142 120 150 168 C 158 216 166 262 188 282 L 198 288 L 198 306 L 160 294 C 138 274 130 228 122 180 C 114 132 102 78 76 56 L 76 44 Z" fill="url(#sBed)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<path d="M 94 54 C 118 78 128 128 136 174 C 144 220 152 262 176 286" fill="none" stroke="#fff" stroke-width="5" opacity="0.55" stroke-linecap="round"/>
+<path d="M 104 44 C 130 66 142 120 150 168 C 158 216 166 262 188 282 L 198 288" fill="none" stroke="#F0584F" stroke-width="7" stroke-linecap="round"/>
+<path d="M 76 56 C 102 78 114 132 122 180 C 130 228 138 274 160 294 L 198 306" fill="none" stroke="#F0584F" stroke-width="7" stroke-linecap="round"/>
+<path d="M 104 44 C 130 66 142 120 150 168 C 158 216 166 262 188 282 L 198 288" fill="none" stroke="#241811" stroke-width="2"/>
+<path d="M 76 56 C 102 78 114 132 122 180 C 130 228 138 274 160 294 L 198 306" fill="none" stroke="#241811" stroke-width="2"/>
+<circle cx="136" cy="222" r="4" fill="#E8C35A" stroke="#241811" stroke-width="2"/>
+</svg>`; }
+  const CUSTOM_ART = {
+    slide: slideSVG,
+    decor: decorSVG, typewriter: typewriterSVG,
+    trunk: trunkSVG, wardrobe: wardrobeSVG, horse: horseSVG, bins: binsSVG, hedge: bushSVG, hedge2: bushSVG, oak: treeSVG,
+    shed: shedSVG, doghouse: doghouseSVG, tree: treeSVG, bush: bushSVG,
+    car: carSVG, shelf: shelfSVG, boxes: boxesSVG,
+    fridge: fridgeSVG, cabinet: cabinetSVG, table: tableSVG,
+    closet: closetSVG, dresser: dresserSVG, bed: bedSVG,
+    tub: tubSVG, cabinet2: cabinet2SVG, basket: basketSVG,
+    couch: couchSVG, tvstand: tvStandSVG, bookshelf: bookshelfSVG
+  };
+
+  /* ---------------- World layout: whole house loaded at once ---------------- */
+  // Furniture x/y/w/h below are now fixed PIXEL sizes and offsets from each
+  // room's top-left corner (not percentages) — so enlarging a room never
+  // changes furniture size, only how much open floor surrounds it.
+  const WORLD = { w: 1300, h: 1660 };
+
+  const ROOMS = {
+    attic: {
+      name: "Attic", emoji: "📦",
+      wall: "#8C6A55", floorA: "#C9A27A", floorB: "#B98F65",
+      floorPattern: "plank",
+      rect: {x:20, y:150, w:260, h:330}, decals: "ATTIC",
+      furniture: [
+        {id:"typewriter", label:"Typewriter", emoji:"⌨️", x:140, y:20,  w:104, h:96,  wall:true},
+        {id:"trunk",      label:"Trunk",      emoji:"🧳", x:20,  y:130, w:110, h:85,  wall:false},
+        {id:"decor",      label:"Decorations", emoji:"🎄", x:120, y:200, w:128, h:110, wall:false},
+      ]
+    },
+    frontyard: {
+      name: "Front Yard", emoji: "🏡",
+      wall: "#BFE6F7", floorA: "#95D680", floorB: "#8ACD74",
+      floorPattern: "grass", noWall: true,
+      rect: {x:20, y:1180, w:1260, h:440},
+      furniture: [
+        {id:"oak",    label:"Tree",  emoji:"🌳", x:120, y:90,  w:180, h:230, wall:false},
+        {id:"hedge",  label:"Hedge", emoji:"🌿", x:470, y:250, w:140, h:100, wall:false},
+        {id:"bins",   label:"Bins",  emoji:"🗑️", x:1080, y:200, w:130, h:110, wall:false},
+      ]
+    },
+    backyard: {
+      name: "Backyard", emoji: "🌳",
+      wall: "#BFE6F7", floorA: "#8FD27A", floorB: "#84C96E",
+      floorPattern: "grass", fence: true,
+      rect: {x:300, y:30, w:920, h:450},
+      furniture: [
+        {id:"shed",     label:"Shed",     emoji:"🏚️", x:30,  y:8,   w:170, h:170, wall:true},
+        {id:"doghouse", label:"Doghouse", emoji:"🏠", x:290, y:240, w:140, h:130, wall:false},
+        {id:"tree",     label:"Tree",     emoji:"🌳", x:470, y:130, w:180, h:230, wall:false},
+        {id:"slide",    label:"Slide",    emoji:"🛝", x:690, y:120, w:200, h:170, wall:false, passthrough:true, zTop:true},
+      ]
+    },
+    kitchen: {
+      name: "Kitchen", emoji: "🍳",
+      wall: "var(--kitchen-wall)", floorA: "var(--kitchen-floor-a)", floorB: "var(--kitchen-floor-b)",
+      floorPattern: "check",
+      rect: {x:380, y:520, w:560, h:320},
+      furniture: [
+        {id:"fridge",  label:"Fridge",  emoji:"🧊", x:16,  y:6, w:84,  h:166, wall:true},
+        {id:"cabinet", label:"Cabinet", emoji:"🍽️", x:340, y:6, w:184, h:88,  wall:true},
+        {id:"table",   label:"Table",   emoji:"🪑", x:210, y:200, w:138, h:84, wall:false},
+      ]
+    },
+    bedroom: {
+      name: "Bedroom", emoji: "🛏️",
+      wall: "var(--bedroom-wall)", floorA: "var(--bedroom-floor-a)", floorB: "var(--bedroom-floor-b)",
+      floorPattern: "plank",
+      rect: {x:380, y:860, w:280, h:300},
+      furniture: [
+        {id:"closet",  label:"Closet",  emoji:"🚪", x:198, y:6, w:66, h:150, wall:true},
+        {id:"dresser", label:"Dresser", emoji:"🗄️", x:16,  y:6, w:70, h:58,  wall:true},
+        {id:"bed",     label:"Bed",     emoji:"🛏️", x:70,  y:150, w:150, h:130, wall:false, passthrough:true},
+      ]
+    },
+    garage: {
+      name: "Garage", emoji: "🚗",
+      wall: "var(--garage-wall)", floorA: "var(--garage-floor-a)", floorB: "var(--garage-floor-b)",
+      floorPattern: "concrete",
+      rect: {x:20, y:520, w:340, h:420},
+      furniture: [
+        {id:"shelf", label:"Shelf", emoji:"🧰", x:250, y:6,   w:68, h:114, wall:true},
+        {id:"boxes", label:"Boxes", emoji:"📦", x:244, y:200, w:74, h:72, wall:false},
+        {id:"car",   label:"Car",   emoji:"🚗", x:22,  y:150, w:196, h:120, wall:false},
+      ]
+    },
+    bathroom: {
+      name: "Bathroom", emoji: "🛁",
+      wall: "var(--bathroom-wall)", floorA: "var(--bathroom-floor-a)", floorB: "var(--bathroom-floor-b)",
+      floorPattern: "tile",
+      rect: {x:680, y:860, w:280, h:300},
+      furniture: [
+        {id:"tub",      label:"Bathtub", emoji:"🛁", x:16,  y:6,   w:106, h:86, wall:true},
+        {id:"cabinet2", label:"Cabinet", emoji:"🧴", x:182, y:6,   w:75,  h:77, wall:true},
+        {id:"basket",   label:"Laundry", emoji:"🧺", x:182, y:180, w:62,  h:62, wall:false},
+      ]
+    },
+    livingroom: {
+      name: "Living Room", emoji: "🛋️",
+      wall: "var(--livingroom-wall)", floorA: "var(--livingroom-floor-a)", floorB: "var(--livingroom-floor-b)",
+      floorPattern: "plank",
+      rect: {x:960, y:520, w:320, h:380},
+      furniture: [
+        {id:"tvstand",   label:"TV Stand",  emoji:"📺", x:228, y:6,   w:76, h:100, wall:true},
+        {id:"bookshelf", label:"Bookshelf", emoji:"📚", x:228, y:118, w:76, h:112, wall:true},
+        {id:"couch",     label:"Couch",     emoji:"🛋️", x:28,  y:210, w:172, h:112, wall:false},
+      ]
+    }
+  };
+
+  // Doorway bridges connecting adjacent rooms — no walls, just open floor.
+  const CONNECTORS = [
+    {rect:{x:100, y:476, w:90,  h:48}, color:"#B98F65"},   // attic <-> garage (stairs)
+    {rect:{x:110, y:936, w:170, h:248}, color:"#B9BEC4"},  // garage <-> front yard (driveway)
+    {rect:{x:470, y:1156, w:100, h:28}},                   // bedroom <-> front yard
+    {rect:{x:1080, y:896, w:90,  h:288}, color:"#D8C9B0"},  // living room <-> front yard (front walk)
+    {rect:{x:600, y:470, w:110, h:60}},   // backyard <-> kitchen
+    {rect:{x:1030, y:470, w:100, h:60}},   // backyard <-> living room
+    {rect:{x:356, y:620, w:28,  h:110}},  // garage <-> kitchen
+    {rect:{x:470, y:836, w:100, h:48}},   // kitchen <-> bedroom
+    {rect:{x:760, y:836, w:100, h:48}},   // kitchen <-> bathroom
+    {rect:{x:656, y:960, w:28,  h:80}},   // bedroom <-> bathroom
+    {rect:{x:936, y:630, w:28,  h:100}},  // kitchen <-> living room
+  ];
+
+
+  const WALKABLE_ZONES = Object.values(ROOMS).map(r => r.rect).concat(CONNECTORS.map(c => c.rect));
+  let SOLID_RECTS = [];
+
+  function isWalkable(x, y){
+    let inZone = false;
+    for(let i=0;i<WALKABLE_ZONES.length;i++){
+      const r = WALKABLE_ZONES[i];
+      if(x >= r.x && x <= r.x+r.w && y >= r.y && y <= r.y+r.h){ inZone = true; break; }
+    }
+    if(!inZone) return false;
+    for(let i=0;i<SOLID_RECTS.length;i++){
+      const r = SOLID_RECTS[i];
+      if(x >= r.x && x <= r.x+r.w && y >= r.y && y <= r.y+r.h) return false;
+    }
+    return true;
+  }
+
+  function floorCss(room){
+    switch(room.floorPattern){
+      case "check":
+        return `repeating-conic-gradient(${room.floorA} 0% 25%, ${room.floorB} 0% 50%) 0 0 / 13% 22%`;
+      case "plank":
+        return `repeating-linear-gradient(90deg, ${room.floorA} 0 10%, ${room.floorB} 10% 20%)`;
+      case "concrete":
+        return `repeating-linear-gradient(135deg, ${room.floorA} 0 6%, ${room.floorB} 6% 12%)`;
+      case "grass":
+        return `radial-gradient(circle at 30% 40%, rgba(255,255,255,0.18) 0 2px, transparent 3px) 0 0 / 36px 30px, repeating-linear-gradient(90deg, ${room.floorA} 0 60px, ${room.floorB} 60px 120px)`;
+      case "tile":
+        return `linear-gradient(${room.floorA}, ${room.floorA}), repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0 3px, transparent 3px 16%), repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0 3px, transparent 3px 16%)`;
+      default:
+        return room.floorA;
+    }
+  }
+
+  /* ---------------- State ---------------- */
+  let state = {
+    phase: "title",
+    hidingRoom: null,
+    hidingSpot: null,
+    pendingSpot: null,
+    checkedSpots: 0,
+    checkedIds: new Set(),
+    startTime: null,
+    busy: false,
+    pos: {x:450, y:230},
+    target: {x:450, y:230},
+    onArrive: null,
+    walkingClassApplied: false,
+    camX: 0, camY: 0,
+  };
+
+  /* ---------------- DOM refs ---------------- */
+  const titleScreen = document.getElementById("title-screen");
+  const gameScreen = document.getElementById("game-screen");
+  const winScreen = document.getElementById("win-screen");
+  const stage = document.getElementById("stage");
+  const worldEl = document.getElementById("world");
+  const phasePill = document.getElementById("phase-pill");
+  const statPill = document.getElementById("stat-pill");
+  const confirmFab = document.getElementById("confirm-fab");
+  const plainBtn = document.getElementById("plain-btn");
+  const digBtn = document.getElementById("dig-btn");
+  function blanketSVG(col){
+    return `<svg viewBox="0 0 80 52" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="plaid" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" style="fill:${col}"/><rect width="12" height="4" fill="#000" opacity="0.07"/><rect width="4" height="12" fill="#000" opacity="0.07"/><rect x="6" width="1.5" height="12" fill="#fff" opacity="0.18"/></pattern></defs><path d="M 4 46 C 2 30 14 12 40 10 C 66 12 78 30 76 46 Q 58 50 40 48 Q 22 50 4 46 Z" fill="url(#plaid)" stroke="#000" stroke-opacity="0.22" stroke-width="2" stroke-linejoin="round"/><path d="M 14 22 Q 26 14 40 14" stroke="#fff" stroke-width="2" fill="none" opacity="0.18" stroke-linecap="round"/></svg>`;
+  }
+  function roomAt(x, y){
+    for(const k in ROOMS){ const r = ROOMS[k].rect; if(x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h) return k; }
+    return null;
+  }
+  function nearestRoom(x, y){
+    let best=null, bd=Infinity;
+    for(const k in ROOMS){ const r=ROOMS[k].rect;
+      const d=Math.hypot(Math.max(r.x-x,0,x-(r.x+r.w)), Math.max(r.y-y,0,y-(r.y+r.h)));
+      if(d<bd){bd=d;best=k;} }
+    return best;
+  }
+  const toast = document.getElementById("toast");
+  const interstitial = document.getElementById("interstitial");
+
+  document.getElementById("title-critters").innerHTML = pugSVG() + platypusSVG();
+  document.getElementById("win-critters").innerHTML = pugSVG() + platypusSVG();
+
+  let spriteEl = null, footEl = null;
+  let freestandingEls = [];
+  let FURN_LIST = [];
+  let garageDoorEl = null, garagePlateEl = null, garageDoorSolid = null;
+  const PLATE = {x:334, y:914};
+  let ROOM_FOG = {}, curSeekRoom = null, blanketEl = null, blanketRoom = null;
+  let bedWorldRect = null, bedLumpEl = null, inBedNow = false;
+  let viewportW = 360, viewportH = 500;
+
+  function measureViewport(){
+    const rect = stage.getBoundingClientRect();
+    if(rect.width > 0) viewportW = rect.width;
+    if(rect.height > 0) viewportH = rect.height;
+  }
+  window.addEventListener("resize", measureViewport);
+
+  /* ---------------- Helpers ---------------- */
+  function showToast(msg, ms){
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.classList.remove("show"), ms || 1400);
+  }
+
+  function setTarget(x, y, onArrive){
+    if(state.mp && mp.hide && Math.hypot(x - state.pos.x, y - state.pos.y) > 8) mpUnhide();   // moving sneaks you out
+    state.target = {x, y};
+    state.onArrive = onArrive || null;
+  }
+
+  function placeSpriteAt(x, y){
+    state.pos = {x, y};
+    state.target = {x, y};
+    state.onArrive = null;
+    if(spriteEl){
+      spriteEl.style.left = x + "px";
+      spriteEl.style.top = y + "px";
+      footEl.style.left = x + "px";
+      footEl.style.top = (y + 3) + "px";
+    }
+  }
+
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+  function attemptMove(nx, ny){
+    const ok = (x, y) => isWalkable(x, y) && !slideBlocks(x, y);
+    if(ok(nx, ny)) return {x:nx, y:ny};
+    if(ok(nx, state.pos.y)) return {x:nx, y: state.pos.y};
+    if(ok(state.pos.x, ny)) return {x: state.pos.x, y: ny};
+    return null;
+  }
+
+  /* ---------------- Movement + camera engine ---------------- */
+  let lastTs = null;
+  function tick(ts){
+    if(lastTs == null) lastTs = ts;
+    const dt = Math.min(0.05, (ts - lastTs) / 1000);
+    lastTs = ts;
+
+    if(typeof keysDown !== "undefined" && keysDown.size) updateKeyboardTarget();
+
+    if(spriteEl && (state.phase === "hiding" || state.phase === "seeking")){
+      let speed = state.sliding ? 760 : (state.mp && state.phase === "seeking" ? 350 : 300); // world px per second; platytag platypus ~17% faster
+      if(state.phase === "seeking" && !state.sliding && nearDig(state.pos.x, state.pos.y)) speed *= 0.7;
+      const dx = state.target.x - state.pos.x;
+      const dy = state.target.y - state.pos.y;
+      const dist = Math.hypot(dx, dy);
+
+      if(dist > 1.2){
+        const step = speed * dt;
+        let nx, ny;
+        if(step >= dist){ nx = state.target.x; ny = state.target.y; }
+        else { nx = state.pos.x + (dx/dist)*step; ny = state.pos.y + (dy/dist)*step; }
+
+        const prevX = state.pos.x, prevY = state.pos.y;
+        const tm = tunnelMove(nx, ny);
+        const moved = tm || attemptMove(nx, ny);
+        if(moved){ state.pos = moved; }
+        handleSlide(prevX, prevY);
+        checkHoleEntry();
+
+        const movedDx = state.pos.x - prevX;
+        if(Math.abs(movedDx) > 0.6){
+          const flip = spriteEl.querySelector(".flip");
+          if(flip) flip.style.transform = movedDx < 0 ? "scaleX(1)" : "scaleX(-1)";
+        }
+        if(!state.walkingClassApplied){
+          spriteEl.classList.remove("idle");
+          spriteEl.classList.add("walking");
+          state.walkingClassApplied = true;
+        }
+      } else {
+        state.pos.x = state.target.x;
+        state.pos.y = state.target.y;
+        if(state.walkingClassApplied){
+          spriteEl.classList.remove("walking");
+          spriteEl.classList.add("idle");
+          state.walkingClassApplied = false;
+        }
+        if(state.onArrive){
+          const cb = state.onArrive;
+          state.onArrive = null;
+          cb();
+        }
+      }
+
+      spriteEl.style.left = state.pos.x + "px";
+      spriteEl.style.top = state.pos.y + "px";
+      footEl.style.left = state.pos.x + "px";
+      footEl.style.top = (state.pos.y + 3) + "px";
+
+      // burrow-under-the-covers effect: swap the sprite for a wiggling lump
+      // whenever the character is inside the bed's mattress area
+      if(bedWorldRect){
+        const margin = 16;
+        const nowInBed = state.pos.x > bedWorldRect.x+margin && state.pos.x < bedWorldRect.x+bedWorldRect.w-margin &&
+                         state.pos.y > bedWorldRect.y+34 && state.pos.y < bedWorldRect.y+bedWorldRect.h-margin;
+        if(nowInBed !== inBedNow){
+          inBedNow = nowInBed;
+          spriteEl.style.visibility = inBedNow ? "hidden" : "visible";
+          footEl.style.visibility = inBedNow ? "hidden" : "visible";
+          if(bedLumpEl) bedLumpEl.classList.toggle("show", inBedNow);
+        }
+        if(inBedNow && bedLumpEl){
+          bedLumpEl.style.left = state.pos.x + "px";
+          bedLumpEl.style.top = state.pos.y + "px";
+        }
+      }
+
+      const onPlate = Math.hypot(state.pos.x-PLATE.x, state.pos.y-PLATE.y) < 20;
+      if(onPlate && !state.onPlate){
+        state.garageOpen = !state.garageOpen;
+        const i = SOLID_RECTS.indexOf(garageDoorSolid);
+        if(state.garageOpen){ if(i >= 0) SOLID_RECTS.splice(i, 1); }
+        else if(i < 0){ SOLID_RECTS.push(garageDoorSolid); }
+        if(garageDoorEl) garageDoorEl.classList.toggle("open", state.garageOpen);
+        if(garagePlateEl) garagePlateEl.classList.toggle("pressed", state.garageOpen);
+        showToast(state.garageOpen ? "Garage door opened! 🚗" : "Garage door closed");
+      }
+      state.onPlate = onPlate;
+      updateFog();
+      updateProximity();
+
+      // depth-sort: freestanding furniture covers the character when they're behind it
+      for(let i=0;i<freestandingEls.length;i++){
+        const item = freestandingEls[i];
+        item.el.style.zIndex = (state.pos.y < item.depthY) ? "6" : "3";
+      }
+
+      // camera follows, centered on character, clamped to world bounds
+      const maxCamX = Math.max(0, WORLD.w - viewportW);
+      const maxCamY = Math.max(0, WORLD.h - viewportH);
+      state.camX = clamp(state.pos.x - viewportW/2, 0, maxCamX);
+      state.camY = clamp(state.pos.y - viewportH/2, 0, maxCamY);
+      worldEl.style.transform = `translate(${-state.camX}px, ${-state.camY}px)`;
+    }
+    if(state.mp) mpFrame(dt);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  /* ---------------- Build the whole house at once ---------------- */
+  function buildWorld(){
+    worldEl.innerHTML = "";
+    worldEl.style.width = WORLD.w + "px";
+    worldEl.style.height = WORLD.h + "px";
+    freestandingEls = [];
+    FURN_LIST = [];
+    ROOM_FOG = {}; curSeekRoom = null; blanketEl = null; blanketRoom = null;
+    SOLID_RECTS = [];
+    bedWorldRect = null;
+    inBedNow = false;
+
+    Object.keys(ROOMS).forEach(key => {
+      const room = ROOMS[key];
+      const rect = room.rect;
+
+      const roomDiv = document.createElement("div");
+      roomDiv.className = "room";
+      roomDiv.style.left = rect.x+"px"; roomDiv.style.top = rect.y+"px";
+      roomDiv.style.width = rect.w+"px"; roomDiv.style.height = rect.h+"px";
+
+      const wallBand = document.createElement("div");
+      wallBand.className = "room-wall-band";
+      wallBand.style.background = room.wall;
+      if(room.fence){
+        roomDiv.classList.add("yard");
+        wallBand.classList.add("fence-band");
+        wallBand.style.background = "";
+      }
+      roomDiv.appendChild(wallBand);
+
+      const floorBand = document.createElement("div");
+      floorBand.className = "room-floor-band";
+      floorBand.style.background = floorCss(room);
+      if(room.decals === "ATTIC") roomDiv.insertAdjacentHTML("beforeend", ATTIC_DECALS);
+      if(room.noWall){ wallBand.style.display = "none"; floorBand.style.top = "0"; roomDiv.classList.add("open-yard"); }
+      roomDiv.appendChild(floorBand);
+
+      room.furniture.forEach((f, i) => {
+        const wx = rect.x + f.x;
+        const wy = rect.y + f.y;
+        const ww = f.w;
+        const wh = f.h;
+        const worldCx = wx + ww/2;
+        const worldStandY = Math.min(rect.y+rect.h-14, wy + wh + 16);
+
+        // solid collision footprint: freestanding pieces stay walkable along their back
+        // edge (near the wall) so the character can tuck in behind them; wall-mounted
+        // pieces are solid all the way through since there's no room behind them anyway.
+        // The bed is a special case — fully pass-through, no collision at all.
+        if(f.passthrough){
+          // no solid rect
+        } else if(f.wall){
+          SOLID_RECTS.push({x:wx, y:wy, w:ww, h:wh});
+        } else {
+          const openFrac = 0.4;
+          SOLID_RECTS.push({x:wx, y: wy + wh*openFrac, w:ww, h: wh*(1-openFrac)});
+        }
+
+        if(!CUSTOM_ART[f.id]){
+        const shadow = document.createElement("div");
+        shadow.className = "f-shadow";
+        shadow.style.left = (f.x + ww*0.18) + "px";
+        shadow.style.top = (f.y + wh - 6) + "px";
+        shadow.style.width = (ww*0.64) + "px";
+        shadow.style.height = "10px";
+        roomDiv.appendChild(shadow);
+        }
+
+        const el = document.createElement("div");
+        const illustrated = !!CUSTOM_ART[f.id];
+        el.className = "furniture" + (illustrated ? " illustrated" : "");
+        el.style.left = f.x+"px"; el.style.top = f.y+"px";
+        el.style.width = ww+"px"; el.style.height = wh+"px";
+        el.dataset.id = f.id;
+        el.dataset.room = key;
+        if(f.zTop) el.style.zIndex = "6";
+        if(f.id === "bed"){
+          el.dataset.cx = worldCx;
+          el.dataset.cy = wy + wh*0.6;
+        } else {
+          el.dataset.cx = worldCx;
+          el.dataset.cy = worldStandY;
+        }
+
+        if(illustrated){
+          el.innerHTML = `<div class="custom-svg">${CUSTOM_ART[f.id]()}</div>`;
+        } else {
+          el.style.background = `linear-gradient(160deg, #fff, ${f.color})`;
+          el.style.setProperty("--rot", rot+"deg");
+          el.style.transform = `rotate(${rot}deg)`;
+          el.innerHTML = `<div class="f-emoji">${f.emoji}</div><div class="f-label">${f.label}</div>`;
+        }
+
+        
+
+        if(!f.wall && !f.passthrough){
+          el.classList.add("freestanding");
+          freestandingEls.push({el: el, depthY: worldStandY});
+        }
+
+        FURN_LIST.push({id:f.id, room:key, el:el, x:wx, y:wy, w:ww, h:wh});
+        if(f.id === "bed"){
+          bedWorldRect = {x:wx, y:wy, w:ww, h:wh};
+        }
+
+        roomDiv.appendChild(el);
+      });
+
+      const fog = document.createElement("div");
+      fog.className = "room-fog";
+      roomDiv.appendChild(fog);
+      ROOM_FOG[key] = fog;
+      worldEl.appendChild(roomDiv);
+    });
+
+    // doorway bridges painted after rooms so they visually open the walls
+    CONNECTORS.forEach(c => {
+      const patch = document.createElement("div");
+      patch.className = "connector-patch";
+      if(c.color) patch.style.background = c.color;
+      patch.style.left = c.rect.x+"px"; patch.style.top = c.rect.y+"px";
+      patch.style.width = c.rect.w+"px"; patch.style.height = c.rect.h+"px";
+      worldEl.appendChild(patch);
+    });
+
+    buildTunnel();
+    (state.digs || []).forEach(d => addDigEl(d, false));
+    const DOOR = {x:104, y:910, w:182, h:30};
+    const door = document.createElement("div");
+    door.className = "garage-door" + (state.garageOpen ? " open" : "");
+    door.style.left = DOOR.x+"px"; door.style.top = DOOR.y+"px"; door.style.width = DOOR.w+"px"; door.style.height = DOOR.h+"px";
+    worldEl.appendChild(door);
+    garageDoorEl = door;
+    garageDoorSolid = {x:DOOR.x, y:DOOR.y-10, w:DOOR.w, h:DOOR.h+30};
+    if(!state.garageOpen) SOLID_RECTS.push(garageDoorSolid);
+    const plate = document.createElement("div");
+    plate.className = "garage-plate" + (state.garageOpen ? " pressed" : "");
+    plate.style.left = PLATE.x+"px"; plate.style.top = PLATE.y+"px";
+    worldEl.appendChild(plate);
+    garagePlateEl = plate;
+
+    footEl = document.createElement("div");
+    footEl.className = "foot-shadow";
+    worldEl.appendChild(footEl);
+
+    if(state.phase === "seeking" && state.hidingSpot === "blanket" && state.blanketPos){
+      const bp = state.blanketPos;
+      const bel = makeBlanketEl(bp.x, bp.y);
+      bel.style.display = "none";
+      worldEl.appendChild(bel);
+      blanketEl = bel;
+      if(state.blanketTunnel){
+        blanketRoom = "tunnel";
+        bel.style.zIndex = "12";
+        FURN_LIST.push({id:"blanket", room:"floor", el:bel, x:bp.x-40, y:bp.y-58, w:80, h:62, hidden:true});
+      } else {
+        blanketRoom = roomAt(bp.x, bp.y) || nearestRoom(bp.x, bp.y);
+        FURN_LIST.push({id:"blanket", room:"floor", el:bel, x:bp.x-35, y:bp.y-38, w:70, h:46, hidden:true});
+      }
+    }
+
+    spriteEl = document.createElement("div");
+    spriteEl.className = "critter-sprite idle" + (state.phase === "hiding" ? " pug" : " plat");
+    spriteEl.innerHTML = `<span class="flip">${(state.phase === "hiding") ? pugSVG() : platypusSVG()}</span>`;
+    worldEl.appendChild(spriteEl);
+
+    if(bedWorldRect){
+      bedLumpEl = document.createElement("div");
+      bedLumpEl.className = "bed-lump";
+      bedLumpEl.innerHTML = `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="30" cy="22" rx="27" ry="15" fill="#FCC7DA"/>
+        <ellipse cx="30" cy="16" rx="27" ry="10" fill="#FFE0EA"/>
+        <path d="M6 20 Q30 8 54 20" stroke="#F2A6C4" stroke-width="2.5" fill="none" opacity="0.6"/>
+      </svg>`;
+      worldEl.appendChild(bedLumpEl);
+    } else {
+      bedLumpEl = null;
+    }
+
+    // pug stayed under the covers (blanket button in bed): leave its lump visible to the seeker
+    if(state.phase === "seeking" && state.pugLumpPos){
+      const pl = document.createElement("div");
+      pl.className = "bed-lump show pug-lump";
+      pl.style.left = state.pugLumpPos.x + "px";
+      pl.style.top = state.pugLumpPos.y + "px";
+      pl.innerHTML = `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="30" cy="22" rx="27" ry="15" fill="#FCC7DA"/>
+        <ellipse cx="30" cy="16" rx="27" ry="10" fill="#FFE0EA"/>
+        <path d="M6 20 Q30 8 54 20" stroke="#F2A6C4" stroke-width="2.5" fill="none" opacity="0.6"/>
+      </svg>`;
+      worldEl.appendChild(pl);
+    }
+  }
+
+  /* ---------------- Pointer input: touch-and-chase ---------------- */
+  let dragging = false;
+
+  function worldPosFromEvent(e){
+    const rect = stage.getBoundingClientRect();
+    let wx = state.camX + (e.clientX - rect.left);
+    let wy = state.camY + (e.clientY - rect.top);
+    wx = Math.max(4, Math.min(WORLD.w-4, wx));
+    wy = Math.max(4, Math.min(WORLD.h-4, wy));
+    return {x:wx, y:wy};
+  }
+
+  function resolveActionAt(e){
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if(!el) return null;
+    const furn = el.closest(".furniture");
+    if(furn) return {type:"furniture", el:furn};
+    return null;
+  }
+
+  function updateFromPointer(e){
+    // Only the seeker taps furniture to walk to it; the pug just walks where you touch
+    // (so you can stop anywhere, e.g. under the bed covers). Proximity still lights things up.
+    const action = state.phase === "seeking" ? resolveActionAt(e) : null;
+    if(action && action.type === "furniture"){
+      const item = FURN_LIST.find(f => f.el === action.el);
+      if(!item) return;
+      const pad = 16;
+      const tx = clamp(state.pos.x, item.x - pad, item.x + item.w + pad);
+      const ty = clamp(state.pos.y, item.y - pad, item.y + item.h + pad);
+      state.wantId = item.id;
+      setTarget(tx, ty, null);
+    } else {
+      state.wantId = null;
+      const p = worldPosFromEvent(e);
+      setTarget(p.x, p.y, null);
+    }
+  }
+
+
+  function updateFog(){
+    const r = state.underground ? "tunnel" : roomAt(state.pos.x, state.pos.y);
+    if(!r || r === curSeekRoom) return;   // in a doorway: keep the last room lit
+    curSeekRoom = r;
+    for(const k in ROOM_FOG) ROOM_FOG[k].classList.toggle("on", k !== r);
+    if(blanketEl && blanketRoom !== "tunnel"){
+      const vis = (r === blanketRoom);
+      blanketEl.style.display = vis ? "" : "none";
+      const it = FURN_LIST.find(f => f.id === "blanket");
+      if(it) it.hidden = !vis;
+    }
+  }
+  /* ---------------- Proximity: any side of an object counts ---------------- */
+  const NEAR = 30;
+  function distToItem(item, px, py){
+    const dx = Math.max(item.x - px, 0, px - (item.x + item.w));
+    const dy = Math.max(item.y - py, 0, py - (item.y + item.h));
+    return Math.hypot(dx, dy);
+  }
+  function nearestItem(){
+    let best = null, bestD = Infinity;
+    for(const item of FURN_LIST){
+      if(item.hidden) continue;
+      const d = distToItem(item, state.pos.x, state.pos.y);
+      if(d < bestD){ bestD = d; best = item; }
+    }
+    return bestD <= NEAR ? best : null;
+  }
+  function updateProximity(){
+    digBtn.classList.toggle("show", canDigHere() && !state.pendingSpot && !confirmFab.classList.contains("show"));
+    if(blanketEl && blanketRoom === "tunnel" && state.phase === "seeking"){
+      const vis = !!state.underground;
+      blanketEl.style.display = vis ? "" : "none";
+      const it = FURN_LIST.find(f => f.id === "blanket"); if(it) it.hidden = !vis;
+    }
+    if(state.busy || (state.phase !== "hiding" && state.phase !== "seeking")) return;
+    const item = nearestItem();
+    const curId = state.pendingSpot ? state.pendingSpot.spotId : null;
+    const newId = item ? item.id : null;
+    if(newId !== curId){
+      worldEl.querySelectorAll(".furniture.selected").forEach(x => x.classList.remove("selected"));
+      if(item){
+        item.el.classList.add("selected");
+        state.pendingSpot = {room: item.room, spotId: item.id};
+        confirmFab.textContent = state.phase === "hiding" ? "✅ Hide!" : "🔍 Search";
+        confirmFab.classList.add("show");
+      } else {
+        state.pendingSpot = null;
+        confirmFab.classList.remove("show");
+      }
+    }
+    // tapped an object as the seeker: search it automatically once close enough
+    if(item && state.phase === "seeking" && state.wantId === item.id){
+      state.wantId = null;
+      doSearch(item.id, item.room);
+    }
+  }
+
+  function onPointerDown(e){
+    if(state.busy) return;
+    dragging = true;
+    if(stage.setPointerCapture){ try{ stage.setPointerCapture(e.pointerId); }catch(err){} }
+    updateFromPointer(e);
+  }
+  function onPointerMove(e){
+    if(!dragging || state.busy) return;
+    updateFromPointer(e);
+  }
+  function onPointerUp(){ dragging = false; }
+
+  stage.addEventListener("pointerdown", onPointerDown);
+  stage.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("pointercancel", onPointerUp);
+
+  /* ---------------- Keyboard input (desktop/trackpad; touch is untouched) ---------------- */
+  const KEY_DIR = {
+    ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
+    KeyW:{x:0,y:-1}, KeyS:{x:0,y:1}, KeyA:{x:-1,y:0}, KeyD:{x:1,y:0}
+  };
+  const keysDown = new Set();
+  let keyboardActive = false;
+  const KEY_REACH = 600; // project a far target in the held direction; walls/attemptMove stop it naturally
+
+  function updateKeyboardTarget(){
+    if(state.busy || (state.phase !== "hiding" && state.phase !== "seeking")) return;
+    let dx = 0, dy = 0;
+    keysDown.forEach(code => { const d = KEY_DIR[code]; if(d){ dx += d.x; dy += d.y; } });
+    if(dx === 0 && dy === 0){
+      if(keyboardActive){ keyboardActive = false; setTarget(state.pos.x, state.pos.y, null); }
+      return;
+    }
+    keyboardActive = true;
+    dragging = false;
+    state.wantId = null;
+    const len = Math.hypot(dx, dy) || 1;
+    const tx = clamp(state.pos.x + (dx/len)*KEY_REACH, 0, WORLD.w);
+    const ty = clamp(state.pos.y + (dy/len)*KEY_REACH, 0, WORLD.h);
+    setTarget(tx, ty, null);
+  }
+
+  function typingOrMenu(e){
+    const t = e.target;
+    if(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return true;
+    return gameScreen.classList.contains("hidden");   // game keys only while the game is on screen
+  }
+  window.addEventListener("keydown", (e) => {
+    if(typingOrMenu(e)) return;
+    if(e.repeat) return;
+    if(KEY_DIR[e.code]){
+      keysDown.add(e.code);
+      updateKeyboardTarget();
+      e.preventDefault();
+    } else if(e.code === "Space" || e.code === "Enter"){
+      if(confirmFab.classList.contains("show")){ confirmFab.click(); }
+      e.preventDefault();
+    } else if(e.code === "KeyF" || e.code === "KeyE"){
+      if(digBtn.classList.contains("show")){ digBtn.click(); }
+    } else if(e.code === "KeyB"){
+      if(plainBtn.classList.contains("show")){ plainBtn.click(); }
+    }
+  });
+  window.addEventListener("keyup", (e) => {
+    if(typingOrMenu(e)){ keysDown.clear(); return; }
+    if(KEY_DIR[e.code]){
+      keysDown.delete(e.code);
+      updateKeyboardTarget();
+      e.preventDefault();
+    }
+  });
+  window.addEventListener("blur", () => { keysDown.clear(); keyboardActive = false; });
+
+  function updateHud(){
+    if(state.mp){ mpHud(); return; }
+    if(state.phase === "hiding"){
+      phasePill.innerHTML = "🐶 Hiding";
+      statPill.textContent = "Pick a cozy spot";
+    } else if(state.phase === "seeking"){
+      phasePill.innerHTML = "🦆 Seeking";
+      statPill.textContent = "Spots checked: " + state.checkedSpots;
+    }
+  }
+
+
+  /* ---------------- Backyard slide ---------------- */
+  // chute centerline (world coords) — follows the curved slide art, high end north, low end south-east
+  const SLIDE_PTS = [[172, 1080], [210, 1116], [235, 1126], [270, 1137], [292, 1165], [300, 1186]];
+  const SLIDE = {y1:172, y2:300, lowY:270, half:24};
+  function chuteCenter(y){
+    const P = SLIDE_PTS;
+    if(y <= P[0][0]) return P[0][1];
+    for(let i=1;i<P.length;i++){ if(y <= P[i][0]){ const t=(y-P[i-1][0])/(P[i][0]-P[i-1][0]); return P[i-1][1]+(P[i][1]-P[i-1][1])*t; } }
+    return P[P.length-1][1];
+  }
+  function chuteX(y){ const c = chuteCenter(y); return {l: c - SLIDE.half, r: c + SLIDE.half}; }
+  function inChute(x, y){ if(y < SLIDE.y1 || y > SLIDE.y2) return false; const c = chuteX(y); return x >= c.l && x <= c.r; }
+  function inLowEnd(x, y){ return y >= SLIDE.lowY && inChute(x, y); }
+  // the low end of the slide sits on the ground: you can't walk under it sideways,
+  // only step onto it from the south (or slide off it)
+  function slideBlocks(nx, ny){
+    if(state.sliding) return false;
+    if(!inLowEnd(nx, ny)) return false;
+    if(inLowEnd(state.pos.x, state.pos.y)) return false;
+    return !(state.pos.y > SLIDE.y2);
+  }
+  function onTopOfSlide(on){
+    spriteEl.style.zIndex = on ? "7" : "";
+    footEl.style.visibility = on ? "hidden" : "";
+  }
+  function startSlide(){
+    state.sliding = true; state.busy = true; state.slideMode = "slide";
+    onTopOfSlide(true);
+    spriteEl.classList.add("sliding");
+    state.pos.x = chuteCenter(state.pos.y);
+    const pts = SLIDE_PTS.filter(p => p[0] > state.pos.y + 4).map(p => ({x:p[1], y:p[0]}));
+    pts.push({x: 1186, y: SLIDE.y2 + 30});
+    const next = () => {
+      const p = pts.shift();
+      if(!p){
+        state.sliding = false; state.busy = false; state.slideMode = null;
+        spriteEl.classList.remove("sliding");
+        onTopOfSlide(false);
+        return;
+      }
+      setTarget(p.x, p.y, next);
+    };
+    next();
+  }
+  const SLIDE_TOP = {x:1076, y:166, r:40};   // generous grab zone around the ladder top / platform
+  function handleSlide(px, py){
+    if(state.sliding) return;
+    if(state.slideMode !== "climb" && Math.hypot(state.pos.x - SLIDE_TOP.x, state.pos.y - SLIDE_TOP.y) < SLIDE_TOP.r){
+      startSlide();
+      return;
+    }
+    const now = inChute(state.pos.x, state.pos.y), before = inChute(px, py);
+    if(!state.slideMode){
+      if(now && !before){
+        if(py < SLIDE.y1) startSlide();                              // came down off the ladder: whee
+        else if(py > SLIDE.y2){ state.slideMode = "climb"; onTopOfSlide(true); } // walking up from the bottom
+        else state.slideMode = "under";                              // came in from the side: walk underneath
+      }
+    } else if(state.slideMode === "climb"){
+      if(!now){ state.slideMode = null; onTopOfSlide(false); }
+      else if(state.pos.y < (SLIDE.y1 + SLIDE.y2) / 2) startSlide(); // halfway up: slip back down
+    } else if(state.slideMode === "under"){
+      if(!now) state.slideMode = null;
+    }
+  }
+
+  /* ---------------- Front-yard tunnel ---------------- */
+  const HOLES = [{x:720, y:1330}, {x:1010, y:1330}];
+  const TUNNEL_FLOOR = [[716, 1332], [724, 1334], [764, 1414], [966, 1414], [1006, 1334], [1014, 1332]];   // side-view floor line: dips down, runs flat, comes back up
+  const TUN_OVERLAY = {x:630, y:1244};
+  const HOLE_SVG = `<svg viewBox="0 0 80 54" width="80" height="54" xmlns="http://www.w3.org/2000/svg">
+<path d="M 6 30 Q 4 14 22 12 Q 30 2 42 8 Q 56 2 62 12 Q 78 14 74 30 Q 76 44 60 44 L 20 44 Q 4 44 6 30 Z" fill="#9A6B44" stroke="#241811" stroke-width="2.5"/>
+<g fill="#7A5236"><circle cx="16" cy="20" r="4"/><circle cx="64" cy="22" r="4.5"/><circle cx="40" cy="10" r="3.5"/><circle cx="10" cy="36" r="3"/><circle cx="70" cy="38" r="3"/></g>
+<g fill="#B98A5E"><circle cx="26" cy="14" r="2.5"/><circle cx="56" cy="12" r="2.5"/><circle cx="72" cy="30" r="2"/></g>
+<ellipse cx="40" cy="30" rx="24" ry="13" fill="#5A3A22" stroke="#241811" stroke-width="2.5"/>
+<ellipse cx="40" cy="32" rx="19" ry="9" fill="#140A04"/>
+<g fill="#9A6B44" stroke="#241811" stroke-width="1.5"><circle cx="4" cy="46" r="3"/><circle cx="76" cy="48" r="3.5"/><circle cx="30" cy="50" r="2.5"/><circle cx="54" cy="50" r="2.5"/></g>
+</svg>`;
+  const TUNNEL_SVG = `<svg viewBox="0 0 470 236" width="470" height="236" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="tuDirt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5E3F2A"/><stop offset="1" stop-color="#3A2618"/></linearGradient>
+<linearGradient id="tuCave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C2340"/><stop offset="1" stop-color="#171226"/></linearGradient>
+<radialGradient id="tuVig" cx="50%" cy="55%" r="65%"><stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.45"/></radialGradient>
+</defs>
+<rect x="0" y="36" width="470" height="200" rx="18" fill="url(#tuDirt)" stroke="#241811" stroke-width="4"/>
+<ellipse cx="175" cy="98" rx="6" ry="2" fill="#6B4A33"/><ellipse cx="430" cy="197" rx="3" ry="4" fill="#6B4A33"/><ellipse cx="269" cy="114" rx="3" ry="2" fill="#3E2A1C"/><ellipse cx="224" cy="77" rx="4" ry="2" fill="#3E2A1C"/><ellipse cx="40" cy="204" rx="3" ry="3" fill="#6B4A33"/><ellipse cx="305" cy="209" rx="6" ry="2" fill="#5A3D2A"/><ellipse cx="33" cy="202" rx="4" ry="4" fill="#3E2A1C"/><ellipse cx="83" cy="198" rx="3" ry="4" fill="#5A3D2A"/><ellipse cx="62" cy="208" rx="7" ry="3" fill="#7A5A40"/><ellipse cx="59" cy="200" rx="8" ry="2" fill="#6B4A33"/><ellipse cx="326" cy="112" rx="6" ry="5" fill="#7A5A40"/><ellipse cx="248" cy="209" rx="6" ry="4" fill="#7A5A40"/><ellipse cx="137" cy="106" rx="8" ry="3" fill="#6B4A33"/><ellipse cx="304" cy="136" rx="7" ry="5" fill="#7A5A40"/><ellipse cx="383" cy="174" rx="5" ry="2" fill="#6B4A33"/><ellipse cx="272" cy="167" rx="4" ry="4" fill="#5A3D2A"/><ellipse cx="260" cy="167" rx="3" ry="2" fill="#7A5A40"/><ellipse cx="184" cy="149" rx="7" ry="5" fill="#3E2A1C"/><ellipse cx="45" cy="83" rx="5" ry="5" fill="#6B4A33"/><ellipse cx="41" cy="139" rx="8" ry="5" fill="#7A5A40"/><ellipse cx="376" cy="158" rx="8" ry="4" fill="#6B4A33"/><ellipse cx="246" cy="150" rx="4" ry="2" fill="#3E2A1C"/><ellipse cx="40" cy="115" rx="5" ry="3" fill="#5A3D2A"/><ellipse cx="213" cy="160" rx="6" ry="2" fill="#5A3D2A"/><ellipse cx="239" cy="162" rx="7" ry="4" fill="#5A3D2A"/><ellipse cx="429" cy="170" rx="7" ry="4" fill="#3E2A1C"/><ellipse cx="193" cy="157" rx="4" ry="3" fill="#6B4A33"/><ellipse cx="100" cy="98" rx="4" ry="3" fill="#6B4A33"/><ellipse cx="258" cy="210" rx="4" ry="4" fill="#7A5A40"/><ellipse cx="12" cy="97" rx="6" ry="4" fill="#7A5A40"/><ellipse cx="74" cy="191" rx="7" ry="2" fill="#3E2A1C"/><ellipse cx="455" cy="203" rx="6" ry="5" fill="#3E2A1C"/><ellipse cx="211" cy="86" rx="6" ry="5" fill="#6B4A33"/><ellipse cx="107" cy="77" rx="4" ry="5" fill="#5A3D2A"/><ellipse cx="66" cy="147" rx="7" ry="2" fill="#6B4A33"/><ellipse cx="10" cy="205" rx="4" ry="2" fill="#7A5A40"/><ellipse cx="324" cy="66" rx="3" ry="3" fill="#3E2A1C"/><ellipse cx="86" cy="222" rx="5" ry="4" fill="#7A5A40"/><ellipse cx="252" cy="91" rx="3" ry="5" fill="#3E2A1C"/><ellipse cx="255" cy="183" rx="5" ry="2" fill="#5A3D2A"/><ellipse cx="62" cy="147" rx="8" ry="4" fill="#3E2A1C"/><ellipse cx="434" cy="101" rx="7" ry="2" fill="#5A3D2A"/><ellipse cx="280" cy="152" rx="4" ry="2" fill="#7A5A40"/><ellipse cx="339" cy="83" rx="8" ry="4" fill="#7A5A40"/><ellipse cx="95" cy="151" rx="4" ry="4" fill="#5A3D2A"/><ellipse cx="323" cy="109" rx="4" ry="5" fill="#5A3D2A"/><ellipse cx="112" cy="192" rx="6" ry="4" fill="#6B4A33"/><ellipse cx="24" cy="131" rx="6" ry="4" fill="#5A3D2A"/><ellipse cx="364" cy="214" rx="5" ry="5" fill="#7A5A40"/><ellipse cx="196" cy="80" rx="4" ry="2" fill="#5A3D2A"/><ellipse cx="250" cy="110" rx="5" ry="3" fill="#3E2A1C"/><ellipse cx="329" cy="216" rx="3" ry="5" fill="#7A5A40"/><ellipse cx="419" cy="224" rx="3" ry="2" fill="#3E2A1C"/><ellipse cx="410" cy="111" rx="6" ry="3" fill="#3E2A1C"/><ellipse cx="414" cy="222" rx="5" ry="2" fill="#3E2A1C"/><ellipse cx="247" cy="162" rx="8" ry="2" fill="#5A3D2A"/><ellipse cx="97" cy="92" rx="3" ry="3" fill="#3E2A1C"/><ellipse cx="422" cy="97" rx="7" ry="5" fill="#7A5A40"/><ellipse cx="89" cy="200" rx="7" ry="3" fill="#6B4A33"/><ellipse cx="17" cy="226" rx="3" ry="3" fill="#3E2A1C"/><ellipse cx="456" cy="109" rx="4" ry="2" fill="#7A5A40"/><ellipse cx="118" cy="134" rx="7" ry="3" fill="#7A5A40"/><ellipse cx="142" cy="199" rx="6" ry="3" fill="#6B4A33"/><ellipse cx="388" cy="150" rx="6" ry="5" fill="#5A3D2A"/><ellipse cx="282" cy="98" rx="7" ry="2" fill="#3E2A1C"/><ellipse cx="407" cy="106" rx="7" ry="2" fill="#5A3D2A"/><ellipse cx="98" cy="96" rx="6" ry="2" fill="#6B4A33"/><ellipse cx="176" cy="192" rx="7" ry="5" fill="#6B4A33"/><ellipse cx="296" cy="74" rx="4" ry="3" fill="#7A5A40"/><ellipse cx="31" cy="85" rx="7" ry="5" fill="#6B4A33"/><path d="M 40 40 q 10 20 -4 36 q -8 10 4 22" stroke="#8C6A46" stroke-width="3" fill="none"/><path d="M 300 40 q -6 18 8 30" stroke="#8C6A46" stroke-width="3" fill="none"/><path d="M 440 40 q 8 24 -6 40" stroke="#8C6A46" stroke-width="3" fill="none"/><g transform="translate(60 110)"><path d="M 0 -7 L 6 0 L 0 7 L -6 0 Z" fill="#8FE8FF" stroke="#2A7FA8" stroke-width="1.5"/><circle r="12" fill="#8FE8FF" opacity="0.18"/></g><g transform="translate(420 104)"><path d="M 0 -7 L 6 0 L 0 7 L -6 0 Z" fill="#8FE8FF" stroke="#2A7FA8" stroke-width="1.5"/><circle r="12" fill="#8FE8FF" opacity="0.18"/></g><g transform="translate(42 168) rotate(62) scale(1.0)"><rect x="-16" y="-3.5" width="32" height="7" rx="3" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><rect x="-15" y="-2.5" width="30" height="5" fill="#F3EAD6"/></g><g transform="translate(196 214) rotate(-14) scale(1.0)"><rect x="-16" y="-3.5" width="32" height="7" rx="3" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><rect x="-15" y="-2.5" width="30" height="5" fill="#F3EAD6"/></g><g transform="translate(446 186) rotate(74) scale(0.9)"><rect x="-16" y="-3.5" width="32" height="7" rx="3" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><rect x="-15" y="-2.5" width="30" height="5" fill="#F3EAD6"/></g><g transform="translate(112 222) rotate(20) scale(0.7)"><rect x="-16" y="-3.5" width="32" height="7" rx="3" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><rect x="-15" y="-2.5" width="30" height="5" fill="#F3EAD6"/></g><g transform="translate(400 226) rotate(-8) scale(0.75)"><rect x="-16" y="-3.5" width="32" height="7" rx="3" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="-16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="-4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><circle cx="16" cy="4" r="4.5" fill="#F3EAD6" stroke="#241811" stroke-width="1.8"/><rect x="-15" y="-2.5" width="30" height="5" fill="#F3EAD6"/></g><g transform="translate(318 206)"><circle r="30" fill="#BFF3FF" opacity="0.22"/><circle r="18" fill="#DFFAFF" opacity="0.25"/><path d="M -20 -6 L -10 -18 L 10 -18 L 20 -6 L 0 20 Z" fill="#8FE8FF" stroke="#1E6E94" stroke-width="2.5" stroke-linejoin="round"/><path d="M -20 -6 L 20 -6 M -10 -18 L -5 -6 L 0 20 M 10 -18 L 5 -6 L 0 20 M -5 -6 L 0 -18 L 5 -6" stroke="#1E6E94" stroke-width="1.5" fill="none"/><path d="M -10 -18 L -5 -6 L -20 -6 Z" fill="#DFFAFF"/><path d="M 5 -6 L 10 -18 L 20 -6 Z" fill="#5CC8EA"/><path d="M 22 -20 l 2 5 l 5 2 l -5 2 l -2 5 l -2 -5 l -5 -2 l 5 -2 z" fill="#fff"/></g>
+<path d="M 0 40 Q 235.0 30 470 40 L 470 48 Q 235.0 38 0 48 Z" fill="#5E9E4E"/>
+<rect x="0" y="30" width="470" height="14" rx="7" fill="#7DC96A" stroke="#241811" stroke-width="3"/>
+<path d="M 86 88 L 94 90 L 134 170 L 336 170 L 376 90 L 384 88 L 384 22 L 376 24 L 336 104 L 134 104 L 94 24 L 86 22 Z" fill="url(#tuCave)" stroke="#241811" stroke-width="3" stroke-linejoin="round"/>
+<path d="M 86 88 L 94 90 L 134 170 L 336 170 L 376 90 L 384 88" fill="none" stroke="#A0785A" stroke-width="16" stroke-linejoin="round"/>
+<path d="M 86 88 L 94 90 L 134 170 L 336 170 L 376 90 L 384 88" fill="none" stroke="#6E4E38" stroke-width="16" stroke-dasharray="3 22" stroke-linejoin="round"/>
+<path d="M 86 88 L 94 90 L 134 170 L 336 170 L 376 90 L 384 88" fill="none" stroke="#C9A27A" stroke-width="3" stroke-linejoin="round" transform="translate(0 -7)"/>
+<path d="M 86 22 L 94 24 L 134 104 L 336 104 L 376 24 L 384 22" fill="none" stroke="#8C6A55" stroke-width="14" stroke-linejoin="round"/>
+<path d="M 86 22 L 94 24 L 134 104 L 336 104 L 376 24 L 384 22" fill="none" stroke="#5A4232" stroke-width="14" stroke-dasharray="3 22" stroke-linejoin="round"/>
+<rect x="0" y="36" width="470" height="200" rx="18" fill="url(#tuVig)"/>
+</svg>`;
+  let tunnelPathEl = null;
+  function tunnelFloorY(x){
+    const F = TUNNEL_FLOOR;
+    if(x <= F[0][0]) return F[0][1];
+    for(let i=1;i<F.length;i++){ if(x <= F[i][0]){ const t=(x-F[i-1][0])/(F[i][0]-F[i-1][0]); return F[i-1][1]+(F[i][1]-F[i-1][1])*t; } }
+    return F[F.length-1][1];
+  }
+  const TX_MIN = HOLES[0].x + 2, TX_MAX = HOLES[1].x - 2;
+  function setUnderground(on){
+    state.underground = on;
+    spriteEl.classList.toggle("xray", on);
+    footEl.style.visibility = on ? "hidden" : "";
+    if(tunnelPathEl) tunnelPathEl.classList.toggle("show", on);
+  }
+  function buildTunnel(){
+    HOLES.forEach(h => {
+      const el = document.createElement("div");
+      el.className = "tunnel-hole";
+      el.style.left = h.x + "px"; el.style.top = h.y + "px";
+      el.innerHTML = HOLE_SVG;
+      worldEl.appendChild(el);
+    });
+    tunnelPathEl = document.createElement("div");
+    tunnelPathEl.className = "tunnel-path";
+    tunnelPathEl.style.left = TUN_OVERLAY.x + "px"; tunnelPathEl.style.top = TUN_OVERLAY.y + "px";
+    tunnelPathEl.innerHTML = TUNNEL_SVG;
+    worldEl.appendChild(tunnelPathEl);
+  }
+  // underground: move left/right along the tunnel floor; only exit out the two ends
+  function tunnelMove(nx, ny){
+    if(!state.underground) return null;
+    const step = Math.hypot(nx - state.pos.x, ny - state.pos.y);
+    const tx = state.target.x;
+    const unlocked = performance.now() >= (state.tunnelLockUntil || 0);
+    if(unlocked && state.pos.x <= TX_MIN + 3 && tx < HOLES[0].x - 10){
+      setUnderground(false);
+      const out = {x: HOLES[0].x - 42, y: HOLES[0].y};
+      state.target = {x: out.x, y: out.y};
+      return out;
+    }
+    if(unlocked && state.pos.x >= TX_MAX - 3 && tx > HOLES[1].x + 10){
+      setUnderground(false);
+      const out = {x: HOLES[1].x + 42, y: HOLES[1].y};
+      state.target = {x: out.x, y: out.y};
+      return out;
+    }
+    const cx = Math.max(TX_MIN, Math.min(TX_MAX, tx));
+    const d = cx - state.pos.x;
+    const x = Math.abs(d) <= step ? cx : state.pos.x + Math.sign(d) * step;
+    state.target = {x: tx < TX_MIN || tx > TX_MAX ? cx : tx, y: tunnelFloorY(cx)};
+    if(tx < TX_MIN || tx > TX_MAX){ state.target.x = tx; }   // keep the push so the exit can trigger
+    return {x, y: tunnelFloorY(x)};
+  }
+  function checkHoleEntry(){
+    if(state.underground || state.sliding) return;
+    for(const h of HOLES){
+      if(Math.hypot(state.pos.x - h.x, state.pos.y - h.y) < 16){
+        const x = h === HOLES[0] ? TX_MIN : TX_MAX;
+        state.pos.x = x; state.pos.y = tunnelFloorY(x);
+        state.target = {x: state.pos.x, y: state.pos.y};
+        state.tunnelLockUntil = performance.now() + 600;
+        setUnderground(true);
+        return;
+      }
+    }
+  }
+
+
+  /* ---------------- Pug dig ability (yards only) ---------------- */
+  const DIG_SVG = '<svg viewBox="0 0 76 42" width="76" height="42" xmlns="http://www.w3.org/2000/svg"><ellipse cx="24" cy="24" rx="21" ry="12" fill="#8C5E36"/><ellipse cx="24" cy="24" rx="17" ry="9" fill="#5A3A22" stroke="#241811" stroke-width="2"/><ellipse cx="24" cy="26" rx="13" ry="6" fill="#140A04"/><path d="M 44 34 Q 46 16 58 14 Q 72 14 74 32 Q 74 38 60 38 L 50 38 Q 44 38 44 34 Z" fill="#9A6B44" stroke="#241811" stroke-width="2"/><g fill="#7A5236"><circle cx="54" cy="22" r="3"/><circle cx="66" cy="26" r="2.5"/><circle cx="58" cy="32" r="2"/></g><g fill="#B98A5E"><circle cx="62" cy="18" r="2"/><circle cx="50" cy="30" r="1.5"/></g><g fill="#9A6B44" stroke="#241811" stroke-width="1"><circle cx="6" cy="36" r="2"/><circle cx="42" cy="12" r="2"/></g></svg>';
+  const DIG_SLOW_R = 30;
+  function addDigEl(d, fresh){
+    const el = document.createElement("div");
+    el.className = "dig-spot" + (fresh ? " fresh" : "");
+    el.style.left = d.x + "px"; el.style.top = d.y + "px";
+    el.innerHTML = DIG_SVG;
+    worldEl.appendChild(el);
+  }
+  function canDigHere(){
+    if(state.mp) return false;   // digging is classic-mode only for now
+    if(state.phase !== "hiding" || state.busy || state.underground || state.sliding) return false;
+    const r = roomAt(state.pos.x, state.pos.y);
+    return r === "frontyard" || r === "backyard";
+  }
+  function nearDig(x, y){
+    return (state.digs || []).some(d => Math.hypot(x - (d.x + 14), y - d.y) < DIG_SLOW_R + 8);
+  }
+  digBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
+  digBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if(!canDigHere()) return;
+    if((state.digs || []).some(d => Math.hypot(state.pos.x - d.x, state.pos.y - d.y) < 34)){ showToast("Already dug here!"); return; }
+    state.busy = true;
+    state.target = {x: state.pos.x, y: state.pos.y};
+    spriteEl.classList.add("digging");
+    setTimeout(() => {
+      spriteEl.classList.remove("digging");
+      const d = {x: Math.round(state.pos.x), y: Math.round(state.pos.y + 4)};
+      state.digs = state.digs || [];
+      state.digs.push(d);
+      addDigEl(d, true);
+      state.busy = false;
+    }, 550);
+  });
+  /* ---------------- Search / hide actions ---------------- */
+  function doSearch(fid, roomKey){
+    if(state.mp){ mpSearch(fid); return; }
+    const item = FURN_LIST.find(f => f.id === fid);
+    if(!item || state.busy) return;
+    const el = item.el;
+    state.busy = true;
+    confirmFab.classList.remove("show");
+    el.classList.remove("selected");
+    el.classList.add("checking");
+    setTimeout(() => {
+      el.classList.remove("checking");
+      if(roomKey === state.hidingRoom && fid === state.hidingSpot){
+        el.classList.add("found-here");
+        endGame();
+      } else {
+        if(!state.checkedIds.has(fid)){ state.checkedIds.add(fid); state.checkedSpots += 1; }
+        el.classList.add("not-here");
+        setTimeout(() => el.classList.remove("not-here"), 650);
+        showToast("Not here! 🔍");
+        updateHud();
+        state.pendingSpot = null;
+        state.busy = false;
+      }
+    }, 480);
+  }
+
+  confirmFab.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if(state.busy || !state.pendingSpot) return;
+    if(state.mp){ mpConfirm(); return; }
+    if(state.phase === "seeking"){
+      doSearch(state.pendingSpot.spotId, state.pendingSpot.room);
+      return;
+    }
+    state.busy = true;
+    state.hidingRoom = state.pendingSpot.room;
+    state.hidingSpot = state.pendingSpot.spotId;
+    confirmFab.classList.remove("show");
+    spriteEl.classList.add("hidden-away");
+    setTimeout(() => { startSeekTransition(); }, 380);
+  });
+  confirmFab.addEventListener("pointerdown", (e) => e.stopPropagation());
+
+
+  /* ---------------- Hide in plain sight: blanket ---------------- */
+  const COLD_BLANKET_SVG = `<svg viewBox="0 0 90 70" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="45" cy="66" rx="38" ry="4" fill="rgba(0,0,0,0.3)"/>
+<circle cx="45" cy="26" r="17" fill="#E3B07A" stroke="#241811" stroke-width="2.5"/>
+<path d="M 30 16 Q 22 14 23 26 Q 26 30 31 26 Z" fill="#4A2E1C" stroke="#241811" stroke-width="2"/>
+<path d="M 60 16 Q 68 14 67 26 Q 64 30 59 26 Z" fill="#4A2E1C" stroke="#241811" stroke-width="2"/>
+<circle cx="39" cy="24" r="5" fill="#241811"/><circle cx="51" cy="24" r="5" fill="#241811"/>
+<circle cx="37.5" cy="22.5" r="1.8" fill="#fff"/><circle cx="49.5" cy="22.5" r="1.8" fill="#fff"/>
+<ellipse cx="45" cy="33" rx="7" ry="5" fill="#F1D3A4" stroke="#241811" stroke-width="1.5"/>
+<ellipse cx="45" cy="31" rx="3" ry="2" fill="#241811"/>
+<ellipse cx="34" cy="31" rx="3.5" ry="2.2" fill="#8FC8F0" opacity="0.8"/><ellipse cx="56" cy="31" rx="3.5" ry="2.2" fill="#8FC8F0" opacity="0.8"/>
+<path d="M 4 62 C 2 44 14 30 30 34 Q 45 42 60 34 C 76 30 88 44 86 62 Q 66 67 45 65 Q 24 67 4 62 Z" fill="#7E9CE0" stroke="#241811" stroke-width="2.5" stroke-linejoin="round"/>
+<g stroke="#5C7BC8" stroke-width="3" opacity="0.8"><line x1="14" y1="44" x2="14" y2="62"/><line x1="30" y1="40" x2="30" y2="64"/><line x1="60" y1="40" x2="60" y2="64"/><line x1="76" y1="44" x2="76" y2="62"/><line x1="6" y1="54" x2="84" y2="54"/></g>
+<g stroke="#F6E7C8" stroke-width="1.5" opacity="0.7"><line x1="22" y1="40" x2="22" y2="64"/><line x1="68" y1="40" x2="68" y2="64"/></g>
+<path d="M 26 40 Q 36 46 45 44" stroke="#241811" stroke-width="2" fill="none" opacity="0.5"/>
+<g stroke="#BFE6F7" stroke-width="2.2" fill="none" stroke-linecap="round"><path d="M 12 20 q 3 -3 0 -6 q -3 -3 0 -6"/><path d="M 78 20 q 3 -3 0 -6 q -3 -3 0 -6"/></g>
+</svg>`;
+  function makeBlanketEl(x, y){
+    if(state.blanketTunnel){
+      const el = document.createElement("div");
+      el.className = "furniture illustrated blanket-spot cold";
+      el.dataset.id = "blanket";
+      el.style.left = (x - 40) + "px"; el.style.top = (y - 58) + "px";
+      el.innerHTML = COLD_BLANKET_SVG;
+      return el;
+    }
+    const rk = roomAt(x, y);
+    const col = rk ? ROOMS[rk].floorA : "#DECBA0";
+    const el = document.createElement("div");
+    el.className = "furniture illustrated blanket-spot";
+    el.dataset.id = "blanket";
+    el.style.left = (x - 35) + "px";
+    el.style.top = (y - 38) + "px";
+    el.innerHTML = blanketSVG(col);
+    return el;
+  }
+  plainBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
+  plainBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if(state.mp){ mpBlanket(); return; }
+    if(state.busy || state.phase !== "hiding") return;
+    state.busy = true;
+    state.target = {x: state.pos.x, y: state.pos.y};
+    state.blanketTunnel = !!state.underground;
+    confirmFab.classList.remove("show");
+    plainBtn.classList.remove("show");
+    worldEl.querySelectorAll(".furniture.selected").forEach(x => x.classList.remove("selected"));
+
+    // Already under the bed covers: stay a lump, no blanket spawns — counts as hiding in the bed
+    const bedItem = FURN_LIST.find(f => f.id === "bed");
+    if(inBedNow && !state.underground && bedItem){
+      state.blanketTunnel = false;
+      state.blanketPos = null;
+      state.hidingRoom = bedItem.room;
+      state.hidingSpot = "bed";
+      state.pugLumpPos = {x: state.pos.x, y: state.pos.y};
+      setTimeout(() => { startSeekTransition(); }, 900);
+      return;
+    }
+
+    state.blanketPos = {x: state.pos.x, y: state.pos.y};
+    const el = makeBlanketEl(state.pos.x, state.pos.y);
+    el.classList.add("blanket-drop");
+    el.style.zIndex = state.underground ? "12" : "7";
+    worldEl.appendChild(el);
+    setTimeout(() => { spriteEl.classList.add("hidden-away"); footEl.style.visibility = "hidden"; }, 250);
+    state.hidingRoom = "floor";
+    state.hidingSpot = "blanket";
+    setTimeout(() => { startSeekTransition(); }, 900);
+  });
+
+  /* ---------------- Transition to seeking ---------------- */
+  function startSeekTransition(){
+    plainBtn.classList.remove("show");
+    digBtn.classList.remove("show");
+    state.phase = "transition";
+    interstitial.style.display = "flex";
+    let n = 3;
+    interstitial.innerHTML = `<h2>Nicely hidden!</h2><p>The platypus is on the way. Get ready to search...</p><div class="count">${n}</div>`;
+    const iv = setInterval(() => {
+      n -= 1;
+      if(n <= 0){
+        clearInterval(iv);
+        interstitial.style.display = "none";
+        beginSeekPhase();
+      } else {
+        interstitial.querySelector(".count").textContent = n;
+      }
+    }, 700);
+  }
+
+  function beginSeekPhase(){
+    state.phase = "seeking";
+    state.underground = false;
+    state.sliding = false; state.slideMode = null;
+    state.garageOpen = false;
+    state.onPlate = false;
+    state.pendingSpot = null;
+    state.wantId = null;
+    state.checkedSpots = 0;
+    state.checkedIds = new Set();
+    state.startTime = Date.now();
+    state.busy = false;
+    measureViewport();
+    buildWorld();
+    const spawn = {x: 400, y: 760};
+    placeSpriteAt(spawn.x, spawn.y);
+    updateHud();
+  }
+
+  /* ---------------- Win / end game ---------------- */
+  function endGame(){
+    const elapsed = Math.max(1, Math.round((Date.now() - state.startTime)/1000));
+    setTimeout(() => {
+      document.getElementById("win-time").textContent = elapsed + "s";
+      document.getElementById("win-checks").textContent = state.checkedSpots;
+
+      let best = null;
+      try {
+        const raw = localStorage.getItem("pugseek_best");
+        best = raw ? parseInt(raw,10) : null;
+        if(best === null || elapsed < best){
+          localStorage.setItem("pugseek_best", String(elapsed));
+          best = elapsed;
+        }
+      } catch(e){ /* storage unavailable, ignore */ }
+      document.getElementById("win-best").textContent = best !== null ? best+"s" : "--";
+
+      const subs = [
+        "The platypus checked every cozy corner before spotting that wiggly tail.",
+        "Found! That pug never had a chance against a determined platypus.",
+        "Sniffed out and spotted — better hiding spot next time, pup."
+      ];
+      document.getElementById("win-sub").textContent = subs[Math.floor(Math.random()*subs.length)];
+
+      switchScreen(winScreen);
+    }, 550);
+  }
+
+  /* ---------------- Screen switching ---------------- */
+  function switchScreen(target){
+    document.querySelectorAll("#app > .screen").forEach(s => s.classList.add("hidden"));
+    target.classList.remove("hidden");
+  }
+
+  function startHidingPhase(){
+    state.mp = false;
+    state.phase = "hiding";
+    state.underground = false;
+    state.sliding = false; state.slideMode = null;
+    state.garageOpen = false;
+    state.onPlate = false;
+    state.blanketPos = null;
+    state.blanketTunnel = false;
+    state.pugLumpPos = null;
+    state.digs = [];
+    plainBtn.classList.add("show");
+    state.wantId = null;
+    state.hidingRoom = null;
+    state.hidingSpot = null;
+    state.pendingSpot = null;
+    state.busy = false;
+    confirmFab.classList.remove("show");
+    switchScreen(gameScreen);
+    measureViewport();
+    buildWorld();
+    const spawn = {x: 400, y: 760};
+    placeSpriteAt(spawn.x, spawn.y);
+    updateHud();
+  }
+
+  document.getElementById("play-btn").addEventListener("click", startHidingPhase);
+  document.getElementById("again-btn").addEventListener("click", startHidingPhase);
+
+  document.getElementById("howto-btn").addEventListener("click", () => {
+    const card = document.getElementById("howto-card");
+    card.style.display = card.style.display === "none" ? "block" : "none";
+  });
+
+  /* =====================================================================
+     PLATYTAG — multiplayer tag mode
+     ===================================================================== */
+
+  /* ---------- Network adapter ----------
+     This is the ONLY part that knows about claude.ai. To host the game elsewhere
+     (e.g. GitHub Pages + Firebase), replace createClaudeNet() with an object that
+     has the same members:
+       available()   -> Promise<boolean>   can this device go online at all?
+       join(code)    -> Promise            enter the room for a 4-letter code
+       setMe(obj)    -> void               merge obj into MY shared state
+       peers()       -> [{id, isMe, p}]    everyone in the room + their shared state
+       myId()        -> string|null        my id within peers()
+       onChange(fn)  -> void               fn() whenever anyone's state/presence changes
+       leave()       -> Promise
+     Everything below talks only to Net, never to claude.* directly. */
+  function createClaudeNet(){
+    let roomNs = null, code = null, myId = null, mine = {}, subscribed = false;
+    const listeners = [];
+    async function getRoomNs(){
+      if(roomNs !== null) return roomNs;
+      for(let i = 0; i < 30 && !(window.claude && typeof window.claude.use === "function"); i++){
+        await new Promise(r => setTimeout(r, 100));
+      }
+      try{
+        roomNs = (window.claude && typeof window.claude.use === "function") ? ((await window.claude.use("room")) || false) : false;
+      }catch(e){ roomNs = false; }
+      return roomNs;
+    }
+    const fire = (err) => listeners.forEach(fn => { try{ fn(err); }catch(e){ console.error(e); } });
+    return {
+      async available(){ return !!(await getRoomNs()); },
+      async join(c){
+        const r = await getRoomNs();
+        if(!r) throw new Error("unavailable");
+        if(!subscribed){
+          subscribed = true;
+          r.onPeers(ch => {
+            const me = ch.peers.find(p => p.sameTab);
+            if(me) myId = me.peer;
+            if(code) fire();
+          }, err => fire(err));
+          r.onConnection(() => { if(code) fire(); });
+        }
+        code = c;
+        mine = {c};
+        await r.presence({c});
+      },
+      setMe(obj){
+        if(!roomNs || !code) return;
+        Object.assign(mine, obj);
+        roomNs.presence(Object.assign({c: code}, obj)).catch(() => {});
+      },
+      peers(){
+        if(!roomNs || !code) return [];
+        return roomNs.peers()
+          .filter(p => p.sameTab || (p.presence && p.presence.c === code))
+          .map(p => ({id: p.peer, isMe: !!p.sameTab, p: p.sameTab ? Object.assign({}, p.presence, mine) : (p.presence || {})}));
+      },
+      myId(){
+        if(!myId && roomNs){ const m = roomNs.peers().find(p => p.sameTab); if(m) myId = m.peer; }
+        return myId;
+      },
+      connected(){ return !!(roomNs && roomNs.connected()); },
+      allDevices(){ return roomNs ? roomNs.peers().length : 0; },
+      onChange(fn){ listeners.push(fn); },
+      async leave(){
+        if(!roomNs || !code) return;
+        const clear = {}; Object.keys(mine).forEach(k => { clear[k] = null; }); clear.c = null;
+        code = null; mine = {};
+        try{ await roomNs.presence(clear); }catch(e){}
+      }
+    };
+  }
+
+  /* ---------- Firebase adapter (used when the game is hosted outside claude.ai, e.g. GitHub Pages) ---------- */
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyC_lbYEijRpjRQXEylPG499opD5axX8VeA",
+    authDomain: "platypug-99b31.firebaseapp.com",
+    databaseURL: "https://platypug-99b31-default-rtdb.firebaseio.com",
+    projectId: "platypug-99b31",
+    appId: "1:266525704767:web:98764adae656dd79d52e8a"
+  };
+  function createFirebaseNet(){
+    let db = null, code = null, meRef = null, playersRef = null, players = {}, mine = {}, isConnected = false;
+    let pending = null, flushTimer = null;
+    const myId = "p" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+    const listeners = [];
+    const fire = (err) => listeners.forEach(fn => { try{ fn(err); }catch(e){ console.error(e); } });
+    function init(){
+      if(db) return true;
+      try{
+        const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        db = app.database();
+        db.ref(".info/connected").on("value", snap => { isConnected = !!snap.val(); if(code) fire(); });
+        return true;
+      }catch(e){ console.error(e); return false; }
+    }
+    function flush(){
+      flushTimer = null;
+      if(!pending || !meRef) return;
+      const patch = pending; pending = null;
+      meRef.update(patch).catch(() => {});
+    }
+    const clean = (v) => JSON.parse(JSON.stringify(v === undefined ? null : v));
+    return {
+      async available(){ return init(); },
+      async join(c){
+        if(!init()) throw new Error("unavailable");
+        await this.leave();
+        code = c;
+        mine = {t: Date.now()};
+        meRef = db.ref(`rooms/${code}/players/${myId}`);
+        playersRef = db.ref(`rooms/${code}/players`);
+        await meRef.onDisconnect().remove();
+        await meRef.set(mine);
+        playersRef.on("value", snap => { players = snap.val() || {}; fire(); }, err => fire(err));
+      },
+      setMe(obj){
+        if(!meRef) return;
+        const patch = {};
+        for(const k in obj){ patch[k] = clean(obj[k]); if(patch[k] === null) delete mine[k]; else mine[k] = patch[k]; }
+        pending = Object.assign(pending || {}, patch);
+        if(!flushTimer) flushTimer = setTimeout(flush, 66);   // ~15 updates/sec max
+      },
+      peers(){
+        if(!code) return [];
+        const all = Object.assign({}, players, {[myId]: mine});
+        return Object.keys(all).map(id => ({id, isMe: id === myId, p: all[id] || {}}));
+      },
+      myId(){ return code ? myId : null; },
+      connected(){ return isConnected; },
+      allDevices(){ return code ? Object.keys(Object.assign({}, players, {[myId]: 1})).length : 0; },
+      onChange(fn){ listeners.push(fn); },
+      async leave(){
+        if(!meRef) return;
+        const r = meRef, pr = playersRef;
+        meRef = null; playersRef = null; code = null; players = {}; mine = {}; pending = null;
+        clearTimeout(flushTimer); flushTimer = null;
+        try{ pr.off(); }catch(e){}
+        try{ await r.onDisconnect().cancel(); await r.remove(); }catch(e){}
+      }
+    };
+  }
+  // Hosted on the open web (GitHub Pages): Firebase. Inside claude.ai: the built-in rooms.
+  const Net = (window.firebase && typeof window.firebase.initializeApp === "function") ? createFirebaseNet() : createClaudeNet();
+
+  /* ---------- Rules ---------- */
+  const HEAD_START = 15;      // seconds the pugs get before the platypus spawns
+  const TAG_R = 34;           // touch distance for a tag (a little forgiving for lag)
+  const BLANKET_TAG_R = 40;   // touching a pug's blanket tags it
+  const LUMP_SVG = `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="30" cy="22" rx="27" ry="15" fill="#FCC7DA"/>
+        <ellipse cx="30" cy="16" rx="27" ry="10" fill="#FFE0EA"/>
+        <path d="M6 20 Q30 8 54 20" stroke="#F2A6C4" stroke-width="2.5" fill="none" opacity="0.6"/>
+      </svg>`;
+
+  const mp = {
+    code: null, isHost: false, hadHost: false, g: null, hostG: null, hostT0: 0, hostTimer: null,
+    inGame: false, myRole: null, spawned: false, lastRid: null, tgSeen: 0, overShown: false,
+    hide: null, myBlanketEl: null, chk: null, chkUntil: 0, lastSent: "", face: 1, lastX: 0,
+    remotes: new Map(), joinTimer: null
+  };
+
+  const lobbyScreen = document.getElementById("lobby-screen");
+  const tagoverScreen = document.getElementById("tagover-screen");
+  const lobbyStatus = document.getElementById("lobby-status");
+  const lobbyJoin = document.getElementById("lobby-join");
+  const lobbyRoom = document.getElementById("lobby-room");
+  const nickInput = document.getElementById("nick-input");
+  const codeInput = document.getElementById("code-input");
+  const createBtn = document.getElementById("create-btn");
+  const joinBtn = document.getElementById("join-btn");
+  const startBtn = document.getElementById("start-btn");
+  const waitNote = document.getElementById("wait-note");
+  const playerList = document.getElementById("player-list");
+  const roomCodeEl = document.getElementById("room-code");
+  const tagoverBtn = document.getElementById("tagover-btn");
+  document.getElementById("tagover-critters").innerHTML = pugSVG() + platypusSVG();
+
+  const DEFAULT_NOTE = "One platypus, lots of pugs. Tagged pugs join the hunt!";
+  function fmt(sec){ sec = Math.max(0, sec|0); const m = Math.floor(sec/60), s = sec % 60; return m ? `${m}:${String(s).padStart(2,"0")}` : `${s}s`; }
+  function myName(){ return (nickInput.value || "").trim().slice(0, 14) || "Player"; }
+  try{ nickInput.value = localStorage.getItem("platytag_name") || ""; }catch(e){}
+  function randCode(){ const A = "ABCDEFGHJKMNPQRSTUVWXYZ"; let c = ""; for(let i = 0; i < 4; i++) c += A[Math.floor(Math.random()*A.length)]; return c; }
+  codeInput.addEventListener("input", () => { codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4); });
+
+  /* ---------- Lobby flow ---------- */
+  function showJoinCard(note){
+    lobbyJoin.style.display = ""; lobbyRoom.style.display = "none";
+    lobbyStatus.textContent = note || DEFAULT_NOTE;
+  }
+  document.getElementById("tag-btn").addEventListener("click", async () => {
+    switchScreen(lobbyScreen);
+    if(mp.code){ renderLobby(); return; }
+    showJoinCard("Connecting…");
+    createBtn.disabled = joinBtn.disabled = true;
+    const ok = await Net.available();
+    createBtn.disabled = joinBtn.disabled = !ok;
+    lobbyStatus.textContent = ok ? DEFAULT_NOTE : "Multiplayer couldn't connect on this device. Check your internet connection and reload.";
+    nickInput.disabled = codeInput.disabled = !ok;
+  });
+  createBtn.addEventListener("click", () => enterRoom(randCode(), true));
+  joinBtn.addEventListener("click", () => {
+    const code = codeInput.value.trim().toUpperCase();
+    if(code.length !== 4){ lobbyStatus.textContent = "Enter the 4-letter room code."; return; }
+    enterRoom(code, false);
+  });
+  codeInput.addEventListener("keydown", e => { if(e.key === "Enter") joinBtn.click(); });
+  document.getElementById("lobby-back").addEventListener("click", async () => { await leaveRoom(); switchScreen(titleScreen); });
+
+  async function enterRoom(code, asHost){
+    try{ localStorage.setItem("platytag_name", myName()); }catch(e){}
+    createBtn.disabled = joinBtn.disabled = true;
+    lobbyStatus.textContent = "Joining…";
+    try{ await Net.join(code); }
+    catch(e){ createBtn.disabled = joinBtn.disabled = false; lobbyStatus.textContent = "Couldn't connect. Try again."; return; }
+    createBtn.disabled = joinBtn.disabled = false;
+    Object.assign(mp, {code, isHost: asHost, hadHost: false, g: null, lastRid: null, inGame: false});
+    const me = {n: myName(), h: asHost ? 1 : 0, role: null, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0};
+    if(asHost){
+      mp.hostG = {ph: "lobby", rid: 0, roles: {}, tg: [], hl: HEAD_START, el: 0};
+      me.g = JSON.parse(JSON.stringify(mp.hostG));
+      mp.g = mp.hostG;
+      clearInterval(mp.hostTimer);
+      mp.hostTimer = setInterval(hostTick, 100);
+    } else {
+      clearTimeout(mp.joinTimer);
+      mp.joinTimer = setTimeout(() => {
+        if(mp.code === code && !mp.hadHost){ leaveRoom(); showJoinCard(`No game found with code ${code}. Check the code and try again.`); }
+      }, 12000);
+    }
+    Net.setMe(me);
+    lobbyJoin.style.display = "none"; lobbyRoom.style.display = "";
+    lobbyStatus.textContent = asHost ? "Share this code with the other players." : "Joined! Waiting for the host…";
+    renderLobby();
+  }
+
+  async function leaveRoom(){
+    clearInterval(mp.hostTimer); mp.hostTimer = null;
+    clearTimeout(mp.joinTimer);
+    Object.assign(mp, {code: null, isHost: false, hadHost: false, g: null, hostG: null, inGame: false, myRole: null, hide: null});
+    state.mp = false;
+    await Net.leave();
+    showJoinCard();
+  }
+
+  function renderLobby(){
+    if(!mp.code) return;
+    roomCodeEl.textContent = mp.code;
+    const G = mp.g;
+    const peers = Net.peers().filter(pp => pp.p && pp.p.n)
+      .sort((a, b) => (b.p.h|0) - (a.p.h|0) || (a.id < b.id ? -1 : 1));
+    playerList.innerHTML = "";
+    peers.forEach(pp => {
+      const li = document.createElement("li");
+      const a = document.createElement("span"); a.textContent = String(pp.p.n).slice(0, 14) + (pp.isMe ? " (you)" : "");
+      const b = document.createElement("span"); b.className = "tag"; b.textContent = pp.p.h ? "Host" : "";
+      li.append(a, b); playerList.appendChild(li);
+    });
+    const idle = !G || G.ph === "lobby" || G.ph === "over";
+    startBtn.style.display = mp.isHost ? "" : "none";
+    startBtn.disabled = !(mp.isHost && idle && peers.length >= 2);
+    if(mp.isHost) waitNote.textContent = peers.length < 2 ? "Waiting for players to join…" : "Everyone in? Start when ready. The platypus is picked at random.";
+    else if(G && !idle && !(G.roles || {})[Net.myId()]) waitNote.textContent = "A round is in progress — you'll join the next one.";
+    else waitNote.textContent = "Waiting for the host to start…";
+    const others = peers.length - 1;
+    document.getElementById("net-note").textContent =
+      (Net.connected() ? "🟢 Connected" : "🟡 Connecting…") + ` · ${others} other player${others === 1 ? "" : "s"} in this room` +
+      ` · ${Net.allDevices()} device${Net.allDevices() === 1 ? "" : "s"} on this game link`;
+  }
+
+  startBtn.addEventListener("click", () => {
+    if(!mp.isHost) return;
+    const ids = Net.peers().filter(pp => pp.p && pp.p.n).map(pp => pp.id);
+    if(ids.length < 2) return;
+    const platId = ids[Math.floor(Math.random()*ids.length)];
+    const roles = {}; ids.forEach(id => { roles[id] = id === platId ? "plat" : "pug"; });
+    mp.hostG = {ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, tg: [], hl: HEAD_START, el: 0};
+    mp.hostT0 = Date.now();
+    pushHost();
+  });
+
+  tagoverBtn.addEventListener("click", () => {
+    if(mp.isHost && mp.hostG){ mp.hostG.ph = "lobby"; pushHost(); }
+    switchScreen(lobbyScreen);
+    if(mp.code){ lobbyJoin.style.display = "none"; lobbyRoom.style.display = ""; renderLobby(); }
+    else showJoinCard();
+  });
+
+  /* ---------- Host: referee for the whole room ---------- */
+  function pushHost(){
+    mp.g = mp.hostG;
+    Net.setMe({g: JSON.parse(JSON.stringify(mp.hostG))});
+    onNetChange();
+  }
+  function isTag(pl, pg){
+    if(!!pl.ug !== !!pg.ug) return false;
+    if(pg.hid) return pl.chk === pg.hid;   // hiding in furniture: platypus must check that spot
+    if(pg.bl) return Math.hypot(pl.x - pg.bl.x, pl.y - pg.bl.y) < BLANKET_TAG_R;
+    return Math.hypot(pl.x - pg.x, pl.y - pg.y) < TAG_R;
+  }
+  function hostTick(){
+    const G = mp.hostG;
+    if(!G || G.ph === "lobby" || G.ph === "over") return;
+    const peers = Net.peers();
+    const byId = new Map(peers.map(pp => [pp.id, pp.p]));
+    let changed = false;
+    for(const id of Object.keys(G.roles)){ if(!byId.has(id)){ delete G.roles[id]; changed = true; } }   // dropped players
+    const elapsed = (Date.now() - mp.hostT0) / 1000;
+    if(G.ph === "head"){
+      const hl = Math.max(0, Math.ceil(HEAD_START - elapsed));
+      if(hl !== G.hl){ G.hl = hl; changed = true; }
+      if(elapsed >= HEAD_START){ G.ph = "play"; changed = true; }
+    }
+    if(G.ph === "play"){
+      const el = Math.floor(elapsed - HEAD_START);
+      if(el !== G.el){ G.el = el; changed = true; }
+      const plats = Object.keys(G.roles).filter(id => G.roles[id] === "plat")
+        .map(id => byId.get(id)).filter(p => p && p.sp && p.x != null);
+      for(const id of Object.keys(G.roles)){
+        if(G.roles[id] !== "pug") continue;
+        const pg = byId.get(id);
+        if(!pg || !pg.sp || pg.x == null) continue;
+        if(plats.some(pl => isTag(pl, pg))){
+          G.roles[id] = "plat";
+          G.tg.push({id, n: String(pg.n || "Pug").slice(0, 14), t: el});
+          changed = true;
+        }
+      }
+    }
+    const pugIds = Object.keys(G.roles).filter(id => G.roles[id] === "pug");
+    const platCount = Object.keys(G.roles).length - pugIds.length;
+    if(pugIds.length === 0 || Object.keys(G.roles).length < 2 && G.ph === "play"){
+      if(G.ph !== "over"){ G.ph = "over"; changed = true; }
+    } else if(platCount === 0){
+      G.roles[pugIds[Math.floor(Math.random()*pugIds.length)]] = "plat";   // the platypus left: promote a pug
+      changed = true;
+    }
+    if(changed) pushHost();
+  }
+
+  /* ---------- Everyone: follow the host's game state ---------- */
+  Net.onChange(onNetChange);
+  function onNetChange(err){
+    if(!mp.code) return;
+    if(err){ if(!mp.inGame) showJoinCard("Lost connection to the room."); return; }
+    if(mp.isHost){ mp.g = mp.hostG; }
+    else {
+      const hosts = Net.peers().filter(pp => !pp.isMe && pp.p && pp.p.h && pp.p.g).sort((a, b) => a.id < b.id ? -1 : 1);
+      if(hosts.length){ mp.hadHost = true; mp.g = hosts[0].p.g; }
+      else if(mp.hadHost){ hostGone(); return; }
+    }
+    mpSync();
+    if(!lobbyScreen.classList.contains("hidden")) renderLobby();
+  }
+
+  async function hostGone(){
+    const wasInGame = mp.inGame;
+    await leaveRoom();
+    if(wasInGame || !lobbyScreen.classList.contains("hidden") || !tagoverScreen.classList.contains("hidden")){
+      switchScreen(lobbyScreen);
+      showJoinCard("The host left the game. Create or join another one.");
+    }
+  }
+
+  function mpSync(){
+    const G = mp.g;
+    if(!G) return;
+    const role = (G.roles || {})[Net.myId()];
+    if(G.ph === "lobby"){
+      if(mp.inGame){ mp.inGame = false; state.mp = false; state.phase = "title"; switchScreen(lobbyScreen); lobbyJoin.style.display = "none"; lobbyRoom.style.display = ""; }
+      return;
+    }
+    if((G.ph === "head" || G.ph === "play") && role && G.rid !== mp.lastRid){
+      mp.lastRid = G.rid;
+      startTagRound(role);
+    }
+    if(!mp.inGame) return;
+    if(role && role !== mp.myRole) becomeRole(role);
+    if(state.phase === "waiting"){
+      const c = document.getElementById("mp-count");
+      if(c) c.textContent = G.hl;
+      if(G.ph !== "head") spawnMe();
+    }
+    const tg = G.tg || [];
+    if(tg.length > mp.tgSeen){
+      const last = tg[tg.length - 1];
+      if(last.id !== Net.myId()) showToast(`${last.n} was tagged! 🦆`, 1800);
+      mp.tgSeen = tg.length;
+    }
+    updateHud();
+    if(G.ph === "over") showTagOver();
+  }
+
+  /* ---------- My character ---------- */
+  function setSpriteRole(role){
+    spriteEl.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat") + (state.underground ? " xray" : "");
+    spriteEl.innerHTML = `<span class="flip">${role === "pug" ? pugSVG() : platypusSVG()}</span>`;
+    state.walkingClassApplied = false;
+  }
+  function pickSpawn(){
+    const base = {x: 400, y: 760};
+    for(let i = 0; i < 30; i++){
+      const x = base.x + (Math.random() - 0.5) * 140, y = base.y + (Math.random() - 0.5) * 90;
+      if(isWalkable(x, y)) return {x, y};
+    }
+    return base;
+  }
+  function startTagRound(role){
+    state.mp = true;
+    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, myRole: role, lastSent: ""});
+    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false,
+      blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
+      hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set()});
+    confirmFab.classList.remove("show"); digBtn.classList.remove("show"); plainBtn.classList.remove("show");
+    mp.remotes = new Map();                 // buildWorld wipes the old remote sprites
+    state.phase = "hiding";
+    switchScreen(gameScreen);
+    measureViewport();
+    buildWorld();
+    if(role === "pug"){ spawnMe(); }
+    else {
+      state.phase = "waiting";
+      spriteEl.style.visibility = "hidden"; footEl.style.visibility = "hidden";
+      interstitial.style.display = "flex";
+      interstitial.innerHTML = `<h2>You're the platypus! 🦆</h2><p>The pugs are running off to hide. Tag them by touching them, or check the furniture they're hiding in.</p><div class="count" id="mp-count">${(mp.g && mp.g.hl) || HEAD_START}</div>`;
+      Net.setMe({role, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0});
+    }
+    updateHud();
+  }
+  function spawnMe(){
+    mp.spawned = true;
+    interstitial.style.display = "none";
+    state.phase = mp.myRole === "pug" ? "hiding" : "seeking";
+    setSpriteRole(mp.myRole);
+    const s = pickSpawn();
+    placeSpriteAt(s.x, s.y);
+    mp.lastX = s.x;
+    spriteEl.style.visibility = ""; footEl.style.visibility = "";
+    plainBtn.classList.toggle("show", mp.myRole === "pug");
+    if(mp.myRole === "plat") showToast("Go find those pugs! 🦆", 1600);
+    sendMe(true);
+    updateHud();
+  }
+  function becomeRole(role){
+    const wasPug = mp.myRole === "pug";
+    mp.myRole = role;
+    mpUnhide();
+    if(state.phase === "waiting") return;
+    state.phase = role === "pug" ? "hiding" : "seeking";
+    setSpriteRole(role);
+    if(inBedNow){ spriteEl.style.visibility = "hidden"; }
+    plainBtn.classList.toggle("show", role === "pug");
+    state.pendingSpot = null; confirmFab.classList.remove("show");
+    worldEl.querySelectorAll(".furniture.selected").forEach(x => x.classList.remove("selected"));
+    if(wasPug && role === "plat") showToast("Tagged! You're a platypus now — help find the others 🦆", 2400);
+    sendMe(true);
+  }
+
+  /* ---------- Pug hiding (tag mode) ---------- */
+  function mpConfirm(){
+    if(!state.pendingSpot) return;
+    if(state.phase === "seeking"){ mpSearch(state.pendingSpot.spotId); return; }
+    if(state.phase !== "hiding" || mp.hide) return;
+    mp.hide = {type: "furn", id: state.pendingSpot.spotId};
+    state.target = {x: state.pos.x, y: state.pos.y};
+    spriteEl.classList.add("hidden-away");
+    confirmFab.classList.remove("show");
+    showToast("Hidden! Move to sneak back out.", 1500);
+    sendMe(true);
+  }
+  function mpBlanket(){
+    if(state.phase !== "hiding" || state.busy || mp.hide) return;
+    state.target = {x: state.pos.x, y: state.pos.y};
+    if(inBedNow && !state.underground){ showToast("Snuggled under the covers 🛏️", 1400); return; }   // the lump is what everyone sees
+    state.blanketTunnel = !!state.underground;
+    mp.hide = {type: "blanket", x: Math.round(state.pos.x), y: Math.round(state.pos.y), t: state.blanketTunnel ? 1 : 0};
+    const el = makeBlanketEl(state.pos.x, state.pos.y);
+    el.classList.add("blanket-drop");
+    el.style.zIndex = state.underground ? "12" : "7";
+    el.style.pointerEvents = "none";
+    worldEl.appendChild(el);
+    mp.myBlanketEl = el;
+    confirmFab.classList.remove("show");
+    setTimeout(() => { if(mp.hide && mp.hide.type === "blanket") spriteEl.classList.add("hidden-away"); }, 250);
+    sendMe(true);
+  }
+  function mpUnhide(){
+    if(!mp.hide) return;
+    mp.hide = null;
+    spriteEl.classList.remove("hidden-away");
+    if(mp.myBlanketEl){ mp.myBlanketEl.remove(); mp.myBlanketEl = null; }
+    state.pendingSpot = null;                 // lets the Hide button reappear if still next to furniture
+    sendMe(true);
+  }
+
+  /* ---------- Platypus checking furniture (tag mode) ---------- */
+  function mpSearch(fid){
+    const item = FURN_LIST.find(f => f.id === fid);
+    if(!item || state.busy) return;
+    state.busy = true;
+    confirmFab.classList.remove("show");
+    item.el.classList.remove("selected");
+    item.el.classList.add("checking");
+    setTimeout(() => {
+      item.el.classList.remove("checking");
+      const roles = (mp.g && mp.g.roles) || {};
+      const hit = Net.peers().some(pp => !pp.isMe && roles[pp.id] === "pug" && pp.p.hid === fid);
+      mp.chk = fid; mp.chkUntil = Date.now() + 1500;   // the host tags any pug hiding here
+      sendMe(true);
+      if(hit){ item.el.classList.add("found-here"); setTimeout(() => item.el.classList.remove("found-here"), 1200); }
+      else { item.el.classList.add("not-here"); setTimeout(() => item.el.classList.remove("not-here"), 650); showToast("Not here! 🔍"); }
+      state.pendingSpot = null;
+      state.busy = false;
+    }, 480);
+  }
+
+  /* ---------- Sending my state ---------- */
+  function sendMe(force){
+    if(!mp.inGame) return;
+    if(mp.chk && Date.now() > mp.chkUntil) mp.chk = null;
+    const live = mp.spawned && state.phase !== "waiting";
+    const h = mp.hide;
+    const o = {
+      role: mp.myRole, sp: live ? 1 : 0,
+      x: live ? Math.round(state.pos.x) : null, y: live ? Math.round(state.pos.y) : null,
+      f: mp.face, w: state.walkingClassApplied ? 1 : 0,
+      hid: h && h.type === "furn" ? h.id : null,
+      bl: h && h.type === "blanket" ? {x: h.x, y: h.y, t: h.t} : null,
+      chk: mp.chk || null, ug: state.underground ? 1 : 0
+    };
+    const s = JSON.stringify(o);
+    if(!force && s === mp.lastSent) return;
+    mp.lastSent = s;
+    Net.setMe(o);
+  }
+
+  /* ---------- Drawing the other players ---------- */
+  function pointInBed(x, y){
+    const b = bedWorldRect; if(!b) return false;
+    const m = 16;
+    return x > b.x + m && x < b.x + b.w - m && y > b.y + 34 && y < b.y + b.h - m;
+  }
+  function makeRemote(role, p){
+    const el = document.createElement("div");
+    el.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat");
+    el.innerHTML = `<span class="flip">${role === "pug" ? pugSVG() : platypusSVG()}</span>`;
+    worldEl.appendChild(el);
+    const tag = document.createElement("div");
+    tag.className = "name-tag" + (role === "plat" ? " plat" : "");
+    tag.textContent = String(p.n || "Player").slice(0, 14);
+    worldEl.appendChild(tag);
+    const lump = document.createElement("div");
+    lump.className = "bed-lump";
+    lump.innerHTML = LUMP_SVG;
+    worldEl.appendChild(lump);
+    return {role, el, tag, lump, flip: el.querySelector(".flip"), x: p.x, y: p.y, walking: false, face: null, blanket: null, blKey: null};
+  }
+  function removeRemote(r){ r.el.remove(); r.tag.remove(); r.lump.remove(); if(r.blanket) r.blanket.remove(); }
+  function renderRemotes(dt){
+    const roles = (mp.g && mp.g.roles) || {};
+    const seen = new Set();
+    const k = Math.min(1, dt * 12);
+    for(const pp of Net.peers()){
+      if(pp.isMe) continue;
+      const p = pp.p, role = roles[pp.id];
+      if(!role || !p.sp || p.x == null) continue;
+      seen.add(pp.id);
+      let r = mp.remotes.get(pp.id);
+      if(!r || r.role !== role){ if(r) removeRemote(r); r = makeRemote(role, p); mp.remotes.set(pp.id, r); }
+      if(Math.hypot(p.x - r.x, p.y - r.y) > 160){ r.x = p.x; r.y = p.y; }   // big jumps (tunnel, spawn): snap
+      else { r.x += (p.x - r.x) * k; r.y += (p.y - r.y) * k; }
+      r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
+      r.tag.style.left = r.x + "px"; r.tag.style.top = (r.y + 6) + "px";
+      const walking = !!p.w;
+      if(walking !== r.walking){ r.el.classList.toggle("walking", walking); r.el.classList.toggle("idle", !walking); r.walking = walking; }
+      const face = p.f ? "scaleX(-1)" : "scaleX(1)";
+      if(face !== r.face && r.flip){ r.flip.style.transform = face; r.face = face; }
+      r.el.classList.toggle("xray", !!p.ug);
+      const inBed = !p.ug && pointInBed(r.x, r.y);
+      const tunnelHidden = !!p.ug && !state.underground;          // underground players are only visible from the tunnel
+      const hidden = !!p.hid || !!p.bl || inBed || tunnelHidden;
+      r.el.style.visibility = hidden ? "hidden" : "";
+      r.tag.style.visibility = hidden ? "hidden" : "";
+      r.lump.classList.toggle("show", inBed && !p.hid && !p.bl);
+      if(inBed){ r.lump.style.left = r.x + "px"; r.lump.style.top = r.y + "px"; }
+      const bk = p.bl ? `${p.bl.x},${p.bl.y},${p.bl.t|0}` : null;
+      if(bk !== r.blKey){
+        if(r.blanket){ r.blanket.remove(); r.blanket = null; }
+        if(p.bl){
+          const save = state.blanketTunnel;
+          state.blanketTunnel = !!p.bl.t;
+          const b = makeBlanketEl(p.bl.x, p.bl.y);
+          state.blanketTunnel = save;
+          b.style.zIndex = p.bl.t ? "12" : "7";
+          b.style.pointerEvents = "none";
+          worldEl.appendChild(b);
+          r.blanket = b;
+        }
+        r.blKey = bk;
+      }
+      if(r.blanket) r.blanket.style.display = (p.bl && p.bl.t && !state.underground) ? "none" : "";
+    }
+    for(const [id, r] of mp.remotes){ if(!seen.has(id)){ removeRemote(r); mp.remotes.delete(id); } }
+  }
+
+  function mpFrame(dt){
+    if(!mp.inGame) return;
+    const dx = state.pos.x - mp.lastX;
+    if(Math.abs(dx) > 0.6) mp.face = dx < 0 ? 0 : 1;
+    mp.lastX = state.pos.x;
+    sendMe(false);
+    renderRemotes(dt);
+  }
+
+  function mpHud(){
+    const G = mp.g || {};
+    const pugs = Object.values(G.roles || {}).filter(r => r === "pug").length;
+    phasePill.innerHTML = mp.myRole === "pug" ? "🐶 Pug" : "🦆 Platypus";
+    if(G.ph === "head") statPill.textContent = mp.myRole === "pug" ? `Platypus in ${G.hl}s — hide!` : `Released in ${G.hl}s`;
+    else statPill.textContent = `Pugs left: ${pugs} · ${fmt(G.el)}`;
+  }
+
+  function showTagOver(){
+    if(mp.overShown) return;
+    mp.overShown = true;
+    const G = JSON.parse(JSON.stringify(mp.g));
+    mp.inGame = false;
+    state.phase = "over";
+    plainBtn.classList.remove("show"); confirmFab.classList.remove("show");
+    const tg = G.tg || [];
+    document.getElementById("tagover-time").textContent = fmt(G.el);
+    document.getElementById("tagover-count").textContent = tg.length;
+    const list = document.getElementById("tagover-list");
+    list.innerHTML = "";
+    tg.forEach((t, i) => {
+      const li = document.createElement("li");
+      const a = document.createElement("span"); a.textContent = `${i + 1}. ${t.n}`;
+      const b = document.createElement("span"); b.className = "tag"; b.textContent = fmt(t.t);
+      li.append(a, b); list.appendChild(li);
+    });
+    const last = tg[tg.length - 1];
+    document.getElementById("tagover-sub").textContent = last ? `${last.n} was the last pug standing.` : "Every pug has been found.";
+    setTimeout(() => { if(!mp.inGame) switchScreen(tagoverScreen); }, 900);
+  }
+
+})();
+</script>
+</body>
+</html>
