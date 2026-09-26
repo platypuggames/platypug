@@ -93,7 +93,7 @@
     box-shadow: var(--shadow-soft); border: 4px solid #ffffffaa;
   }
   .title-badge svg { width: 70px; height: 70px; filter: drop-shadow(0 6px 6px rgba(0,0,0,.15)); }
-  .title-badge svg:first-child { width: 90px; }
+  .title-badge svg { width: 78px; height: 84px; }
   #title-screen h1 { position: relative; z-index: 1; font-family: var(--font-display); font-size: 30px; margin: 4px 0 0; line-height: 1.1; font-weight: 700; letter-spacing: -0.5px; }
   #title-screen h1 span { color: var(--accent); }
   #title-screen p.sub { position: relative; z-index: 1; margin: 0; color: var(--ink-soft); font-size: 14px; max-width: 280px; font-weight: 600; }
@@ -226,7 +226,7 @@
     filter: drop-shadow(0 6px 5px rgba(0,0,0,.2));
     z-index: 5; transform-origin: 50% 85%;
   }
-  .critter-sprite.pug { width: 58px; height: 47px; margin-left: -29px; margin-top: -40px; }
+  .critter-sprite.pug, .critter-sprite.plat { width: 54px; height: 59px; margin-left: -27px; margin-top: -51px; }
 
   /* pug tongue: out and panting when idle, pulled in while walking */
   .pug-tongue { transform-box: fill-box; transform-origin: 50% 0%; transition: transform .16s ease; }
@@ -239,18 +239,41 @@
   .pug-leg { transform-box: fill-box; transform-origin: 50% 0%; }
   .critter-sprite.walking .pug-leg.leg-l { animation: legL .28s ease-in-out infinite; }
   .critter-sprite.walking .pug-leg.leg-r { animation: legR .28s ease-in-out infinite; }
-  @keyframes legL { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(48deg); } }
-  @keyframes legR { 0%,100% { transform: rotate(8deg); } 50% { transform: rotate(-48deg); } }
+  @keyframes legL { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-38%); } }
+  @keyframes legR { 0%,100% { transform: translateY(-38%); } 50% { transform: translateY(0); } }
+  /* pug: tail wags, ears flop, little arms swing */
+  .pug-tail { transform-box: fill-box; transform-origin: 0% 45%; }
+  .critter-sprite.idle .pug-tail { animation: platWagFast .3s ease-in-out infinite; }
+  .critter-sprite.walking .pug-tail { animation: platWagSlow .56s ease-in-out infinite; }
+  .crit-ear { transform-box: fill-box; }
+  .crit-ear.ear-l { transform-origin: 92% 6%; }
+  .crit-ear.ear-r { transform-origin: 8% 6%; }
+  .critter-sprite.walking .crit-ear.ear-l { animation: earFlopL .28s ease-in-out infinite; }
+  .critter-sprite.walking .crit-ear.ear-r { animation: earFlopR .28s ease-in-out infinite; }
+  @keyframes earFlopL { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(9deg); } }
+  @keyframes earFlopR { 0%,100% { transform: rotate(3deg); } 50% { transform: rotate(-9deg); } }
+  .crit-arm { transform-box: fill-box; transform-origin: 60% 0%; }
+  .crit-arm.arm-r { transform-origin: 40% 0%; }
+  .critter-sprite.walking .crit-arm.arm-l { animation: armSwing .28s ease-in-out infinite; }
+  .critter-sprite.walking .crit-arm.arm-r { animation: armSwing .28s ease-in-out -.14s infinite; }
+  .critter-sprite.plat.walking .crit-arm.arm-l { animation-duration: .36s; }
+  .critter-sprite.plat.walking .crit-arm.arm-r { animation-duration: .36s; animation-delay: -.18s; }
+  @keyframes armSwing { 0%,100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+  .critter-sprite.pug.idle .crit-lid { animation: pugBlink 3.6s ease-in-out infinite; }
+  @keyframes pugBlink { 0%, 90% { transform: scaleY(0); } 94% { transform: scaleY(1); } 98%, 100% { transform: scaleY(0); } }
+  .plat-tuft { transform-box: fill-box; transform-origin: 50% 100%; }
+  .critter-sprite.plat.walking .plat-tuft { animation: tuftBob .36s ease-in-out infinite; }
+  @keyframes tuftBob { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
 
   /* platypus: sized box, tail wag, stepping feet, sleepy blink */
-  .critter-sprite.plat { width: 56px; height: 53px; margin-left: -28px; margin-top: -48px; }
+  
   .plat-tail { transform-box: fill-box; transform-origin: 0% 55%; }
   .plat-foot { transform-box: fill-box; transform-origin: 50% 0%; }
   .critter-sprite.walking .plat-tail { animation: platWagSlow 1s ease-in-out infinite; }
   .critter-sprite.idle .plat-tail { animation: platWagFast .32s ease-in-out infinite; }
   .critter-sprite.walking .pf-l { animation: platStep .36s ease-in-out infinite; }
   .critter-sprite.walking .pf-r { animation: platStep .36s ease-in-out -.18s infinite; }
-  .critter-sprite.idle .plat-lid { animation: platBlink 3.2s ease-in-out infinite; }
+  .critter-sprite.plat.idle .crit-lid { animation: platBlink 3.2s ease-in-out infinite; }
   @keyframes platWagSlow { 0%,100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
   @keyframes platWagFast { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
   @keyframes platStep { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-40%) rotate(-10deg); } }
@@ -263,7 +286,7 @@
   }
 
   .critter-sprite.sliding { animation: slideWob .18s ease-in-out infinite !important; }
-  .critter-sprite.sliding .pug-leg, .critter-sprite.sliding .plat-foot { animation: none !important; }
+  .critter-sprite.sliding .pug-leg, .critter-sprite.sliding .plat-foot, .critter-sprite.sliding .crit-arm, .critter-sprite.sliding .crit-ear { animation: none !important; }
   .critter-sprite.sliding .pug-tongue { animation: none !important; transform: none !important; }
   @keyframes slideWob { 0%,100% { transform: rotate(-7deg) scale(1.06); } 50% { transform: rotate(7deg) scale(1.06); } }
   .critter-sprite .flip { transition: transform .2s ease; display:block; width:100%; height:100%; }
@@ -496,13 +519,80 @@
   window.addEventListener("orientationchange", () => setTimeout(setVH, 60));
   if(window.visualViewport){ window.visualViewport.addEventListener("resize", setVH); }
 
-  /* ---------------- SVG critters ---------------- */
-  const PUG_TPL = "<svg viewBox=\"60 440 1340 1080\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<radialGradient id=\"hg__ID__\" cx=\"50%\" cy=\"35%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#F2CC98\"/><stop offset=\"0.7\" stop-color=\"#E3B07A\"/><stop offset=\"1\" stop-color=\"#C9925A\"/></radialGradient>\n<linearGradient id=\"bg__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#E3B07A\"/><stop offset=\"1\" stop-color=\"#C9925A\"/></linearGradient>\n<radialGradient id=\"ring__ID__\" cx=\"50%\" cy=\"60%\" r=\"60%\"><stop offset=\"0.7\" stop-color=\"#6B4428\"/><stop offset=\"1\" stop-color=\"#3A2416\"/></radialGradient>\n<radialGradient id=\"white__ID__\" cx=\"45%\" cy=\"60%\" r=\"65%\"><stop offset=\"0.6\" stop-color=\"#FFFDF8\"/><stop offset=\"1\" stop-color=\"#E8DDD0\"/></radialGradient>\n<radialGradient id=\"iris__ID__\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0.55\" stop-color=\"#A06A3C\"/><stop offset=\"1\" stop-color=\"#6E4424\"/></radialGradient>\n<radialGradient id=\"mz__ID__\" cx=\"50%\" cy=\"35%\" r=\"65%\"><stop offset=\"0.3\" stop-color=\"#F1D3A4\"/><stop offset=\"1\" stop-color=\"#E2B888\"/></radialGradient>\n<linearGradient id=\"ear__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6A4630\"/><stop offset=\"1\" stop-color=\"#4A2E1C\"/></linearGradient>\n<linearGradient id=\"tg__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#F27C97\"/><stop offset=\"1\" stop-color=\"#FF9FB3\"/></linearGradient>\n<radialGradient id=\"ns__ID__\" cx=\"40%\" cy=\"30%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#5A3C2A\"/><stop offset=\"1\" stop-color=\"#1A100A\"/></radialGradient>\n</defs>\n<ellipse cx=\"700\" cy=\"1470\" rx=\"560\" ry=\"30\" fill=\"#000\" opacity=\"0.08\"/>\n<g class=\"pug-leg leg-l\"><ellipse cx=\"491\" cy=\"1412\" rx=\"38\" ry=\"60\" fill=\"url(#bg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/><path d=\"M 479 1456 L 479 1470 M 503 1456 L 503 1470\" stroke=\"#241811\" stroke-width=\"5\" stroke-linecap=\"round\" opacity=\"0.6\"/></g><g class=\"pug-leg leg-l\"><ellipse cx=\"613\" cy=\"1412\" rx=\"38\" ry=\"60\" fill=\"url(#bg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/><path d=\"M 601 1456 L 601 1470 M 625 1456 L 625 1470\" stroke=\"#241811\" stroke-width=\"5\" stroke-linecap=\"round\" opacity=\"0.6\"/></g><g class=\"pug-leg leg-r\"><ellipse cx=\"1042\" cy=\"1412\" rx=\"38\" ry=\"60\" fill=\"url(#bg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/><path d=\"M 1030 1456 L 1030 1470 M 1054 1456 L 1054 1470\" stroke=\"#241811\" stroke-width=\"5\" stroke-linecap=\"round\" opacity=\"0.6\"/></g><g class=\"pug-leg leg-r\"><ellipse cx=\"1141\" cy=\"1412\" rx=\"38\" ry=\"60\" fill=\"url(#bg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/><path d=\"M 1129 1456 L 1129 1470 M 1153 1456 L 1153 1470\" stroke=\"#241811\" stroke-width=\"5\" stroke-linecap=\"round\" opacity=\"0.6\"/></g>\n<g stroke=\"#241811\" stroke-width=\"12\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n<path d=\"M 458 1120 C 387 1140 356 1320 440 1360 L 1172 1360 C 1223 1350 1225 1170 1205 1085 C 1184 1010 1125 995 1065 1005 L 916 1040 Z\" fill=\"url(#bg__ID__)\"/>\n</g>\n\n<path d=\"M 1011 1330 Q 1094 1340 1166 1320\" stroke=\"#C9925A\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.8\"/>\n<ellipse cx=\"1113\" cy=\"1250\" rx=\"70\" ry=\"22\" fill=\"#fff\" opacity=\"0.18\"/>\n<g stroke=\"#241811\" stroke-width=\"12\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n<path d=\"M 330 600 C 380 545 440 522 500 508 C 560 494 730 490 790 497 C 860 504 950 522 1040 580 C 1200 640 1320 760 1300 880 C 1290 990 1230 1060 1150 1078 C 900 1100 500 1135 250 1120 C 110 1110 80 980 100 870 C 110 760 200 660 330 600 Z\" fill=\"url(#hg__ID__)\"/>\n<path d=\"M 420 548 C 380 500 280 482 218 512 C 158 542 118 640 126 748 C 175 742 232 692 272 640 C 302 605 352 576 420 548 Z\" fill=\"url(#ear__ID__)\"/>\n<path d=\"M 960 548 C 1010 500 1120 480 1185 505 C 1250 530 1287 622 1274 704 C 1226 694 1180 642 1140 597 C 1100 567 1030 554 960 548 Z\" fill=\"url(#ear__ID__)\"/>\n</g>\n<g fill=\"none\" stroke=\"#8A6040\" stroke-width=\"7\" stroke-linecap=\"round\" opacity=\"0.75\">\n<path d=\"M 240 522 C 210 565 200 620 208 675\"/>\n<path d=\"M 1118 500 C 1165 540 1205 600 1220 660\"/>\n</g>\n<g fill=\"none\" stroke=\"#241811\" stroke-width=\"7\" stroke-linecap=\"round\">\n<path d=\"M 615 512 Q 603 530 615 548\"/>\n<path d=\"M 675 512 Q 687 530 675 548\"/>\n\n</g>\n<circle cx=\"527\" cy=\"700\" r=\"122\" fill=\"url(#ring__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/>\n<circle cx=\"527\" cy=\"708\" r=\"96\" fill=\"url(#white__ID__)\" stroke=\"#241811\" stroke-width=\"6\"/>\n<circle cx=\"541\" cy=\"712\" r=\"74\" fill=\"url(#iris__ID__)\"/>\n<circle cx=\"541\" cy=\"712\" r=\"56\" fill=\"#140C07\"/>\n<circle cx=\"515\" cy=\"684\" r=\"24\" fill=\"#fff\"/>\n<circle cx=\"566\" cy=\"740\" r=\"10\" fill=\"#fff\" opacity=\"0.9\"/>\n<circle cx=\"763\" cy=\"700\" r=\"122\" fill=\"url(#ring__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/>\n<circle cx=\"763\" cy=\"708\" r=\"96\" fill=\"url(#white__ID__)\" stroke=\"#241811\" stroke-width=\"6\"/>\n<circle cx=\"749\" cy=\"712\" r=\"74\" fill=\"url(#iris__ID__)\"/>\n<circle cx=\"749\" cy=\"712\" r=\"56\" fill=\"#140C07\"/>\n<circle cx=\"723\" cy=\"684\" r=\"24\" fill=\"#fff\"/>\n<circle cx=\"774\" cy=\"740\" r=\"10\" fill=\"#fff\" opacity=\"0.9\"/>\n<g fill=\"none\" stroke=\"#241811\" stroke-width=\"7\" stroke-linecap=\"round\">\n<path d=\"M 603 568 L 631 590\"/>\n<path d=\"M 687 568 L 659 590\"/>\n<path d=\"M 530 840 Q 645 812 760 840\"/>\n</g>\n<path d=\"M 298 948 C 298 900 420 894 505 894 C 580 894 575 846 645 846 C 715 846 710 894 785 894 C 870 894 992 900 992 948 C 992 1008 830 1054 645 1056 C 460 1054 298 1008 298 948 Z\" fill=\"url(#mz__ID__)\" stroke=\"#241811\" stroke-width=\"12\" stroke-linejoin=\"round\"/>\n\n<path d=\"M 645 922 L 645 984\" stroke=\"#241811\" stroke-width=\"7\" stroke-linecap=\"round\"/>\n<g class=\"pug-tongue\"><path d=\"M 526 996 L 531 996 L 535 996 L 540 996 L 545 996 L 550 996 L 555 996 L 560 996 L 565 996 L 570 995 L 575 995 L 580 995 L 584 994 L 589 994 L 594 993 L 598 993 L 603 992 L 608 992 L 612 991 L 616 990 L 621 989 L 625 989 L 629 988 L 633 987 L 637 986 L 641 985 L 645 984 L 649 985 L 653 986 L 657 987 L 661 988 L 665 989 L 669 989 L 674 990 L 678 991 L 682 992 L 687 992 L 692 993 L 696 993 L 698 993 C 702 1063 668 1128 612 1128 C 556 1128 522 1066 526 996 Z\" fill=\"url(#tg__ID__)\" stroke=\"#241811\" stroke-width=\"8\" stroke-linejoin=\"round\"/>\n<path d=\"M 612 1002 L 612 1098\" stroke=\"#C9546F\" stroke-width=\"7\" stroke-linecap=\"round\"/>\n<ellipse cx=\"574\" cy=\"1040\" rx=\"12\" ry=\"24\" fill=\"#fff\" opacity=\"0.35\"/></g>\n<path d=\"M 398 952 C 432 1004 570 1004 645 984 C 720 1004 858 1004 892 952\" fill=\"none\" stroke=\"#241811\" stroke-width=\"8\" stroke-linecap=\"round\"/>\n<path d=\"M 595 890 Q 645 870 695 890 Q 699 920 645 924 Q 591 920 595 890 Z\" fill=\"url(#ns__ID__)\" stroke=\"#241811\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\n<ellipse cx=\"625\" cy=\"903\" rx=\"9\" ry=\"6\" fill=\"#0C0704\"/>\n<ellipse cx=\"665\" cy=\"903\" rx=\"9\" ry=\"6\" fill=\"#0C0704\"/>\n<ellipse cx=\"633\" cy=\"884\" rx=\"13\" ry=\"4\" fill=\"#fff\" opacity=\"0.45\"/>\n<circle cx=\"1272\" cy=\"1040\" r=\"74\" fill=\"url(#hg__ID__)\" stroke=\"#241811\" stroke-width=\"12\"/>\n<path d=\"M 1278.0 1040.0 L 1278.5 1041.1 L 1278.8 1042.3 L 1278.9 1043.6 L 1278.7 1045.0 L 1278.3 1046.5 L 1277.5 1047.9 L 1276.4 1049.2 L 1275.0 1050.4 L 1273.4 1051.3 L 1271.6 1052.0 L 1269.6 1052.4 L 1267.4 1052.4 L 1265.2 1052.0 L 1263.0 1051.2 L 1260.9 1050.0 L 1258.9 1048.5 L 1257.2 1046.5 L 1255.7 1044.2 L 1254.7 1041.6 L 1254.0 1038.7 L 1253.9 1035.8 L 1254.2 1032.7 L 1255.1 1029.6 L 1256.6 1026.7 L 1258.5 1023.9 L 1260.9 1021.4 L 1263.8 1019.4 L 1267.1 1017.7 L 1270.7 1016.6 L 1274.5 1016.1 L 1278.4 1016.3 L 1282.4 1017.1 L 1286.3 1018.5 L 1289.9 1020.6 L 1293.3 1023.4 L 1296.2 1026.7 L 1298.6 1030.5 L 1300.3 1034.8 L 1301.4 1039.4 L 1301.7 1044.2 L 1301.2 1049.0 L 1299.9 1053.9 L 1297.9 1058.5 L 1295.0 1062.8 L 1291.4 1066.7 L 1287.1 1070.0 L 1282.3 1072.6 L 1277.1 1074.4 L 1271.5 1075.4 L 1265.7 1075.5 L 1260.0 1074.6 L 1254.3 1072.7 L 1248.9 1069.9 L 1244.0 1066.3 L 1239.7 1061.8 L 1236.1 1056.6 L 1233.3 1050.8 L 1231.5 1044.5 L 1230.6 1038.0 L 1230.9 1031.3 L 1232.3 1024.6 L 1234.7 1018.1 L 1238.3 1012.1 L 1242.8 1006.6 L 1248.2 1001.8 L 1254.3 998.0 L 1261.1 995.1 L 1268.4 993.3 L 1276.0 992.8 L 1283.6 993.4 L 1291.1 995.3 L 1298.4 998.5 L 1305.1 1002.8 L 1311.1 1008.1 L 1316.2 1014.5 L 1320.2 1021.7 L 1323.1 1029.5 L 1324.8 1037.8 L 1325.0 1046.3 L 1323.9 1054.9 L 1321.4 1063.2 L 1317.5 1071.2 L 1312.4 1078.5 L 1306.1 1084.9 L 1298.8 1090.3 L 1290.6 1094.5 L 1281.7 1097.4 L 1272.4 1098.8 L 1262.9 1098.7 L 1253.5 1097.1\" fill=\"none\" stroke=\"#241811\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n</svg>";
-  let _pugN = 0;
-  function pugSVG(){ return PUG_TPL.replace(/__ID__/g, 'p' + (++_pugN)); }
-  const PLAT_TPL = "<svg viewBox=\"0 0 1240 1180\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<clipPath id=\"sil__ID__\"><path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\"/></clipPath>\n<clipPath id=\"tl__ID__\"><path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\"/></clipPath>\n<clipPath id=\"bc__ID__\"><path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\"/></clipPath>\n<radialGradient id=\"ir__ID__\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0.6\" stop-color=\"#EE6FA8\"/><stop offset=\"1\" stop-color=\"#B83D78\"/></radialGradient>\n<linearGradient id=\"bl__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFC06A\"/><stop offset=\"1\" stop-color=\"#F59A3C\"/></linearGradient>\n</defs>\n<ellipse cx=\"600\" cy=\"1150\" rx=\"360\" ry=\"18\" fill=\"#000\" opacity=\"0.1\"/>\n<g class=\"plat-tail\"><path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\" fill=\"#8C5E3C\"/>\n<g clip-path=\"url(#tl__ID__)\" stroke=\"#4A2E1C\" stroke-width=\"13\"><line x1=\"760\" y1=\"800\" x2=\"1020\" y2=\"1100\"/><line x1=\"816\" y1=\"800\" x2=\"1076\" y2=\"1100\"/><line x1=\"872\" y1=\"800\" x2=\"1132\" y2=\"1100\"/><line x1=\"928\" y1=\"800\" x2=\"1188\" y2=\"1100\"/><line x1=\"984\" y1=\"800\" x2=\"1244\" y2=\"1100\"/><line x1=\"1040\" y1=\"800\" x2=\"1300\" y2=\"1100\"/><line x1=\"1096\" y1=\"800\" x2=\"1356\" y2=\"1100\"/><line x1=\"1152\" y1=\"800\" x2=\"1412\" y2=\"1100\"/><line x1=\"1208\" y1=\"800\" x2=\"1468\" y2=\"1100\"/><line x1=\"1264\" y1=\"800\" x2=\"1524\" y2=\"1100\"/><line x1=\"900\" y1=\"800\" x2=\"640\" y2=\"1100\"/><line x1=\"956\" y1=\"800\" x2=\"696\" y2=\"1100\"/><line x1=\"1012\" y1=\"800\" x2=\"752\" y2=\"1100\"/><line x1=\"1068\" y1=\"800\" x2=\"808\" y2=\"1100\"/><line x1=\"1124\" y1=\"800\" x2=\"864\" y2=\"1100\"/><line x1=\"1180\" y1=\"800\" x2=\"920\" y2=\"1100\"/><line x1=\"1236\" y1=\"800\" x2=\"976\" y2=\"1100\"/><line x1=\"1292\" y1=\"800\" x2=\"1032\" y2=\"1100\"/><line x1=\"1348\" y1=\"800\" x2=\"1088\" y2=\"1100\"/><line x1=\"1404\" y1=\"800\" x2=\"1144\" y2=\"1100\"/><line x1=\"1460\" y1=\"800\" x2=\"1200\" y2=\"1100\"/></g>\n<path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/></g>\n<g class=\"plat-foot pf-l\"><path d=\"M 380 1090 C 380 1130 400 1150 440 1152 C 480 1154 500 1134 498 1098 Z\" fill=\"url(#bl__ID__)\" stroke=\"#1E1418\" stroke-width=\"14\" stroke-linejoin=\"round\"/><path d=\"M 410 1120 L 412 1146 M 440 1122 L 440 1150 M 470 1120 L 468 1146\" stroke=\"#D9772A\" stroke-width=\"5\" stroke-linecap=\"round\"/></g>\n<g class=\"plat-foot pf-r\"><path d=\"M 640 1090 C 640 1130 660 1150 700 1152 C 740 1154 760 1134 758 1098 Z\" fill=\"url(#bl__ID__)\" stroke=\"#1E1418\" stroke-width=\"14\" stroke-linejoin=\"round\"/><path d=\"M 670 1120 L 672 1146 M 700 1122 L 700 1150 M 730 1120 L 728 1146\" stroke=\"#D9772A\" stroke-width=\"5\" stroke-linecap=\"round\"/></g>\n<g stroke=\"#1E1418\" stroke-width=\"12\" stroke-linejoin=\"round\">\n<path d=\"M 562 96 C 540 60 520 30 536 16 C 556 6 584 50 598 94 Z\" fill=\"#C9AEEA\"/>\n<path d=\"M 662 100 C 684 64 712 40 726 52 C 738 70 700 96 650 108 Z\" fill=\"#C9AEEA\"/>\n<path d=\"M 596 94 C 590 50 600 8 620 4 C 642 6 644 50 632 96 Z\" fill=\"#C9AEEA\"/>\n</g>\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"#A887D6\"/>\n<g clip-path=\"url(#sil__ID__)\">\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"#C9AEEA\" transform=\"translate(-34 -16)\"/>\n<path d=\"M 374 850 C 440 834 522 836 576 856 C 560 892 556 934 580 960 C 610 986 652 990 690 984 C 660 1050 560 1086 470 1082 C 400 1078 358 1042 348 992 C 368 958 378 902 374 850 Z\" fill=\"#FFF1F7\"/>\n<ellipse cx=\"880\" cy=\"520\" rx=\"40\" ry=\"140\" fill=\"#C9AEEA\" opacity=\"0.0\"/>\n</g>\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/>\n<g fill=\"#fff\">\n<ellipse cx=\"470\" cy=\"150\" rx=\"40\" ry=\"24\" transform=\"rotate(-18 470 150)\"/>\n<circle cx=\"385\" cy=\"200\" r=\"16\"/><circle cx=\"500\" cy=\"210\" r=\"12\"/><circle cx=\"362\" cy=\"245\" r=\"11\"/>\n</g>\n<g fill=\"none\" stroke=\"#1E1418\" stroke-width=\"15\" stroke-linecap=\"round\">\n<path d=\"M 350 846 C 366 880 368 930 340 962 C 322 980 296 978 284 968\"/>\n<path d=\"M 612 850 C 578 872 566 920 584 952 C 604 980 660 976 720 950\"/>\n</g>\n<path d=\"M 185 319 Q 156 305 156 275\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 160 346 Q 130 337 123 311\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 145 379 Q 116 378 102 355\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"258\" cy=\"412\" r=\"118\" fill=\"#1E1226\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<circle cx=\"262\" cy=\"418\" r=\"94\" fill=\"url(#ir__ID__)\"/>\n<circle cx=\"262\" cy=\"418\" r=\"73\" fill=\"#140C1A\"/>\n<path d=\"M 299 504 A 101 101 0 0 0 352 447\" stroke=\"#fff\" stroke-width=\"7\" fill=\"none\" opacity=\"0.55\" stroke-linecap=\"round\"/>\n<circle cx=\"220\" cy=\"377\" r=\"31\" fill=\"#fff\"/>\n<circle cx=\"264\" cy=\"367\" r=\"9\" fill=\"#fff\"/>\n<circle cx=\"244\" cy=\"418\" r=\"13\" fill=\"#fff\"/><ellipse class=\"plat-lid\" style=\"transform:scaleY(0);transform-box:fill-box;transform-origin:50% 0%\" cx=\"258\" cy=\"412\" rx=\"126\" ry=\"126\" fill=\"#C9AEEA\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<path d=\"M 793 343 Q 822 329 822 299\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 818 370 Q 848 361 855 335\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 833 403 Q 862 402 876 379\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"720\" cy=\"436\" r=\"118\" fill=\"#1E1226\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<circle cx=\"724\" cy=\"442\" r=\"94\" fill=\"url(#ir__ID__)\"/>\n<circle cx=\"724\" cy=\"442\" r=\"73\" fill=\"#140C1A\"/>\n<path d=\"M 761 528 A 101 101 0 0 0 814 471\" stroke=\"#fff\" stroke-width=\"7\" fill=\"none\" opacity=\"0.55\" stroke-linecap=\"round\"/>\n<circle cx=\"682\" cy=\"401\" r=\"31\" fill=\"#fff\"/>\n<circle cx=\"726\" cy=\"391\" r=\"9\" fill=\"#fff\"/>\n<circle cx=\"706\" cy=\"442\" r=\"13\" fill=\"#fff\"/><ellipse class=\"plat-lid\" style=\"transform:scaleY(0);transform-box:fill-box;transform-origin:50% 0%\" cx=\"720\" cy=\"436\" rx=\"126\" ry=\"126\" fill=\"#C9AEEA\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\" fill=\"url(#bl__ID__)\"/>\n<g clip-path=\"url(#bc__ID__)\">\n<path d=\"M 0 720 C 150 760 350 770 640 700 L 700 900 L 0 900 Z\" fill=\"#D9772A\"/>\n<path d=\"M 530 500 C 600 520 640 580 632 640 L 660 640 L 660 480 Z\" fill=\"#D9772A\" opacity=\"0.55\"/>\n</g>\n<path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/>\n<ellipse cx=\"376\" cy=\"572\" rx=\"12\" ry=\"16\" fill=\"#1E1418\"/><ellipse cx=\"428\" cy=\"578\" rx=\"12\" ry=\"16\" fill=\"#1E1418\"/>\n<ellipse cx=\"217\" cy=\"630\" rx=\"18\" ry=\"16\" fill=\"#fff\" opacity=\"0.85\"/>\n<path d=\"M 440 492 C 480 486 520 494 548 510\" stroke=\"#fff\" stroke-width=\"10\" fill=\"none\" opacity=\"0.6\" stroke-linecap=\"round\"/>\n</svg>";
-  let _platN = 0;
-  function platypusSVG(){ return PLAT_TPL.replace(/__ID__/g, 'q' + (++_platN)); }
+  /* ---------------- SVG critters (front-facing chibi art) ----------------
+     kind: "pug" | "plat";  look: {c: "p"|"f"|"b", g: true for girl (eyelashes)} */
+  const CRITTER_PAL = {
+    p: {body: "#BF9DE9", belly: "#F5F6F6", dark: "#885B3D", darkLine: "#5E3E29"},
+    f: {body: "#EBCAA0", belly: "#F1E1CB", dark: "#6C605D", darkLine: "#4B4C4C"},
+    b: {body: "#767676", belly: "#B6B6B6", dark: "#4B4C4C", darkLine: "#2A2826"}
+  };
+  const CR_SIL = "M 255 88 C 385 90 482 172 488 285 C 492 352 470 402 430 422 C 450 468 462 522 452 562 C 440 602 372 614 252 614 C 148 614 86 598 78 548 C 72 498 82 456 95 428 C 46 402 20 350 22 285 C 26 170 128 88 255 88 Z";
+  const CR_EAR_L = "M 228 86 C 200 70 160 66 120 74 C 70 86 20 130 -10 160 C -35 185 -42 215 -30 240 C -18 262 10 272 40 266 C 46 265 50 263 51 262 C 75 245 90 225 100 200 C 112 165 130 125 165 100 C 185 88 205 84 228 86 Z";
+  const CR_EAR_R = "M 282 86 C 310 70 350 66 390 74 C 440 86 490 130 520 160 C 545 185 552 215 540 240 C 528 262 500 272 470 266 C 464 265 460 263 459 262 C 435 245 420 225 410 200 C 398 165 380 125 345 100 C 325 88 305 84 282 86 Z";
+  const CR_SNOUT = "M 150 340 C 175 330 195 328 215 312 C 235 295 275 295 295 312 C 315 328 335 330 360 340 C 382 352 380 386 350 393 C 300 403 210 403 160 393 C 130 386 128 352 150 340 Z";
+  let _critN = 0;
+  function randLook(kind){
+    return {c: kind === "plat" ? "p" : (Math.random() < 0.5 ? "f" : "b"), g: Math.random() < 0.5};
+  }
+  function critterSVG(kind, look){
+    look = look || {c: kind === "plat" ? "p" : "f", g: false};
+    const c = (kind === "pug" && look.c === "p") ? "f" : (look.c || "f");
+    const P = CRITTER_PAL[c] || CRITTER_PAL.f;
+    const id = "cr" + (++_critN);
+    const K = "#000", SW = 14;
+    const eye = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="33" fill="${K}"/><circle cx="${cx-10}" cy="${cy-11}" r="10.5" fill="#fff"/>` +
+      `<ellipse class="crit-lid" style="transform:scaleY(0);transform-box:fill-box;transform-origin:50% 0%" cx="${cx}" cy="${cy}" rx="38" ry="38" fill="${P.body}"/>`;
+    const lashes = (cx, cy) => `<path d="M ${cx} ${cy-36} L ${cx} ${cy-54} M ${cx-19} ${cy-30} L ${cx-29} ${cy-46} M ${cx+19} ${cy-30} L ${cx+29} ${cy-46}" stroke="${K}" stroke-width="7" stroke-linecap="round"/>`;
+    const isPug = kind === "pug";
+    let s = `<svg viewBox="-46 6 610 662" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">` +
+      `<defs><clipPath id="${id}s"><path d="${CR_SIL}"/></clipPath></defs>` +
+      `<ellipse cx="258" cy="632" rx="215" ry="12" fill="#000" opacity="0.08"/>`;
+    // tail (behind body)
+    if(isPug){
+      s += `<g class="pug-tail"><path d="M 432 450 C 462 424 522 430 540 468 C 556 506 530 548 486 560 C 462 566 440 562 426 552 Z" fill="${P.body}" stroke="${K}" stroke-width="${SW}" stroke-linejoin="round"/>` +
+        `<path d="M 462 482 C 484 476 494 496 482 508 C 470 518 452 512 448 498" fill="none" stroke="${K}" stroke-width="8" stroke-linecap="round"/></g>`;
+    } else {
+      s += `<g class="plat-tail"><path d="M 416 480 C 450 460 512 450 542 468 C 566 484 560 530 530 560 C 500 588 452 594 414 584 Z" fill="${P.dark}" stroke="${K}" stroke-width="${SW}" stroke-linejoin="round"/></g>`;
+    }
+    // feet (behind body)
+    const foot = isPug ? P.body : "#EFA847";
+    s += `<g class="${isPug ? "pug-leg leg-l" : "plat-foot pf-l"}"><ellipse cx="160" cy="626" rx="42" ry="27" fill="${foot}" stroke="${K}" stroke-width="${SW}"/></g>` +
+         `<g class="${isPug ? "pug-leg leg-r" : "plat-foot pf-r"}"><ellipse cx="356" cy="626" rx="42" ry="27" fill="${foot}" stroke="${K}" stroke-width="${SW}"/></g>`;
+    // head tuft (platypus) / ears (pug) — back layer
+    if(!isPug){
+      s += `<g class="plat-tuft" fill="${P.body}" stroke="${K}" stroke-width="${SW}" stroke-linejoin="round">` +
+        `<path d="M 226 102 C 204 76 194 38 215 25 C 242 13 268 50 272 100 Z"/>` +
+        `<path d="M 284 100 C 290 62 316 38 334 47 C 350 58 336 88 310 106 Z"/></g>`;
+    } else {
+      // outline pass: ears + head stroked double-width first, then filled on top, so only the outer edge of the union shows
+      s += `<g fill="${K}" stroke="${K}" stroke-width="${SW*2}" stroke-linejoin="round"><path class="crit-ear ear-l" d="${CR_EAR_L}"/><path class="crit-ear ear-r" d="${CR_EAR_R}"/><path d="${CR_SIL}"/></g>`;
+    }
+    // body + belly + (pug) the part of each ear that lies over the head
+    s += `<path d="${CR_SIL}" fill="${P.body}"/>` +
+      `<g clip-path="url(#${id}s)"><ellipse cx="252" cy="516" rx="118" ry="80" fill="${P.belly}"/></g>` +
+      (isPug ? "" : `<path d="${CR_SIL}" fill="none" stroke="${K}" stroke-width="${SW}" stroke-linejoin="round"/>`);
+    if(isPug) s += `<g fill="${P.dark}"><path class="crit-ear ear-l" d="${CR_EAR_L}"/><path class="crit-ear ear-r" d="${CR_EAR_R}"/></g>`;
+    // arms
+    s += `<g fill="none" stroke="${K}" stroke-width="12" stroke-linecap="round">` +
+      `<path class="crit-arm arm-l" d="M 155 442 C 176 460 180 486 160 498 C 140 510 118 502 103 488"/>` +
+      `<path class="crit-arm arm-r" d="M 350 442 C 329 460 325 486 345 498 C 365 510 387 502 402 488"/></g>`;
+    // face
+    s += `<ellipse cx="107" cy="332" rx="31" ry="22" fill="#F0A292"/><ellipse cx="403" cy="332" rx="31" ry="22" fill="#F0A292"/>`;
+    s += eye(155, 283) + eye(355, 283);
+    if(look.g) s += lashes(155, 283) + lashes(355, 283);
+    if(isPug){
+      s += `<path d="${CR_SNOUT}" fill="${P.dark}" stroke="${P.darkLine}" stroke-width="9" stroke-linejoin="round"/>` +
+        `<g class="pug-tongue"><path d="M 240 344 C 238 380 272 380 270 344 Z" fill="#F27C97" stroke="${K}" stroke-width="6" stroke-linejoin="round"/><path d="M 255 350 L 255 366" stroke="#C9546F" stroke-width="4" stroke-linecap="round"/></g>` +
+        `<path d="M 226 344 C 236 356 252 352 255 336 C 258 352 274 356 284 344" fill="none" stroke="${K}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` +
+        `<path d="M 234 316 C 240 307 270 307 276 316 C 274 330 262 337 255 337 C 248 337 236 330 234 316 Z" fill="${K}"/>`;
+    } else {
+      s += `<path d="${CR_SNOUT}" fill="#EFA847" stroke="#AC7C45" stroke-width="9" stroke-linejoin="round"/>` +
+        `<ellipse cx="236" cy="333" rx="6.5" ry="9.5" fill="#121312"/><ellipse cx="275" cy="333" rx="6.5" ry="9.5" fill="#121312"/>`;
+    }
+    return s + `</svg>`;
+  }
+  function pugSVG(look){ return critterSVG("pug", look); }
+  function platypusSVG(look){ return critterSVG("plat", look); }
 
 
   /* ---------------- Custom furniture illustrations ---------------- */
@@ -1218,7 +1308,7 @@
   const toast = document.getElementById("toast");
   const interstitial = document.getElementById("interstitial");
 
-  document.getElementById("title-critters").innerHTML = pugSVG() + platypusSVG();
+  document.getElementById("title-critters").innerHTML = pugSVG(randLook("pug")) + platypusSVG(randLook("plat"));
   document.getElementById("win-critters").innerHTML = pugSVG() + platypusSVG();
 
   let spriteEl = null, footEl = null;
@@ -1547,7 +1637,7 @@
 
     spriteEl = document.createElement("div");
     spriteEl.className = "critter-sprite idle" + (state.phase === "hiding" ? " pug" : " plat");
-    spriteEl.innerHTML = `<span class="flip">${(state.phase === "hiding") ? pugSVG() : platypusSVG()}</span>`;
+    spriteEl.innerHTML = `<span class="flip">${(state.phase === "hiding") ? pugSVG((state.looks || {}).pug) : platypusSVG((state.looks || {}).plat)}</span>`;
     worldEl.appendChild(spriteEl);
 
     if(bedWorldRect){
@@ -2206,6 +2296,8 @@
 
   function startHidingPhase(){
     state.mp = false;
+    state.looks = {pug: randLook("pug"), plat: randLook("plat")};   // random boy/girl + fawn/black pug; purple platypus
+    document.getElementById("win-critters").innerHTML = pugSVG(state.looks.pug) + platypusSVG(state.looks.plat);
     state.phase = "hiding";
     state.underground = false;
     state.sliding = false; state.slideMode = null;
@@ -2417,7 +2509,7 @@
   const playerList = document.getElementById("player-list");
   const roomCodeEl = document.getElementById("room-code");
   const tagoverBtn = document.getElementById("tagover-btn");
-  document.getElementById("tagover-critters").innerHTML = pugSVG() + platypusSVG();
+  document.getElementById("tagover-critters").innerHTML = pugSVG(randLook("pug")) + platypusSVG(randLook("plat"));
 
   const DEFAULT_NOTE = "One platypus, lots of pugs. Tagged pugs join the hunt!";
   function fmt(sec){ sec = Math.max(0, sec|0); const m = Math.floor(sec/60), s = sec % 60; return m ? `${m}:${String(s).padStart(2,"0")}` : `${s}s`; }
@@ -2532,8 +2624,13 @@
     const ids = roster().slice(0, MAX_PLAYERS).map(pp => pp.id);
     if(ids.length < 2) return;
     const platId = ids[Math.floor(Math.random()*ids.length)];
-    const roles = {}; ids.forEach(id => { roles[id] = id === platId ? "plat" : "pug"; });
-    mp.hostG = {ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, tg: [], hl: HEAD_START, el: 0};
+    const roles = {}, lk = {};
+    ids.forEach(id => {
+      roles[id] = id === platId ? "plat" : "pug";
+      // look code: colour (p purple / f fawn / b black) + "g" girl or "-" boy. Starting platypus is always purple.
+      lk[id] = (id === platId ? "p" : (Math.random() < 0.5 ? "f" : "b")) + (Math.random() < 0.5 ? "g" : "-");
+    });
+    mp.hostG = {ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, lk, tg: [], hl: HEAD_START, el: 0};
     mp.hostT0 = Date.now();
     pushHost();
   });
@@ -2656,9 +2753,20 @@
   }
 
   /* ---------- My character ---------- */
+  // a tagged pug keeps its colour + sex: fawn pug -> fawn platypus, black pug -> black platypus
+  function lookFromCode(code, kind){
+    code = String(code || "f-");
+    let c = code[0];
+    if(kind === "pug" && c === "p") c = "f";
+    return {c, g: code[1] === "g"};
+  }
+  function mpLookCode(id){ return ((mp.g && mp.g.lk) || {})[id] || null; }
   function setSpriteRole(role){
+    const code = mpLookCode(Net.myId());
+    state.looks = {pug: lookFromCode(code, "pug"), plat: lookFromCode(code, "plat")};
+    mp.myLook = code;
     spriteEl.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat") + (state.underground ? " xray" : "");
-    spriteEl.innerHTML = `<span class="flip">${role === "pug" ? pugSVG() : platypusSVG()}</span>`;
+    spriteEl.innerHTML = `<span class="flip">${role === "pug" ? pugSVG(state.looks.pug) : platypusSVG(state.looks.plat)}</span>`;
     state.walkingClassApplied = false;
   }
   function pickSpawn(){
@@ -2802,10 +2910,10 @@
     const m = 16;
     return x > b.x + m && x < b.x + b.w - m && y > b.y + 34 && y < b.y + b.h - m;
   }
-  function makeRemote(role, p){
+  function makeRemote(role, p, lk){
     const el = document.createElement("div");
     el.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat");
-    el.innerHTML = `<span class="flip">${role === "pug" ? pugSVG() : platypusSVG()}</span>`;
+    el.innerHTML = `<span class="flip">${role === "pug" ? pugSVG(lookFromCode(lk, "pug")) : platypusSVG(lookFromCode(lk, "plat"))}</span>`;
     worldEl.appendChild(el);
     const tag = document.createElement("div");
     tag.className = "name-tag" + (role === "plat" ? " plat" : "");
@@ -2815,7 +2923,7 @@
     lump.className = "bed-lump";
     lump.innerHTML = LUMP_SVG;
     worldEl.appendChild(lump);
-    return {role, el, tag, lump, flip: el.querySelector(".flip"), x: p.x, y: p.y, walking: false, face: null, blanket: null, blKey: null};
+    return {role, lk, el, tag, lump, flip: el.querySelector(".flip"), x: p.x, y: p.y, walking: false, face: null, blanket: null, blKey: null};
   }
   function removeRemote(r){ r.el.remove(); r.tag.remove(); r.lump.remove(); if(r.blanket) r.blanket.remove(); }
   const MP_MAX_DIGS = 20;   // per pug; digging a 21st fills in that pug's oldest hole
@@ -2844,7 +2952,8 @@
       if(!role || !p.sp || p.x == null) continue;
       seen.add(pp.id);
       let r = mp.remotes.get(pp.id);
-      if(!r || r.role !== role){ if(r) removeRemote(r); r = makeRemote(role, p); mp.remotes.set(pp.id, r); }
+      const lk = mpLookCode(pp.id);
+      if(!r || r.role !== role || r.lk !== lk){ if(r) removeRemote(r); r = makeRemote(role, p, lk); mp.remotes.set(pp.id, r); }
       if(Math.hypot(p.x - r.x, p.y - r.y) > 160){ r.x = p.x; r.y = p.y; }   // big jumps (tunnel, spawn): snap
       else { r.x += (p.x - r.x) * k; r.y += (p.y - r.y) * k; }
       r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
