@@ -133,6 +133,37 @@
   #stage {
     position: absolute; inset: 0; overflow: hidden; cursor: pointer;
   }
+  /* ---------- Pool + swimming ---------- */
+  .pool-caustic { animation: poolCaustic 3.2s linear infinite; }
+  @keyframes poolCaustic { from { transform: translateX(0); } to { transform: translateX(40px); } }
+  .pool-float { animation: poolFloat 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes poolFloat { 0%,100% { translate: 0 0; rotate: -4deg; } 50% { translate: 6px 3px; rotate: 5deg; } }
+  .swim-gear, .swim-straw, .swim-ring { display: none; position: absolute; pointer-events: none; }
+  .swim-gear { left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+  .critter-sprite.swimming .swim-ring { display: block; left: -2px; right: -2px; top: 71%; height: 12px; border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,0.85); background: rgba(80,190,235,0.35); animation: swimRing 1.4s ease-in-out infinite; }
+  @keyframes swimRing { 0%,100% { transform: scale(0.94); opacity: 0.9; } 50% { transform: scale(1.06); opacity: 0.6; } }
+  .critter-sprite.pug.swimming .swim-gear { display: block; }
+  .critter-sprite.pug.swimming > .flip > svg { clip-path: inset(0 0 25% 0); }
+  .critter-sprite.pug.swimming .pug-leg { animation: none !important; }
+  .critter-sprite.swimming { animation: swimBob 1.4s ease-in-out infinite !important; }
+  @keyframes swimBob { 0%,100% { translate: 0 0; } 50% { translate: 0 2px; } }
+  /* platypus: dives under, only a faint shape + the straw show */
+  .critter-sprite.plat.swimming > .flip > svg,
+  .critter-sprite.plat.it.swimming > .flip > svg { opacity: 0.2; filter: blur(1.2px) brightness(0.55) saturate(0.4) !important; clip-path: none; translate: 0 8px; }
+  .critter-sprite.plat.swimming .swim-ring { display: none; }
+  .critter-sprite.plat.swimming .swim-straw { display: block; left: 30px; top: 6px; width: 14px; height: 28px; }
+  .swim-straw svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .critter-sprite.plat.it.swimming .swim-straw svg { filter: drop-shadow(1px 0 0 #E8263A) drop-shadow(-1px 0 0 #E8263A); }
+  .swim-straw::after { content: ""; position: absolute; left: -9px; top: 22px; width: 26px; height: 8px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); }
+  .bub { position: absolute; left: 2px; top: 26px; width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.95); background: rgba(200,240,255,0.35); opacity: 0; }
+  .bub.b1 { animation: bubble 3.1s ease-out infinite 0.4s; }
+  .bub.b2 { animation: bubble 4.3s ease-out infinite 1.7s; left: 9px; width: 4px; height: 4px; }
+  .bub.b3 { animation: bubble 5.7s ease-out infinite 2.9s; left: -4px; width: 5px; height: 5px; }
+  @keyframes bubble { 0% { opacity: 0; transform: translateY(0) scale(0.5); } 8% { opacity: 1; } 22% { opacity: 1; transform: translateY(-10px) scale(1); }
+    26% { opacity: 0; transform: translateY(-12px) scale(1.6); } 100% { opacity: 0; transform: translateY(-12px) scale(1.6); } }
+  .foot-shadow.in-water { opacity: 0; }
+  .world-ext { position: absolute; left: 0; background-color: #D9EEC0; background-image: var(--paw); background-size: 50px 50px; }
   #world {
     position: absolute; top: 0; left: 0;
     background-color: #D9EEC0;
@@ -1065,6 +1096,79 @@
 <g stroke="#241811" stroke-width="2"><line x1="91" y1="57" x2="91" y2="91"/><line x1="101" y1="57" x2="101" y2="91"/></g>
 <rect x="82" y="90" width="28" height="12" rx="3" fill="#C8453A" stroke="#241811" stroke-width="3"/>
 </svg>`; }
+  /* ---------------- Backyard pool ----------------
+     POOL is the water (world coords). Anyone can wade in or climb out anywhere along the edge.
+     Dogs swim in a float vest + goggles; a platypus dives under and breathes through a straw. */
+  const POOL = {x: 560, y: -120, w: 600, h: 220, r: 34};
+  const POOL_DECK = 28;
+  const SWIM_SPEED_PUG = 242, SWIM_SPEED_PLAT = 225;   // platypus just a touch slower in the water
+  function inPool(x, y){
+    const P = POOL;
+    if(x < P.x || x > P.x + P.w || y < P.y || y > P.y + P.h) return false;
+    const cx = Math.max(P.x + P.r, Math.min(P.x + P.w - P.r, x)), cy = Math.max(P.y + P.r, Math.min(P.y + P.h - P.r, y));
+    return Math.hypot(x - cx, y - cy) <= P.r;
+  }
+  function onPoolDeck(x, y){
+    const d = POOL_DECK;
+    return x >= POOL.x - d && x <= POOL.x + POOL.w + d && y >= POOL.y - d && y <= POOL.y + POOL.h + d;
+  }
+  function poolDecal(roomRect){
+    const d = POOL_DECK, W = POOL.w + d*2, H = POOL.h + d*2;
+    const left = POOL.x - d - roomRect.x, top = POOL.y - d - roomRect.y;
+    const w = POOL.w, h = POOL.h, r = POOL.r;
+    let tiles = "";
+    for(let x = 18; x < W; x += 36) tiles += `<line x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;
+    for(let y = 18; y < H; y += 36) tiles += `<line x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;
+    let caust = "";
+    for(let i = 0; i < 6; i++){
+      const y = d + 30 + i * 34, x0 = d - 60 - (i % 2) * 26;
+      let path = `M ${x0} ${y}`;
+      for(let x = x0; x < d + w + 60; x += 40) path += ` q 10 -${5 + (i % 3) * 2} 20 0 t 20 0`;
+      caust += `<path d="${path}" stroke-dasharray="${46 + (i % 3) * 14} ${58 + (i % 2) * 30}"/>`;
+    }
+    const ladder = (x, y, flip) => `<g transform="translate(${x} ${y})${flip ? " scale(1 -1)" : ""}" stroke="#241811" stroke-width="2.5" stroke-linecap="round">
+      <path d="M 0 -18 Q 0 -30 12 -30 L 12 22" fill="none" stroke="#C9D3DC" stroke-width="7"/><path d="M 0 -18 Q 0 -30 12 -30 L 12 22" fill="none" stroke="#241811" stroke-width="1.5"/>
+      <path d="M 34 -18 Q 34 -30 46 -30 L 46 22" fill="none" stroke="#C9D3DC" stroke-width="7"/><path d="M 34 -18 Q 34 -30 46 -30 L 46 22" fill="none" stroke="#241811" stroke-width="1.5"/>
+      <line x1="12" y1="0" x2="46" y2="0" stroke="#C9D3DC" stroke-width="5"/><line x1="12" y1="14" x2="46" y2="14" stroke="#C9D3DC" stroke-width="5" opacity="0.6"/></g>`;
+    return `<svg class="pool-decal" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:${left}px;top:${top}px;pointer-events:none;z-index:1">
+<defs>
+  <clipPath id="poolDeckClip"><rect x="2" y="2" width="${W-4}" height="${H-4}" rx="${r + d*0.6}"/></clipPath>
+  <clipPath id="poolWaterClip"><rect x="${d}" y="${d}" width="${w}" height="${h}" rx="${r}"/></clipPath>
+  <linearGradient id="poolWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FDBF5"/><stop offset="1" stop-color="#2E9BD1"/></linearGradient>
+</defs>
+<rect x="2" y="2" width="${W-4}" height="${H-4}" rx="${r + d*0.6}" fill="#EFE3CC" stroke="#241811" stroke-width="3"/>
+<g stroke="#D8C6A6" stroke-width="2" clip-path="url(#poolDeckClip)">${tiles}</g>
+<rect x="${d-8}" y="${d-8}" width="${w+16}" height="${h+16}" rx="${r+8}" fill="#FBF6EC" stroke="#241811" stroke-width="3"/>
+<rect x="${d}" y="${d}" width="${w}" height="${h}" rx="${r}" fill="url(#poolWater)" stroke="#241811" stroke-width="3"/>
+<g clip-path="url(#poolWaterClip)">
+  <rect x="${d}" y="${d}" width="${w}" height="12" fill="#1F7FB0" opacity="0.55"/>
+  <g stroke="#9FE3F7" stroke-width="3" opacity="0.8"><path d="M ${d} ${d+6} H ${d+w}" stroke-dasharray="6 6"/></g>
+  <g class="pool-caustic" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity="0.35">${caust}</g>
+  <rect x="${d}" y="${d}" width="${w}" height="${h}" fill="none" stroke="#1F7FB0" stroke-width="10" opacity="0.25"/>
+  <path d="M ${d + w*0.5} ${d+14} V ${d + h - 14}" stroke="#1F7FB0" stroke-width="3" stroke-dasharray="14 10" opacity="0.35"/>
+</g>
+${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
+<g class="pool-float" transform="translate(${d + w*0.72} ${d + h*0.34})"><ellipse rx="30" ry="18" fill="#FF8FB3" stroke="#241811" stroke-width="3"/><ellipse rx="12" ry="7" fill="#57C2E8" stroke="#241811" stroke-width="2.5"/>
+  <path d="M -22 -8 Q -14 -15 -4 -16" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.8"/><path d="M 10 12 l 6 -2 M 20 6 l 4 -4 M -18 10 l -6 -3" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+</svg>`;
+  }
+  // float vest + goggles for a swimming dog (drawn over the 56x65 sprite box)
+  const SWIM_GEAR = `<svg class="swim-gear" viewBox="0 0 56 65" xmlns="http://www.w3.org/2000/svg">
+<path d="M 9 41 Q 13 37 20 37 L 22 41 Q 28 44 34 41 L 36 37 Q 43 37 47 41 L 48 50 L 8 50 Z" fill="#FF7A2F" stroke="#241811" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 10 45 H 46" stroke="#FFD34D" stroke-width="2.2"/><rect x="25.5" y="43" width="5" height="4.5" rx="1" fill="#3A3F46"/>
+<path d="M 6 31 Q 28 25 50 31" fill="none" stroke="#2A6FA0" stroke-width="2.4" stroke-linecap="round"/>
+<circle cx="19.5" cy="32.6" r="6.3" fill="rgba(140,220,255,0.45)" stroke="#1E5E86" stroke-width="2"/>
+<circle cx="36.5" cy="32.6" r="6.3" fill="rgba(140,220,255,0.45)" stroke="#1E5E86" stroke-width="2"/>
+<path d="M 25.6 32 Q 28 30 30.4 32" fill="none" stroke="#1E5E86" stroke-width="2"/>
+<path d="M 16 29.5 Q 18 28 20 28.6 M 33 29.5 Q 35 28 37 28.6" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity="0.9"/>
+</svg>`;
+  // the platypus's breathing straw + sporadic bubbles
+  const SWIM_STRAW = `<div class="swim-straw"><svg viewBox="0 0 20 40" xmlns="http://www.w3.org/2000/svg">
+<path d="M 10 40 L 10 12 Q 10 5 16 5" fill="none" stroke="#241811" stroke-width="6.5" stroke-linecap="round"/>
+<path d="M 10 40 L 10 12 Q 10 5 16 5" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+<path d="M 10 40 L 10 12 Q 10 5 16 5" fill="none" stroke="#E8263A" stroke-width="4" stroke-dasharray="4 4" stroke-linecap="butt"/>
+</svg><i class="bub b1"></i><i class="bub b2"></i><i class="bub b3"></i></div>`;
+  function spriteMarkup(kind, svg){ return `<span class="flip">${svg}</span>` + (kind === "pug" ? SWIM_GEAR : SWIM_STRAW) + `<span class="swim-ring"></span>`; }
   const ATTIC_DECALS = `<svg viewBox="0 0 260 330" width="260" height="330" xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:0;top:0;pointer-events:none;z-index:1">
 <g stroke="#5A3A22" stroke-width="2.5" fill="none" stroke-linecap="round">
 <path d="M 40 150 l 30 0 M 36 162 l 38 0"/>
@@ -1128,7 +1232,7 @@
   // Furniture x/y/w/h below are now fixed PIXEL sizes and offsets from each
   // room's top-left corner (not percentages) — so enlarging a room never
   // changes furniture size, only how much open floor surrounds it.
-  const WORLD = { w: 1300, h: 1660 };
+  const WORLD = { w: 1300, h: 1660, y0: -300 };   // y0: the backyard reaches above the original top edge
 
   const ROOMS = {
     attic: {
@@ -1157,12 +1261,11 @@
       name: "Backyard", emoji: "🌳",
       wall: "#BFE6F7", floorA: "#8FD27A", floorB: "#84C96E",
       floorPattern: "grass", fence: true,
-      rect: {x:300, y:30, w:920, h:450},
+      rect: {x:300, y:-300, w:980, h:780}, wallH: 135, decals: "POOL",
       furniture: [
         {id:"shed",     label:"Shed",     emoji:"🏚️", x:30,  y:8,   w:170, h:170, wall:true},
-        {id:"doghouse", label:"Doghouse", emoji:"🏠", x:290, y:240, w:140, h:130, wall:false},
-        {id:"tree",     label:"Tree",     emoji:"🌳", x:470, y:130, w:180, h:230, wall:false},
-        {id:"slide",    label:"Slide",    emoji:"🛝", x:690, y:120, w:200, h:170, wall:false, passthrough:true, zTop:true},
+        {id:"doghouse", label:"Doghouse", emoji:"🏠", x:290, y:570, w:140, h:130, wall:false},
+        {id:"slide",    label:"Slide",    emoji:"🛝", x:690, y:450, w:200, h:170, wall:false, passthrough:true, zTop:true},
       ]
     },
     kitchen: {
@@ -1386,6 +1489,7 @@
     if(spriteEl && (state.phase === "hiding" || state.phase === "seeking")){
       let speed = state.sliding ? 760 : (state.mp && state.phase === "seeking" ? 350 : 300); // world px per second; platytag platypus ~17% faster
       if(state.phase === "seeking" && !state.sliding && nearDig(state.pos.x, state.pos.y)) speed *= 0.7;
+      if(!state.sliding && !state.underground && inPool(state.pos.x, state.pos.y)) speed = state.phase === "seeking" ? SWIM_SPEED_PLAT : SWIM_SPEED_PUG;
       const dx = state.target.x - state.pos.x;
       const dy = state.target.y - state.pos.y;
       const dist = Math.hypot(dx, dy);
@@ -1430,6 +1534,12 @@
 
       spriteEl.style.left = state.pos.x + "px";
       spriteEl.style.top = state.pos.y + "px";
+      const swimNow = !state.underground && !state.sliding && inPool(state.pos.x, state.pos.y);
+      if(swimNow !== !!state.swimming){
+        state.swimming = swimNow;
+        spriteEl.classList.toggle("swimming", swimNow);
+        footEl.classList.toggle("in-water", swimNow);
+      }
       footEl.style.left = state.pos.x + "px";
       footEl.style.top = (state.pos.y + 3) + "px";
 
@@ -1473,9 +1583,9 @@
 
       // camera follows, centered on character, clamped to world bounds
       const maxCamX = Math.max(0, WORLD.w - viewportW);
-      const maxCamY = Math.max(0, WORLD.h - viewportH);
+      const maxCamY = Math.max(WORLD.y0, WORLD.h - viewportH);
       state.camX = clamp(state.pos.x - viewportW/2, 0, maxCamX);
-      state.camY = clamp(state.pos.y - viewportH/2, 0, maxCamY);
+      state.camY = clamp(state.pos.y - viewportH/2, WORLD.y0, maxCamY);
       worldEl.style.transform = `translate(${-state.camX}px, ${-state.camY}px)`;
     }
     if(state.mp) mpFrame(dt);
@@ -1488,6 +1598,10 @@
     worldEl.innerHTML = "";
     worldEl.style.width = WORLD.w + "px";
     worldEl.style.height = WORLD.h + "px";
+    const ext = document.createElement("div");           // lawn above the original top edge
+    ext.className = "world-ext";
+    ext.style.top = WORLD.y0 + "px"; ext.style.height = (-WORLD.y0) + "px"; ext.style.width = WORLD.w + "px";
+    worldEl.appendChild(ext);
     freestandingEls = [];
     FURN_LIST = [];
     ROOM_FOG = {}; curSeekRoom = null; blanketEl = null; blanketRoom = null;
@@ -1519,7 +1633,9 @@
       floorBand.className = "room-floor-band";
       floorBand.style.background = floorCss(room);
       if(room.decals === "ATTIC") roomDiv.insertAdjacentHTML("beforeend", ATTIC_DECALS);
+      if(room.decals === "POOL") roomDiv.insertAdjacentHTML("beforeend", poolDecal(rect));
       if(room.noWall){ wallBand.style.display = "none"; floorBand.style.top = "0"; roomDiv.classList.add("open-yard"); }
+      if(room.wallH){ wallBand.style.height = room.wallH + "px"; floorBand.style.top = room.wallH + "px"; }
       roomDiv.appendChild(floorBand);
 
       room.furniture.forEach((f, i) => {
@@ -1649,7 +1765,7 @@
 
     spriteEl = document.createElement("div");
     spriteEl.className = "critter-sprite idle" + (state.phase === "hiding" ? " pug" : " plat");
-    spriteEl.innerHTML = `<span class="flip">${(state.phase === "hiding") ? pugSVG((state.looks || {}).pug) : platypusSVG((state.looks || {}).plat)}</span>`;
+    spriteEl.innerHTML = state.phase === "hiding" ? spriteMarkup("pug", pugSVG((state.looks || {}).pug)) : spriteMarkup("plat", platypusSVG((state.looks || {}).plat));
     worldEl.appendChild(spriteEl);
 
     if(bedWorldRect){
@@ -1688,7 +1804,7 @@
     let wx = state.camX + (e.clientX - rect.left);
     let wy = state.camY + (e.clientY - rect.top);
     wx = Math.max(4, Math.min(WORLD.w-4, wx));
-    wy = Math.max(4, Math.min(WORLD.h-4, wy));
+    wy = Math.max(WORLD.y0 + 4, Math.min(WORLD.h-4, wy));
     return {x:wx, y:wy};
   }
 
@@ -1826,7 +1942,7 @@
     state.wantId = null;
     const len = Math.hypot(dx, dy) || 1;
     const tx = clamp(state.pos.x + (dx/len)*KEY_REACH, 0, WORLD.w);
-    const ty = clamp(state.pos.y + (dy/len)*KEY_REACH, 0, WORLD.h);
+    const ty = clamp(state.pos.y + (dy/len)*KEY_REACH, WORLD.y0, WORLD.h);
     setTarget(tx, ty, null);
   }
 
@@ -2063,6 +2179,7 @@
     if(state.mp && (mp.hide || mp.myRole !== "pug")) return false;
     if(state.phase !== "hiding" || state.busy || state.underground || state.sliding) return false;
     const r = roomAt(state.pos.x, state.pos.y);
+    if(onPoolDeck(state.pos.x, state.pos.y)) return false;
     return r === "frontyard" || r === "backyard";
   }
   function nearDig(x, y){
@@ -2210,6 +2327,7 @@
   plainBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
   plainBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    if(!state.underground && inPool(state.pos.x, state.pos.y)){ showToast("Blankets don't float! Hop out of the pool first.", 1800); return; }
     if(state.mp){ mpBlanket(); return; }
     if(state.busy || state.phase !== "hiding") return;
     state.busy = true;
@@ -2798,7 +2916,7 @@
     state.looks = {pug: lookFromCode(code, "pug"), plat: lookFromCode(code, "plat")};
     mp.myLook = code;
     spriteEl.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat it") + (state.underground ? " xray" : "");
-    spriteEl.innerHTML = `<span class="flip">${role === "pug" ? pugSVG(state.looks.pug) : platypusSVG(state.looks.plat)}</span>`;
+    spriteEl.innerHTML = role === "pug" ? spriteMarkup("pug", pugSVG(state.looks.pug)) : spriteMarkup("plat", platypusSVG(state.looks.plat));
     state.walkingClassApplied = false;
   }
   function pickSpawn(){
@@ -2953,7 +3071,7 @@
   function makeRemote(role, p, lk){
     const el = document.createElement("div");
     el.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat it");
-    el.innerHTML = `<span class="flip">${role === "pug" ? pugSVG(lookFromCode(lk, "pug")) : platypusSVG(lookFromCode(lk, "plat"))}</span>`;
+    el.innerHTML = role === "pug" ? spriteMarkup("pug", pugSVG(lookFromCode(lk, "pug"))) : spriteMarkup("plat", platypusSVG(lookFromCode(lk, "plat")));
     worldEl.appendChild(el);
     const tag = document.createElement("div");
     tag.className = "name-tag" + (role === "plat" ? " plat" : "");
@@ -3007,6 +3125,7 @@
       const face = p.f ? "scaleX(-1)" : "scaleX(1)";
       if(face !== r.face && r.flip){ r.flip.style.transform = face; r.face = face; }
       r.el.classList.toggle("xray", !!p.ug);
+      r.el.classList.toggle("swimming", !p.ug && inPool(r.x, r.y));
       const inBed = !p.ug && pointInBed(r.x, r.y);
       const tunnelHidden = !!p.ug && !state.underground;          // underground players are only visible from the tunnel
       const hidden = !!p.hid || !!p.bl || inBed || tunnelHidden;
