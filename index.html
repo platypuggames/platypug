@@ -1411,7 +1411,8 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
   // Furniture x/y/w/h below are now fixed PIXEL sizes and offsets from each
   // room's top-left corner (not percentages) — so enlarging a room never
   // changes furniture size, only how much open floor surrounds it.
-  const WORLD = { w: 1300, h: 1660, y0: -300 };   // y0: the backyard reaches above the original top edge
+  const WORLD = { w: 1300, h: 1660, y0: -300 };
+  const CAM_TOP = WORLD.y0 - 110;   // the camera may look a bit past the top edge so the HUD doesn't cover you   // y0: the backyard reaches above the original top edge
 
   const ROOMS = {
     attic: {
@@ -1769,9 +1770,9 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
 
       // camera follows, centered on character, clamped to world bounds
       const maxCamX = Math.max(0, WORLD.w - viewportW);
-      const maxCamY = Math.max(WORLD.y0, WORLD.h - viewportH);
+      const maxCamY = Math.max(CAM_TOP, WORLD.h - viewportH);
       state.camX = clamp(state.pos.x - viewportW/2, 0, maxCamX);
-      state.camY = clamp(state.pos.y - viewportH/2, WORLD.y0, maxCamY);
+      state.camY = clamp(state.pos.y - viewportH/2, CAM_TOP, maxCamY);
       worldEl.style.transform = `translate(${-state.camX}px, ${-state.camY}px)`;
     }
     if(state.mp) mpFrame(dt);
@@ -1786,7 +1787,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     worldEl.style.height = WORLD.h + "px";
     const ext = document.createElement("div");           // lawn above the original top edge
     ext.className = "world-ext";
-    ext.style.top = WORLD.y0 + "px"; ext.style.height = (-WORLD.y0) + "px"; ext.style.width = WORLD.w + "px";
+    ext.style.top = CAM_TOP + "px"; ext.style.height = (-CAM_TOP) + "px"; ext.style.width = WORLD.w + "px";
     worldEl.appendChild(ext);
     freestandingEls = [];
     FURN_LIST = [];
@@ -2000,7 +2001,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     let wx = state.camX + (e.clientX - rect.left);
     let wy = state.camY + (e.clientY - rect.top);
     wx = Math.max(4, Math.min(WORLD.w-4, wx));
-    wy = Math.max(WORLD.y0 + 4, Math.min(WORLD.h-4, wy));
+    wy = Math.max(CAM_TOP + 4, Math.min(WORLD.h-4, wy));
     return {x:wx, y:wy};
   }
 
@@ -3763,7 +3764,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     // snap every camera to where it happened, lights on
     const W = viewportW, H = viewportH;
     state.camX = clamp(F.x - W/2, 0, Math.max(0, WORLD.w - W));
-    state.camY = clamp(F.y - H/2, WORLD.y0, Math.max(WORLD.y0, WORLD.h - H));
+    state.camY = clamp(F.y - H/2, CAM_TOP, Math.max(CAM_TOP, WORLD.h - H));
     worldEl.style.transform = `translate(${-state.camX}px, ${-state.camY}px)`;
     for(const k in ROOM_FOG) ROOM_FOG[k].classList.remove("on");
     if(tunnelPathEl) tunnelPathEl.classList.toggle("show", !!F.ug);
