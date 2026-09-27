@@ -606,9 +606,7 @@
       <div class="stat-card"><div class="num" id="tagover-count">0</div><div class="lbl">PUGS TAGGED</div></div>
     </div>
     <ol class="player-list" id="tagover-list"></ol>
-    <button class="big-btn" id="tagover-again">Play again</button>
-    <p class="lobby-note" id="tagover-wait">Waiting for the host to start the next game…</p>
-    <button class="howto-toggle" id="tagover-btn">Leave game</button>
+    <button class="big-btn secondary" id="tagover-btn">Back to lobby</button>
   </div>
 
   <div id="game-screen" class="screen hidden">
@@ -1677,10 +1675,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
 
     if(typeof keysDown !== "undefined" && keysDown.size) updateKeyboardTarget();
     if(state.frozenUntil && performance.now() < state.frozenUntil){ state.target = {x: state.pos.x, y: state.pos.y}; }
-    else {
-      if(spriteEl && (state.phase === "hiding" || state.phase === "seeking")) checkTrellisFromYard();
-      if(state.holePull && !state.underground && !state.sliding && !state.onLadder){ state.target = {x: state.holePull.x, y: state.holePull.y}; checkHoleEntry(); }
-    }
+    else if(state.holePull && !state.underground && !state.sliding && !state.onLadder){ state.target = {x: state.holePull.x, y: state.holePull.y}; checkHoleEntry(); }
     if(spriteEl && !(state.frozenUntil && performance.now() < state.frozenUntil)) handleBoard();
 
     if(spriteEl && (state.phase === "hiding" || state.phase === "seeking")){
@@ -2416,26 +2411,6 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   const LADDER_TOP = {x: 262, y: 305, r: 24, ladder: "top"};     // inside the attic, at the window
   const LADDER_BOT = {x: 316, y: 452, r: 28, ladder: "bot"};     // backyard, at the foot of the trellis
   const LADDER_SLOW = 0.7;
-  // from the backyard, heading onto the trellis (anywhere along it) or for the window puts you at its foot, climbing
-  const TRELLIS_ZONE = {x0: 294, x1: 348, y0: 288, y1: 456};
-  const inTrellis = (x, y) => x >= TRELLIS_ZONE.x0 && x <= TRELLIS_ZONE.x1 && y >= TRELLIS_ZONE.y0 && y <= TRELLIS_ZONE.y1;
-  const inWindow = (x, y) => x >= 250 && x <= 300 && y >= 276 && y <= 334;
-  function checkTrellisFromYard(){
-    if(state.onLadder || state.underground || state.sliding || state.busy) return false;
-    if(roomAt(state.pos.x, state.pos.y) !== "backyard") return false;
-    const aim = (state.holePull === LADDER_BOT && state.ladAfter) ? state.ladAfter : state.target;   // already being pulled over: keep the original aim
-    const tx = aim.x, ty = aim.y;
-    const aimUp = inTrellis(tx, ty) && ty < LADDER_BOT.y - 8 || inWindow(tx, ty) || roomAt(tx, ty) === "attic";
-    if(inTrellis(state.pos.x, state.pos.y) && (aimUp || state.holeExited !== LADDER_BOT)){
-      const after = aimUp ? {x: tx, y: ty} : null;
-      state.holePull = null; state.ladAfter = null;
-      startLadder("bot");                                   // snap to the foot and start climbing
-      if(after){ state.target = after; state.ladHold = false; }
-      return true;
-    }
-    if(aimUp && state.holePull !== LADDER_BOT){ state.holePull = LADDER_BOT; state.ladAfter = {x: tx, y: ty}; state.holeExited = null; }
-    return false;
-  }
   function ladPoint(t){
     t = Math.max(0, Math.min(LADDER_SEGS.L, t));
     for(const g of LADDER_SEGS){ if(t <= g.s + g.l){ const u = (t - g.s) / g.l; return {x: g.x0 + (g.x1-g.x0)*u, y: g.y0 + (g.y1-g.y0)*u}; } }
@@ -2827,12 +2802,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       }
       if(d < HOLE_ENTER_R){
         state.holePull = null;
-        if(h.ladder){
-          const after = h.ladder === "bot" ? state.ladAfter : null; state.ladAfter = null;
-          startLadder(h.ladder);
-          if(after){ state.target = after; state.ladHold = false; }  // keep climbing toward where you were heading
-          return;
-        }
+        if(h.ladder){ startLadder(h.ladder); return; }
         if(h === SECRET_HOLE){
           state.tunSeg = "B"; state.tunT = SECRET_SEGS.L;
           const e = secretPoint(SECRET_SEGS.L);
@@ -3482,21 +3452,11 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     pushHost();
   }
 
-  // Results screen: the host starts the next round for everyone straight away
-  const tagoverAgain = document.getElementById("tagover-again");
-  const tagoverWait = document.getElementById("tagover-wait");
-  function updateTagoverButtons(){
-    const n = roster().slice(0, MAX_PLAYERS).length;
-    tagoverAgain.style.display = mp.isHost ? "" : "none";
-    tagoverAgain.disabled = n < 2;
-    tagoverWait.style.display = mp.isHost ? (n < 2 ? "" : "none") : "";
-    tagoverWait.textContent = mp.isHost ? "Everyone else left. Waiting for another player…" : "Waiting for the host to start the next game…";
-    tagoverBtn.style.display = mp.isHost ? "none" : "";
-  }
-  tagoverAgain.addEventListener("click", () => { if(mp.isHost) hostStartRound(); });
-  tagoverBtn.addEventListener("click", async () => {
-    await leaveRoom();
+  tagoverBtn.addEventListener("click", () => {
+    if(mp.isHost && mp.hostG){ mp.hostG.ph = "lobby"; pushHost(); }
     switchScreen(lobbyScreen);
+    if(mp.code){ lobbyJoin.style.display = "none"; lobbyRoom.style.display = ""; renderLobby(); }
+    else showJoinCard();
   });
 
   /* ---------- Host: referee for the whole room ---------- */
@@ -3602,7 +3562,6 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     if(checkFull()) return;
     mpSync();
     if(!lobbyScreen.classList.contains("hidden")) renderLobby();
-    if(!tagoverScreen.classList.contains("hidden")) updateTagoverButtons();
   }
 
   async function hostGone(){
@@ -3948,7 +3907,6 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     });
     const last = tg[tg.length - 1];
     document.getElementById("tagover-sub").textContent = last ? `${last.n} was the last pug standing.` : "Every pug has been found.";
-    updateTagoverButtons();
     if(G.fin) playFinale(G, () => { if(!mp.inGame) switchScreen(tagoverScreen); });
     else setTimeout(() => { if(!mp.inGame) switchScreen(tagoverScreen); }, 900);
   }
