@@ -2353,9 +2353,11 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
      under the front yard to a bare dirt patch in its bottom-left corner. Until it's dug open
      there's no sign of it underground, and the dirt patch can't be dug from above. */
   const SECRET_JX = 948;                                            // tunnel-floor x right above the diamond
-  const SECRET_PTS = [[948,1414],[948,1466],[912,1520],[820,1552],[600,1562],[340,1562],[170,1556],[100,1570],[62,1584]];
-  const SECRET_HOLE = {x: 62, y: 1584};
-  const SECRET_OUT = {x: 104, y: 1566};
+  // straight 45° drop from the tunnel floor to the bottom of the yard, a flat run west, then the same
+  // steep climb up to the hole as the original tunnel's ends
+  const SECRET_PTS = [[948,1414],[772,1590],[136,1590],[96,1510],[92,1508]];
+  const SECRET_HOLE = {x: 92, y: 1506};
+  const SECRET_OUT = {x: 136, y: 1506};
   const SECRET_SEGS = (() => { const a = []; let L = 0;
     for(let i = 1; i < SECRET_PTS.length; i++){ const [x0, y0] = SECRET_PTS[i-1], [x1, y1] = SECRET_PTS[i]; const l = Math.hypot(x1-x0, y1-y0); a.push({x0, y0, x1, y1, l, s: L}); L += l; }
     a.L = L; return a; })();
@@ -2376,17 +2378,34 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   }
   const SECRET_O = {x: 20, y: 1380};                                // overlay origin (world)
   function secretPathSVG(){
-    const d = "M " + SECRET_PTS.map(([x, y]) => `${x - SECRET_O.x} ${y - SECRET_O.y}`).join(" L ");
+    const O = SECRET_O, CEIL = 66, MAIN_FLOOR = 1414;
+    const P = SECRET_PTS.map(([x, y]) => [x - O.x, y - O.y]);
+    const mf = MAIN_FLOOR - O.y;
+    // ceiling = floor raised 66px (like the main tunnel), but it can't poke up into the main tunnel
+    const cut = [SECRET_PTS[0][0] - CEIL - O.x, mf];                // where the raised first leg meets the main floor
+    const ceil = [cut].concat(P.slice(1).map(([x, y]) => [x, y - CEIL]));
+    const line = pts => "M " + pts.map(p => p.join(" ")).join(" L ");
+    const cave = line(P) + " L " + ceil.slice().reverse().map(p => p.join(" ")).join(" L ") + " Z";
+    const off = (pts, dy) => pts.map(([x, y]) => [x, y + dy]);
+    const dirt = line(off(P, 34)) + " L " + off(ceil, -34).slice().reverse().map(p => p.join(" ")).join(" L ") + " Z";
+    const J = P[0];
+    const opening = `M ${cut[0] - 6} ${mf - 16} L ${J[0] + 8} ${mf - 16} L ${J[0] + 8} ${mf + 2} L ${cut[0] - 6} ${mf + 2} Z`;
     let pebbles = "";
-    for(let t = 30; t < SECRET_SEGS.L - 20; t += 46){ const p = secretPoint(t); pebbles += `<ellipse cx="${(p.x - SECRET_O.x + ((t*7)%23) - 11).toFixed(1)}" cy="${(p.y - SECRET_O.y + (t%2 ? 26 : -25)).toFixed(1)}" rx="${3 + t%4}" ry="2.5" fill="#6B4A33"/>`; }
+    for(let t = 60; t < SECRET_SEGS.L - 60; t += 52){ const q = secretPoint(t); pebbles += `<ellipse cx="${(q.x - O.x + ((t*7)%23) - 11).toFixed(1)}" cy="${(q.y - O.y + 20).toFixed(1)}" rx="${3 + t%4}" ry="2.5" fill="#6B4A33"/>`; }
     return `<svg viewBox="0 0 1000 240" width="1000" height="240" xmlns="http://www.w3.org/2000/svg" overflow="visible">
-<path d="${d}" fill="none" stroke="#241811" stroke-width="74" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="${d}" fill="none" stroke="#523624" stroke-width="68" stroke-linejoin="round" stroke-linecap="round"/>
+<defs>
+  <linearGradient id="scCave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C2340"/><stop offset="1" stop-color="#171226"/></linearGradient>
+  <clipPath id="scBelow"><rect x="-50" y="${mf + 9}" width="1100" height="400"/></clipPath>
+</defs>
+<path d="${dirt}" fill="#4E3322" stroke="#241811" stroke-width="3" stroke-linejoin="round" clip-path="url(#scBelow)"/>
 ${pebbles}
-<path d="${d}" fill="none" stroke="#1C152A" stroke-width="42" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="${d}" fill="none" stroke="#A0785A" stroke-width="7" stroke-linejoin="round" transform="translate(0 18)" opacity="0.9"/>
-<path d="${d}" fill="none" stroke="#8C6A55" stroke-width="5" stroke-linejoin="round" transform="translate(0 -18)" opacity="0.8"/>
-<g fill="#8FE8FF" opacity="0.55"><circle cx="${760-SECRET_O.x}" cy="${1560-SECRET_O.y}" r="2"/><circle cx="${420-SECRET_O.x}" cy="${1566-SECRET_O.y}" r="1.6"/><circle cx="${220-SECRET_O.x}" cy="${1552-SECRET_O.y}" r="2"/></g>
+<path d="${cave}" fill="url(#scCave)"/>
+<path d="${opening}" fill="#211A33"/>
+<path d="${line(P)}" fill="none" stroke="#A0785A" stroke-width="16" stroke-linejoin="round"/>
+<path d="${line(P)}" fill="none" stroke="#6E4E38" stroke-width="16" stroke-dasharray="3 22" stroke-linejoin="round"/>
+<path d="${line(P)}" fill="none" stroke="#C9A27A" stroke-width="3" stroke-linejoin="round" transform="translate(0 -7)"/>
+<path d="${line(ceil)}" fill="none" stroke="#8C6A55" stroke-width="14" stroke-linejoin="round"/>
+<path d="${line(ceil)}" fill="none" stroke="#5A4232" stroke-width="14" stroke-dasharray="3 22" stroke-linejoin="round"/>
 </svg>`;
   }
   const DIRT_PATCH_SVG = `<svg viewBox="0 0 70 44" width="70" height="44" xmlns="http://www.w3.org/2000/svg">
