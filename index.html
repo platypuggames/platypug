@@ -2902,6 +2902,9 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       endGame();
       return;
     }
+    // Platytag: while you're still touching something, keep telling the host you're checking it
+    // (so a dog that hides there while you're pressed against it — or under the covers with you — is caught)
+    if(state.mp) for(const it of touching){ if(state.touchLatch.has(it.id) && it.id !== "blanket"){ mp.chks[it.id] = Date.now() + 600; } }
     for(const it of touching){
       if(state.touchLatch.has(it.id)) continue;
       state.touchLatch.add(it.id);
@@ -3488,6 +3491,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   function isTag(pl, pg){
     if(pl.ld || pg.ld) return false;                          // no tagging on the trellis ladder
     if(!!pl.ug !== !!pg.ug) return false;
+    if(pg.hid === "bed" && pointInBed(pl.x, pl.y) && Math.hypot(pl.x - pg.x, pl.y - pg.y) < TAG_R + 20) return true;   // under the covers together
     if(pg.hid) return typeof pl.chk === "string" && pl.chk.split(",").includes(pg.hid);   // hiding in furniture: platypus must touch that spot
     if(pg.bl) return blanketTouchedBy(pl.x, pl.y, pg.bl);
     return Math.hypot(pl.x - pg.x, pl.y - pg.y) < TAG_R;
