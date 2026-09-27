@@ -2135,10 +2135,11 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     let dx = 0, dy = 0;
     keysDown.forEach(code => { const d = KEY_DIR[code]; if(d){ dx += d.x; dy += d.y; } });
     if(dx === 0 && dy === 0){
-      if(keyboardActive){ keyboardActive = false; setTarget(state.pos.x, state.pos.y, null); }
+      if(keyboardActive){ keyboardActive = false; state.keyDir = null; setTarget(state.pos.x, state.pos.y, null); }
       return;
     }
     keyboardActive = true;
+    state.keyDir = {x: dx / (Math.hypot(dx, dy) || 1), y: dy / (Math.hypot(dx, dy) || 1)};
     dragging = false;
     state.wantId = null;
     const len = Math.hypot(dx, dy) || 1;
@@ -2493,9 +2494,82 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
 
   // underground: move along the tunnel floor (and the secret passage once it's open);
   // you only come up out of the ends
+  /* Arrow keys underground work like any floor: each arrow moves you that way on the screen.
+     You follow whichever bit of tunnel best matches the direction you're pushing (at corners and
+     the 3-way junction too); pushing into a wall does nothing; pushing out of an end climbs out. */
+  const norm = (x, y) => { const l = Math.hypot(x, y) || 1; return {x: x / l, y: y / l}; };
+  function aTan(x, sgn){ const e = 0.6 * sgn; return norm(sgn, (tunnelFloorY(x + e) - tunnelFloorY(x)) / Math.abs(e)); }
+  function bTan(t, sgn){
+    const L = SECRET_SEGS.L, tt = Math.max(0, Math.min(L, t + 0.6 * sgn));
+    const g = SECRET_SEGS.find(g => tt >= g.s && tt <= g.s + g.l) || SECRET_SEGS[sgn > 0 ? 0 : SECRET_SEGS.length - 1];
+    return norm((g.x1 - g.x0) * sgn, (g.y1 - g.y0) * sgn);
+  }
+  function tunnelKeyMove(step, d){
+    const unlocked = performance.now() >= (state.tunnelLockUntil || 0);
+    let seg = state.tunSeg || "A", t = state.tunT || 0, x = state.pos.x;
+    const dot = v => v.x * d.x + v.y * d.y;
+    const exitTo = (hole, out) => { setUnderground(false); state.holeExited = hole; state.holePull = null; state.target = {x: out.x, y: out.y}; return out; };
+    // climbing out of an end
+    if(unlocked && seg === "A" && x <= TX_MIN + 3 && dot(aTan(x + 1, -1)) > 0.3) return exitTo(HOLES[0], {x: HOLES[0].x - 42, y: HOLES[0].y});
+    if(unlocked && seg === "A" && x >= TX_MAX - 3 && dot(aTan(x - 1, 1)) > 0.3) return exitTo(HOLES[1], {x: HOLES[1].x + 42, y: HOLES[1].y});
+    if(seg === "B" && t >= SECRET_SEGS.L - 3 && dot(bTan(SECRET_SEGS.L, 1)) <= 0.3) state.dhHold = false;
+    if(unlocked && seg === "B" && t >= SECRET_SEGS.L - 3 && !state.dhHold && dot(bTan(SECRET_SEGS.L, 1)) > 0.3) return exitTo(SECRET_HOLE, {x: SECRET_OUT.x, y: SECRET_OUT.y});
+    // the ways you can go from a spot (junction / corners included)
+    const SNAP = 40;
+    const bCorners = SECRET_SEGS.slice(0, -1).map(g => g.s + g.l);
+    function optionsAt(sg, p){
+      const atJ = state.secretOpen && ((sg === "A" && Math.abs(p - SECRET_JX) < 0.5) || (sg === "B" && p < 0.5));
+      const o = [];
+      if(sg === "A" || atJ){ const ax = atJ ? SECRET_JX : p;
+        if(ax < TX_MAX - 0.01) o.push({seg: "A", sgn: 1, v: aTan(ax, 1)});
+        if(ax > TX_MIN + 0.01) o.push({seg: "A", sgn: -1, v: aTan(ax, -1)}); }
+      if(sg === "B" || atJ){ const bt = atJ ? 0 : p;
+        if(bt < SECRET_SEGS.L - 0.01) o.push({seg: "B", sgn: 1, v: bTan(bt, 1)});
+        if(bt > 0.5) o.push({seg: "B", sgn: -1, v: bTan(bt, -1)}); }
+      return o;
+    }
+    const bestOf = o => { let b = null, bd = 0.25; for(const q of o){ const v = dot(q.v); if(v > bd){ bd = v; b = Object.assign({q: v}, q); } } return b; };
+    let rem = step;
+    for(let k = 0; k < 8 && rem > 0.01; k++){
+      const p = seg === "A" ? x : t;
+      let best = bestOf(optionsAt(seg, p));
+      // close to a junction/corner where a turn fits the arrow better? keep going to it, then turn
+      const nodes = seg === "A" ? (state.secretOpen ? [SECRET_JX] : []) : [0].concat(bCorners);
+      for(const nd of nodes){
+        const gap = nd - p;
+        if(Math.abs(gap) < 0.5 || Math.abs(gap) > SNAP) continue;
+        const nb = bestOf(optionsAt(seg, nd).filter(o => !(o.seg === seg && o.sgn === -Math.sign(gap))));
+        if(nb && (!best || nb.q > best.q + 0.05)){
+          const sgn = Math.sign(gap);
+          best = {seg, sgn, v: seg === "A" ? aTan(p, sgn) : bTan(p, sgn), q: nb.q, to: nd};
+        }
+      }
+      if(!best) break;                                        // pushing into a wall
+      const atJ = state.secretOpen && ((seg === "A" && Math.abs(x - SECRET_JX) < 0.5) || (seg === "B" && t < 0.5));
+      if(atJ && best.seg !== seg){ if(best.seg === "A"){ seg = "A"; x = SECRET_JX; } else { seg = "B"; t = 0; } }
+      if(best.seg === "A"){
+        const slope = best.v;
+        let stop = best.sgn > 0 ? TX_MAX : TX_MIN;
+        if(state.secretOpen && (x - SECRET_JX) * best.sgn < -0.5) stop = SECRET_JX;    // pause at the junction to re-choose
+        const nx = best.sgn > 0 ? Math.min(stop, x + rem * Math.abs(slope.x)) : Math.max(stop, x - rem * Math.abs(slope.x));
+        rem -= Math.abs(nx - x) / Math.max(0.05, Math.abs(slope.x));
+        x = nx;
+        if(Math.abs(nx - stop) > 0.01) rem = 0;
+      } else {
+        const bounds = [0].concat(bCorners, [SECRET_SEGS.L]);          // pause at each corner to re-choose
+        let stop = best.sgn > 0 ? SECRET_SEGS.L : 0;
+        for(const bb of bounds){ if(best.sgn > 0 && bb > t + 0.01 && bb < stop) stop = bb; if(best.sgn < 0 && bb < t - 0.01 && bb > stop) stop = bb; }
+        const nt = best.sgn > 0 ? Math.min(stop, t + rem) : Math.max(stop, t - rem);
+        rem -= Math.abs(nt - t); t = nt;
+      }
+    }
+    state.tunSeg = seg; state.tunT = t;
+    return seg === "A" ? {x, y: tunnelFloorY(x)} : secretPoint(t);
+  }
   function tunnelMove(nx, ny){
     if(!state.underground) return null;
     const step = Math.hypot(nx - state.pos.x, ny - state.pos.y);
+    if(keyboardActive && state.keyDir) return tunnelKeyMove(step, state.keyDir);
     const tx = state.target.x, ty = state.target.y;
     const unlocked = performance.now() >= (state.tunnelLockUntil || 0);
     let seg = state.tunSeg || "A", t = state.tunT || 0, x = state.pos.x;
