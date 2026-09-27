@@ -587,6 +587,8 @@
     <div class="lobby-card" id="lobby-room" style="display:none;">
       <div class="lobby-note">Room code</div>
       <div class="room-code" id="room-code">----</div>
+      <div class="lobby-note" style="font-weight:700;">Your name</div>
+      <input class="lobby-input" id="lobby-name" maxlength="14" placeholder="Your name" autocomplete="off" enterkeyhint="done">
       <div class="lobby-note" style="font-weight:700;">Your dog</div>
       <div class="dog-picker"></div>
       <ul class="player-list" id="player-list"></ul>
@@ -3373,8 +3375,22 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     lobbyJoin.style.display = "none"; lobbyRoom.style.display = "";
     lobbyStatus.textContent = asHost ? "Share this code with the other players." : "Joined! Waiting for the host…";
     renderDogPickers();
+    syncLobbyName();
     renderLobby();
   }
+  // rename yourself while in the lobby (everyone's player list updates)
+  const lobbyName = document.getElementById("lobby-name");
+  function syncLobbyName(){ if(document.activeElement !== lobbyName) lobbyName.value = myName(); }
+  lobbyName.addEventListener("input", () => {
+    const v = lobbyName.value.replace(/\s+/g, " ").slice(0, 14);
+    if(!v.trim()) return;
+    nickInput.value = v.trim();
+    try{ localStorage.setItem("platytag_name", nickInput.value); }catch(e){}
+    if(mp.code) Net.setMe({n: myName()});
+    clearTimeout(lobbyName._t); lobbyName._t = setTimeout(renderLobby, 120);
+  });
+  lobbyName.addEventListener("blur", () => { lobbyName.value = myName(); });
+  lobbyName.addEventListener("keydown", e => { if(e.key === "Enter") lobbyName.blur(); });
   function onDogChanged(){ if(mp.code){ Net.setMe({dog: dogCode()}); setTimeout(renderLobby, 50); } }
 
   async function leaveRoom(){
@@ -3455,7 +3471,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   tagoverBtn.addEventListener("click", () => {
     if(mp.isHost && mp.hostG){ mp.hostG.ph = "lobby"; pushHost(); }
     switchScreen(lobbyScreen);
-    if(mp.code){ lobbyJoin.style.display = "none"; lobbyRoom.style.display = ""; renderLobby(); }
+    if(mp.code){ lobbyJoin.style.display = "none"; lobbyRoom.style.display = ""; syncLobbyName(); renderLobby(); }
     else showJoinCard();
   });
 
