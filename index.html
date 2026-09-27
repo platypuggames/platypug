@@ -2515,7 +2515,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     if(seg === "B" && t >= SECRET_SEGS.L - 3 && dot(bTan(SECRET_SEGS.L, 1)) <= 0.3) state.dhHold = false;
     if(unlocked && seg === "B" && t >= SECRET_SEGS.L - 3 && !state.dhHold && dot(bTan(SECRET_SEGS.L, 1)) > 0.3) return exitTo(SECRET_HOLE, {x: SECRET_OUT.x, y: SECRET_OUT.y});
     // the ways you can go from a spot (junction / corners included)
-    const SNAP = 40;
+    const SNAP = 52;
     const bCorners = SECRET_SEGS.slice(0, -1).map(g => g.s + g.l);
     function optionsAt(sg, p){
       const atJ = state.secretOpen && ((sg === "A" && Math.abs(p - SECRET_JX) < 0.5) || (sg === "B" && p < 0.5));
