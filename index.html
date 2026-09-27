@@ -229,6 +229,22 @@
   .critter-sprite.pug, .critter-sprite.plat { width: 56px; height: 65px; margin-left: -28px; margin-top: -59px; }
   .critter-sprite svg, .title-badge svg { overflow: visible; }
   svg.nolash .lash { display: none; }
+  .dog-picker { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .dog-picker .sex-row { display: flex; gap: 8px; justify-content: center; }
+  .dog-picker .sex-row button { font-family: var(--font-display); font-weight: 600; font-size: 15px; border: 2px solid transparent; border-radius: 999px; padding: 6px 18px; background: var(--bg); color: var(--ink); cursor: pointer; }
+  .dog-picker .sex-row button.sel { border-color: var(--accent); background: rgba(255,126,156,0.22); }
+  .dog-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .dog-opt { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 2px solid transparent; border-radius: 12px; background: var(--bg); padding: 4px 2px 3px; font: 700 10.5px/1.1 var(--font); color: var(--ink); cursor: pointer; }
+  .dog-opt.sel { border-color: var(--accent); background: rgba(255,126,156,0.22); }
+  .dog-pic { width: 42px; height: 48px; display: block; }
+  .dog-pic svg { width: 100%; height: 100%; overflow: visible; }
+  .pl-dog { width: 26px; height: 30px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .pl-dog svg { width: 100%; height: 100%; overflow: visible; }
+  /* Platytag: anyone on the platypus team wears a red outline; freshly tagged players pulse */
+  .critter-sprite.it > .flip > svg { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 1.5px 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A); }
+  .critter-sprite.just-tagged > .flip > svg { animation: tagPulse .45s ease-in-out 4; }
+  @keyframes tagPulse { 0%,100% { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 1.5px 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A); }
+    50% { filter: drop-shadow(3px 0 0 #FF1F35) drop-shadow(-3px 0 0 #FF1F35) drop-shadow(0 3px 0 #FF1F35) drop-shadow(0 -3px 0 #FF1F35) drop-shadow(0 0 6px #FF1F35); } }
 
   /* pug tongue: out and panting when idle, pulled in while walking */
   .pug-tongue { transform-box: fill-box; transform-origin: 50% 0%; transition: transform .16s ease; }
@@ -275,7 +291,7 @@
   .critter-sprite.idle .plat-tail { animation: platWagFast .32s ease-in-out infinite; }
   .critter-sprite.walking .pf-l { animation: platStep .36s ease-in-out infinite; }
   .critter-sprite.walking .pf-r { animation: platStep .36s ease-in-out -.18s infinite; }
-  .critter-sprite.plat.idle .crit-lid { animation: platBlink 3.2s ease-in-out infinite; }
+  .critter-sprite.plat.idle .crit-lid, .critter-sprite.plat.idle .plat-lid { animation: platBlink 3.2s ease-in-out infinite; }
   @keyframes platWagSlow { 0%,100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
   @keyframes platWagFast { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
   @keyframes platStep { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-40%) rotate(-10deg); } }
@@ -392,19 +408,19 @@
 
   /* ---------- Platytag (multiplayer) ---------- */
   .mode-btns { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; align-items: stretch; margin-top: 4px; }
-  #lobby-screen, #tagover-screen {
+  #lobby-screen, #tagover-screen, #dog-screen {
     align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 20px;
     overflow-y: auto; -webkit-overflow-scrolling: touch;
     background: linear-gradient(180deg, #E3F6FD 0%, var(--bg) 60%);
   }
   /* menu screens: overlay the app (not stacked in the layout), scroll by touch, never clip the top */
-  #title-screen, #win-screen, #lobby-screen, #tagover-screen { position: absolute; inset: 0; justify-content: safe center; }
-  #title-screen, #title-screen *, #win-screen, #win-screen *, #lobby-screen, #lobby-screen *, #tagover-screen, #tagover-screen * { touch-action: pan-y; }
+  #title-screen, #win-screen, #lobby-screen, #tagover-screen, #dog-screen { position: absolute; inset: 0; justify-content: safe center; }
+  #title-screen, #title-screen *, #win-screen, #win-screen *, #lobby-screen, #lobby-screen *, #tagover-screen, #tagover-screen *, #dog-screen, #dog-screen * { touch-action: pan-y; }
   #title-screen::after { position: fixed; }
   input { user-select: text; -webkit-user-select: text; touch-action: manipulation; }
-  #lobby-screen::before, #tagover-screen::before { content:""; position:absolute; inset:0; background-image: var(--paw); background-size: 64px 64px; pointer-events:none; }
-  #lobby-screen > *, #tagover-screen > * { position: relative; z-index: 1; }
-  #lobby-screen h2, #tagover-screen h2 { margin: 0; font-family: var(--font-display); font-size: 28px; }
+  #lobby-screen::before, #tagover-screen::before, #dog-screen::before { content:""; position:absolute; inset:0; background-image: var(--paw); background-size: 64px 64px; pointer-events:none; }
+  #lobby-screen > *, #tagover-screen > *, #dog-screen > * { position: relative; z-index: 1; }
+  #lobby-screen h2, #tagover-screen h2, #dog-screen h2 { margin: 0; font-family: var(--font-display); font-size: 28px; }
   #tagover-screen .title-badge svg { width: 50px; height: 50px; }
   #tagover-screen .title-badge svg:first-child { width: 64px; }
   .lobby-card { background: var(--panel); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); padding: 16px; width: min(320px, 100%); box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; }
@@ -445,6 +461,13 @@
     </div>
   </div>
 
+  <div id="dog-screen" class="screen hidden">
+    <h2>Pick your pup</h2>
+    <div class="lobby-card"><div class="dog-picker"></div></div>
+    <button class="big-btn" id="dog-go-btn">Let's hide!</button>
+    <button class="howto-toggle" id="dog-back">← Back</button>
+  </div>
+
   <div id="lobby-screen" class="screen hidden">
     <h2>🦆 Platytag</h2>
     <p class="lobby-note" id="lobby-status">One platypus, lots of pugs. Tagged pugs join the hunt!</p>
@@ -459,6 +482,8 @@
     <div class="lobby-card" id="lobby-room" style="display:none;">
       <div class="lobby-note">Room code</div>
       <div class="room-code" id="room-code">----</div>
+      <div class="lobby-note" style="font-weight:700;">Your dog</div>
+      <div class="dog-picker"></div>
       <ul class="player-list" id="player-list"></ul>
       <button class="big-btn" id="start-btn" style="display:none;">Start game</button>
       <p class="lobby-note" id="wait-note">Waiting for the host to start…</p>
@@ -527,6 +552,7 @@
      A platypus look with b "purple" is the classic platypus; any other breed is that dog's platypus. */
   const DOG_BREEDS = ["pugFawn", "pugBlack", "husky", "poodle", "saintBernard", "sheepdog", "shiba",
                       "dachshund", "dalmatian", "frenchBulldog", "germanShepherd"];
+  const OLD_PLAT_TPL = "<svg viewBox=\"0 0 1240 1180\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<clipPath id=\"sil__ID__\"><path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\"/></clipPath>\n<clipPath id=\"tl__ID__\"><path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\"/></clipPath>\n<clipPath id=\"bc__ID__\"><path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\"/></clipPath>\n<radialGradient id=\"ir__ID__\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0.6\" stop-color=\"#EE6FA8\"/><stop offset=\"1\" stop-color=\"#B83D78\"/></radialGradient>\n<linearGradient id=\"bl__ID__\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFC06A\"/><stop offset=\"1\" stop-color=\"#F59A3C\"/></linearGradient>\n</defs>\n<ellipse cx=\"600\" cy=\"1150\" rx=\"360\" ry=\"18\" fill=\"#000\" opacity=\"0.1\"/>\n<g class=\"plat-tail\"><path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\" fill=\"#8C5E3C\"/>\n<g clip-path=\"url(#tl__ID__)\" stroke=\"#4A2E1C\" stroke-width=\"13\"><line x1=\"760\" y1=\"800\" x2=\"1020\" y2=\"1100\"/><line x1=\"816\" y1=\"800\" x2=\"1076\" y2=\"1100\"/><line x1=\"872\" y1=\"800\" x2=\"1132\" y2=\"1100\"/><line x1=\"928\" y1=\"800\" x2=\"1188\" y2=\"1100\"/><line x1=\"984\" y1=\"800\" x2=\"1244\" y2=\"1100\"/><line x1=\"1040\" y1=\"800\" x2=\"1300\" y2=\"1100\"/><line x1=\"1096\" y1=\"800\" x2=\"1356\" y2=\"1100\"/><line x1=\"1152\" y1=\"800\" x2=\"1412\" y2=\"1100\"/><line x1=\"1208\" y1=\"800\" x2=\"1468\" y2=\"1100\"/><line x1=\"1264\" y1=\"800\" x2=\"1524\" y2=\"1100\"/><line x1=\"900\" y1=\"800\" x2=\"640\" y2=\"1100\"/><line x1=\"956\" y1=\"800\" x2=\"696\" y2=\"1100\"/><line x1=\"1012\" y1=\"800\" x2=\"752\" y2=\"1100\"/><line x1=\"1068\" y1=\"800\" x2=\"808\" y2=\"1100\"/><line x1=\"1124\" y1=\"800\" x2=\"864\" y2=\"1100\"/><line x1=\"1180\" y1=\"800\" x2=\"920\" y2=\"1100\"/><line x1=\"1236\" y1=\"800\" x2=\"976\" y2=\"1100\"/><line x1=\"1292\" y1=\"800\" x2=\"1032\" y2=\"1100\"/><line x1=\"1348\" y1=\"800\" x2=\"1088\" y2=\"1100\"/><line x1=\"1404\" y1=\"800\" x2=\"1144\" y2=\"1100\"/><line x1=\"1460\" y1=\"800\" x2=\"1200\" y2=\"1100\"/></g>\n<path d=\"M 850 930 C 895 860 1032 822 1132 830 C 1208 838 1238 880 1225 922 C 1205 992 1132 1050 1020 1070 C 940 1082 872 1040 850 930 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/></g>\n<g class=\"plat-foot pf-l\"><path d=\"M 380 1090 C 380 1130 400 1150 440 1152 C 480 1154 500 1134 498 1098 Z\" fill=\"url(#bl__ID__)\" stroke=\"#1E1418\" stroke-width=\"14\" stroke-linejoin=\"round\"/><path d=\"M 410 1120 L 412 1146 M 440 1122 L 440 1150 M 470 1120 L 468 1146\" stroke=\"#D9772A\" stroke-width=\"5\" stroke-linecap=\"round\"/></g>\n<g class=\"plat-foot pf-r\"><path d=\"M 640 1090 C 640 1130 660 1150 700 1152 C 740 1154 760 1134 758 1098 Z\" fill=\"url(#bl__ID__)\" stroke=\"#1E1418\" stroke-width=\"14\" stroke-linejoin=\"round\"/><path d=\"M 670 1120 L 672 1146 M 700 1122 L 700 1150 M 730 1120 L 728 1146\" stroke=\"#D9772A\" stroke-width=\"5\" stroke-linecap=\"round\"/></g>\n<g stroke=\"#1E1418\" stroke-width=\"12\" stroke-linejoin=\"round\">\n<path d=\"M 562 96 C 540 60 520 30 536 16 C 556 6 584 50 598 94 Z\" fill=\"#C9AEEA\"/>\n<path d=\"M 662 100 C 684 64 712 40 726 52 C 738 70 700 96 650 108 Z\" fill=\"#C9AEEA\"/>\n<path d=\"M 596 94 C 590 50 600 8 620 4 C 642 6 644 50 632 96 Z\" fill=\"#C9AEEA\"/>\n</g>\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"#A887D6\"/>\n<g clip-path=\"url(#sil__ID__)\">\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"#C9AEEA\" transform=\"translate(-34 -16)\"/>\n<path d=\"M 374 850 C 440 834 522 836 576 856 C 560 892 556 934 580 960 C 610 986 652 990 690 984 C 660 1050 560 1086 470 1082 C 400 1078 358 1042 348 992 C 368 958 378 902 374 850 Z\" fill=\"#FFF1F7\"/>\n<ellipse cx=\"880\" cy=\"520\" rx=\"40\" ry=\"140\" fill=\"#C9AEEA\" opacity=\"0.0\"/>\n</g>\n<path d=\"M 250 800 C 230 850 225 940 260 1000 C 300 1080 430 1112 580 1112 C 740 1112 880 1080 905 1000 C 925 930 915 860 885 800 C 872 780 872 758 900 740 C 990 650 1004 520 980 430 C 940 220 780 95 600 90 C 400 85 220 200 160 380 C 120 480 130 560 160 600 C 180 700 220 760 250 800 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/>\n<g fill=\"#fff\">\n<ellipse cx=\"470\" cy=\"150\" rx=\"40\" ry=\"24\" transform=\"rotate(-18 470 150)\"/>\n<circle cx=\"385\" cy=\"200\" r=\"16\"/><circle cx=\"500\" cy=\"210\" r=\"12\"/><circle cx=\"362\" cy=\"245\" r=\"11\"/>\n</g>\n<g fill=\"none\" stroke=\"#1E1418\" stroke-width=\"15\" stroke-linecap=\"round\">\n<path d=\"M 350 846 C 366 880 368 930 340 962 C 322 980 296 978 284 968\"/>\n<path d=\"M 612 850 C 578 872 566 920 584 952 C 604 980 660 976 720 950\"/>\n</g>\n<path d=\"M 185 319 Q 156 305 156 275\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 160 346 Q 130 337 123 311\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 145 379 Q 116 378 102 355\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"258\" cy=\"412\" r=\"118\" fill=\"#1E1226\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<circle cx=\"262\" cy=\"418\" r=\"94\" fill=\"url(#ir__ID__)\"/>\n<circle cx=\"262\" cy=\"418\" r=\"73\" fill=\"#140C1A\"/>\n<path d=\"M 299 504 A 101 101 0 0 0 352 447\" stroke=\"#fff\" stroke-width=\"7\" fill=\"none\" opacity=\"0.55\" stroke-linecap=\"round\"/>\n<circle cx=\"220\" cy=\"377\" r=\"31\" fill=\"#fff\"/>\n<circle cx=\"264\" cy=\"367\" r=\"9\" fill=\"#fff\"/>\n<circle cx=\"244\" cy=\"418\" r=\"13\" fill=\"#fff\"/><ellipse class=\"plat-lid\" style=\"transform:scaleY(0);transform-box:fill-box;transform-origin:50% 0%\" cx=\"258\" cy=\"412\" rx=\"126\" ry=\"126\" fill=\"#C9AEEA\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<path d=\"M 793 343 Q 822 329 822 299\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 818 370 Q 848 361 855 335\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 833 403 Q 862 402 876 379\" stroke=\"#1E1418\" stroke-width=\"14\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"720\" cy=\"436\" r=\"118\" fill=\"#1E1226\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<circle cx=\"724\" cy=\"442\" r=\"94\" fill=\"url(#ir__ID__)\"/>\n<circle cx=\"724\" cy=\"442\" r=\"73\" fill=\"#140C1A\"/>\n<path d=\"M 761 528 A 101 101 0 0 0 814 471\" stroke=\"#fff\" stroke-width=\"7\" fill=\"none\" opacity=\"0.55\" stroke-linecap=\"round\"/>\n<circle cx=\"682\" cy=\"401\" r=\"31\" fill=\"#fff\"/>\n<circle cx=\"726\" cy=\"391\" r=\"9\" fill=\"#fff\"/>\n<circle cx=\"706\" cy=\"442\" r=\"13\" fill=\"#fff\"/><ellipse class=\"plat-lid\" style=\"transform:scaleY(0);transform-box:fill-box;transform-origin:50% 0%\" cx=\"720\" cy=\"436\" rx=\"126\" ry=\"126\" fill=\"#C9AEEA\" stroke=\"#1E1418\" stroke-width=\"12\"/>\n<path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\" fill=\"url(#bl__ID__)\"/>\n<g clip-path=\"url(#bc__ID__)\">\n<path d=\"M 0 720 C 150 760 350 770 640 700 L 700 900 L 0 900 Z\" fill=\"#D9772A\"/>\n<path d=\"M 530 500 C 600 520 640 580 632 640 L 660 640 L 660 480 Z\" fill=\"#D9772A\" opacity=\"0.55\"/>\n</g>\n<path d=\"M 150 574 C 217 560 303 568 340 546 C 383 498 460 460 537 478 C 606 498 641 560 632 640 C 623 730 572 776 467 786 C 364 796 243 790 166 760 C 114 740 97 690 106 640 C 113 600 128 580 150 574 Z\" fill=\"none\" stroke=\"#1E1418\" stroke-width=\"16\" stroke-linejoin=\"round\"/>\n<ellipse cx=\"376\" cy=\"572\" rx=\"12\" ry=\"16\" fill=\"#1E1418\"/><ellipse cx=\"428\" cy=\"578\" rx=\"12\" ry=\"16\" fill=\"#1E1418\"/>\n<ellipse cx=\"217\" cy=\"630\" rx=\"18\" ry=\"16\" fill=\"#fff\" opacity=\"0.85\"/>\n<path d=\"M 440 492 C 480 486 520 494 548 510\" stroke=\"#fff\" stroke-width=\"10\" fill=\"none\" opacity=\"0.6\" stroke-linecap=\"round\"/>\n</svg>";
   let _critN = 0;
   function randLook(kind){
     return {b: kind === "plat" ? "purple" : DOG_BREEDS[Math.floor(Math.random() * DOG_BREEDS.length)], g: Math.random() < 0.5};
@@ -536,11 +562,38 @@
     let b = look.b || "pugFawn";
     if(kind === "pug" && !CRITTER_ART["pug:" + b]) b = "pugFawn";
     if(kind === "plat" && !CRITTER_ART["plat:" + b]) b = "purple";
+    if(kind === "plat" && b === "purple"){
+      // the original platypus, re-framed to the same sprite box/feet line as the vector art
+      return OLD_PLAT_TPL.replace('viewBox=\"0 0 1240 1180\"', 'viewBox="0 -243 1240 1439" overflow="visible"').replace(/__ID__/g, "q" + (++_critN));
+    }
     const A = CRITTER_ART[kind + ":" + b];
     const id = "c" + (++_critN);
     return `<svg viewBox="${A.v}" width="100%" height="100%" overflow="visible" xmlns="http://www.w3.org/2000/svg"${look.g ? "" : ' class="nolash"'}>` +
       A.s.replace(/__ID__/g, id) + `</svg>`;
   }
+  const DOG_NAMES = {pugFawn: "Fawn pug", pugBlack: "Black pug", husky: "Husky", poodle: "Poodle", saintBernard: "St. Bernard",
+    sheepdog: "Sheepdog", shiba: "Shiba", dachshund: "Dachshund", dalmatian: "Dalmatian", frenchBulldog: "Frenchie", germanShepherd: "Shepherd"};
+  // the player's chosen dog (both modes), remembered on this device
+  let myDog = (() => {
+    try { const d = JSON.parse(localStorage.getItem("platypug-dog") || "null"); if(d && DOG_BREEDS.includes(d.b)) return {b: d.b, g: !!d.g}; } catch(e){}
+    return randLook("pug");
+  })();
+  function saveDog(){ try { localStorage.setItem("platypug-dog", JSON.stringify(myDog)); } catch(e){} }
+  function dogCode(d){ return (d || myDog).b + "|" + ((d || myDog).g ? "g" : "-"); }
+  function renderDogPickers(){
+    document.querySelectorAll(".dog-picker").forEach(box => {
+      box.innerHTML = `<div class="sex-row"><button type="button" data-g="-" class="${myDog.g ? "" : "sel"}">Boy</button><button type="button" data-g="g" class="${myDog.g ? "sel" : ""}">Girl</button></div>` +
+        `<div class="dog-grid">` + DOG_BREEDS.map(b => `<button type="button" class="dog-opt${b === myDog.b ? " sel" : ""}" data-b="${b}"><span class="dog-pic">${critterSVG("pug", {b, g: myDog.g})}</span><span>${DOG_NAMES[b] || b}</span></button>`).join("") + `</div>`;
+    });
+  }
+  document.addEventListener("click", e => {
+    const opt = e.target.closest(".dog-picker button");
+    if(!opt) return;
+    if(opt.dataset.b) myDog.b = opt.dataset.b;
+    if(opt.dataset.g) myDog.g = opt.dataset.g === "g";
+    saveDog(); renderDogPickers();
+    if(typeof onDogChanged === "function") onDogChanged();
+  });
   function pugSVG(look){ return critterSVG("pug", look); }
   function platypusSVG(look){ return critterSVG("plat", look); }
 
@@ -1258,7 +1311,7 @@
   const toast = document.getElementById("toast");
   const interstitial = document.getElementById("interstitial");
 
-  document.getElementById("title-critters").innerHTML = pugSVG(randLook("pug")) + platypusSVG(randLook("plat"));
+  document.getElementById("title-critters").innerHTML = pugSVG({b: "pugFawn", g: false}) + platypusSVG({b: "purple"});
   document.getElementById("win-critters").innerHTML = pugSVG() + platypusSVG();
 
   let spriteEl = null, footEl = null;
@@ -1321,6 +1374,7 @@
     lastTs = ts;
 
     if(typeof keysDown !== "undefined" && keysDown.size) updateKeyboardTarget();
+    if(state.frozenUntil && performance.now() < state.frozenUntil){ state.target = {x: state.pos.x, y: state.pos.y}; }
 
     if(spriteEl && (state.phase === "hiding" || state.phase === "seeking")){
       let speed = state.sliding ? 760 : (state.mp && state.phase === "seeking" ? 350 : 300); // world px per second; platytag platypus ~17% faster
@@ -2246,7 +2300,7 @@
 
   function startHidingPhase(){
     state.mp = false;
-    state.looks = {pug: randLook("pug"), plat: randLook("plat")};   // random boy/girl + fawn/black pug; purple platypus
+    state.looks = {pug: {b: myDog.b, g: myDog.g}, plat: {b: "purple", g: false}};   // the dog you picked vs the classic platypus
     document.getElementById("win-critters").innerHTML = pugSVG(state.looks.pug) + platypusSVG(state.looks.plat);
     state.phase = "hiding";
     state.underground = false;
@@ -2272,7 +2326,9 @@
     updateHud();
   }
 
-  document.getElementById("play-btn").addEventListener("click", startHidingPhase);
+  document.getElementById("play-btn").addEventListener("click", () => { renderDogPickers(); switchScreen(document.getElementById("dog-screen")); });
+  document.getElementById("dog-go-btn").addEventListener("click", startHidingPhase);
+  document.getElementById("dog-back").addEventListener("click", () => switchScreen(document.getElementById("title-screen")));
   document.getElementById("again-btn").addEventListener("click", startHidingPhase);
 
   document.getElementById("howto-btn").addEventListener("click", () => {
@@ -2438,6 +2494,7 @@
         <path d="M6 20 Q30 8 54 20" stroke="#F2A6C4" stroke-width="2.5" fill="none" opacity="0.6"/>
       </svg>`;
 
+  const TAG_FREEZE_MS = 1800;   // tagged players are held in place this long
   const mp = {
     code: null, isHost: false, hadHost: false, g: null, hostG: null, hostT0: 0, hostTimer: null,
     inGame: false, myRole: null, spawned: false, lastRid: null, tgSeen: 0, overShown: false,
@@ -2459,7 +2516,7 @@
   const playerList = document.getElementById("player-list");
   const roomCodeEl = document.getElementById("room-code");
   const tagoverBtn = document.getElementById("tagover-btn");
-  document.getElementById("tagover-critters").innerHTML = pugSVG(randLook("pug")) + platypusSVG(randLook("plat"));
+  document.getElementById("tagover-critters").innerHTML = pugSVG({b: "pugFawn", g: false}) + platypusSVG({b: "purple"});
 
   const DEFAULT_NOTE = "One platypus, lots of pugs. Tagged pugs join the hunt!";
   function fmt(sec){ sec = Math.max(0, sec|0); const m = Math.floor(sec/60), s = sec % 60; return m ? `${m}:${String(s).padStart(2,"0")}` : `${s}s`; }
@@ -2501,7 +2558,7 @@
     createBtn.disabled = joinBtn.disabled = false;
     Object.assign(mp, {code, isHost: asHost, hadHost: false, g: null, lastRid: null, inGame: false});
     mp.joinedAt = Date.now();
-    const me = {n: myName(), jt: mp.joinedAt, h: asHost ? 1 : 0, role: null, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0};
+    const me = {n: myName(), dog: dogCode(), jt: mp.joinedAt, h: asHost ? 1 : 0, role: null, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0};
     if(asHost){
       mp.hostG = {ph: "lobby", rid: 0, roles: {}, tg: [], hl: HEAD_START, el: 0};
       me.g = JSON.parse(JSON.stringify(mp.hostG));
@@ -2518,8 +2575,10 @@
     if(!asHost) setTimeout(() => { if(mp.code === code) onNetChange(); }, 1700);   // re-check room capacity once settled
     lobbyJoin.style.display = "none"; lobbyRoom.style.display = "";
     lobbyStatus.textContent = asHost ? "Share this code with the other players." : "Joined! Waiting for the host…";
+    renderDogPickers();
     renderLobby();
   }
+  function onDogChanged(){ if(mp.code){ Net.setMe({dog: dogCode()}); setTimeout(renderLobby, 50); } }
 
   async function leaveRoom(){
     clearInterval(mp.hostTimer); mp.hostTimer = null;
@@ -2553,7 +2612,10 @@
     playerList.innerHTML = "";
     peers.forEach(pp => {
       const li = document.createElement("li");
-      const a = document.createElement("span"); a.textContent = String(pp.p.n).slice(0, 14) + (pp.isMe ? " (you)" : "");
+      const a = document.createElement("span");
+      const d = String(pp.p.dog || "pugFawn|-").split("|");
+      const ic = document.createElement("span"); ic.className = "pl-dog"; ic.innerHTML = critterSVG("pug", {b: d[0], g: d[1] === "g"});
+      a.append(ic, document.createTextNode(String(pp.p.n).slice(0, 14) + (pp.isMe ? " (you)" : "")));
       const b = document.createElement("span"); b.className = "tag"; b.textContent = pp.p.h ? "Host" : "";
       li.append(a, b); playerList.appendChild(li);
     });
@@ -2575,10 +2637,13 @@
     if(ids.length < 2) return;
     const platId = ids[Math.floor(Math.random()*ids.length)];
     const roles = {}, lk = {};
+    const peerById = {}; roster().forEach(pp => { peerById[pp.id] = pp.p; });
     ids.forEach(id => {
       roles[id] = id === platId ? "plat" : "pug";
-      const L = randLook(id === platId ? "plat" : "pug");   // starting platypus is always purple
-      lk[id] = L.b + "|" + (L.g ? "g" : "-");
+      // everyone keeps the dog they picked (used if they're a dog now, or once they're tagged);
+      // the starting platypus is always the classic purple one
+      const d = String((peerById[id] || {}).dog || "");
+      lk[id] = id === platId ? "purple|-" : (DOG_BREEDS.includes(d.split("|")[0]) ? d : dogCode(randLook("pug")));
     });
     mp.hostG = {ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, lk, tg: [], hl: HEAD_START, el: 0};
     mp.hostT0 = Date.now();
@@ -2713,7 +2778,7 @@
     const code = mpLookCode(Net.myId());
     state.looks = {pug: lookFromCode(code, "pug"), plat: lookFromCode(code, "plat")};
     mp.myLook = code;
-    spriteEl.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat") + (state.underground ? " xray" : "");
+    spriteEl.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat it") + (state.underground ? " xray" : "");
     spriteEl.innerHTML = `<span class="flip">${role === "pug" ? pugSVG(state.looks.pug) : platypusSVG(state.looks.plat)}</span>`;
     state.walkingClassApplied = false;
   }
@@ -2742,7 +2807,7 @@
       state.phase = "waiting";
       spriteEl.style.visibility = "hidden"; footEl.style.visibility = "hidden";
       interstitial.style.display = "flex";
-      interstitial.innerHTML = `<h2>You're the platypus! 🦆</h2><p>The pugs are running off to hide. Tag them by touching them, or check the furniture they're hiding in.</p><div class="count" id="mp-count">${(mp.g && mp.g.hl) || HEAD_START}</div>`;
+      interstitial.innerHTML = `<h2>You're the platypus!</h2><p>The pugs are running off to hide. Tag them by touching them, or check the furniture they're hiding in.</p><div class="count" id="mp-count">${(mp.g && mp.g.hl) || HEAD_START}</div>`;
       Net.setMe({role, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0});
     }
     updateHud();
@@ -2772,7 +2837,15 @@
     plainBtn.classList.toggle("show", role === "pug");
     state.pendingSpot = null; confirmFab.classList.remove("show");
     worldEl.querySelectorAll(".furniture.selected").forEach(x => x.classList.remove("selected"));
-    if(wasPug && role === "plat") showToast("Tagged! You're a platypus now — help find the others 🦆", 2400);
+    if(wasPug && role === "plat"){
+      // make getting caught unmissable: stop in place for a moment and pulse the red outline
+      state.frozenUntil = performance.now() + TAG_FREEZE_MS;
+      state.target = {x: state.pos.x, y: state.pos.y};
+      spriteEl.classList.add("just-tagged");
+      setTimeout(() => spriteEl.classList.remove("just-tagged"), TAG_FREEZE_MS + 100);
+      if(navigator.vibrate) try { navigator.vibrate([120, 60, 120]); } catch(e){}
+      showToast("You got tagged! You're on the platypus team now", 2400);
+    }
     sendMe(true);
   }
 
@@ -2860,7 +2933,7 @@
   }
   function makeRemote(role, p, lk){
     const el = document.createElement("div");
-    el.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat");
+    el.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat it");
     el.innerHTML = `<span class="flip">${role === "pug" ? pugSVG(lookFromCode(lk, "pug")) : platypusSVG(lookFromCode(lk, "plat"))}</span>`;
     worldEl.appendChild(el);
     const tag = document.createElement("div");
@@ -2901,7 +2974,11 @@
       seen.add(pp.id);
       let r = mp.remotes.get(pp.id);
       const lk = mpLookCode(pp.id);
-      if(!r || r.role !== role || r.lk !== lk){ if(r) removeRemote(r); r = makeRemote(role, p, lk); mp.remotes.set(pp.id, r); }
+      if(!r || r.role !== role || r.lk !== lk){
+        const wasPug = r && r.role === "pug";
+        if(r) removeRemote(r); r = makeRemote(role, p, lk); mp.remotes.set(pp.id, r);
+        if(wasPug && role === "plat"){ r.el.classList.add("just-tagged"); setTimeout(() => r.el.classList.remove("just-tagged"), 1900); }
+      }
       if(Math.hypot(p.x - r.x, p.y - r.y) > 160){ r.x = p.x; r.y = p.y; }   // big jumps (tunnel, spawn): snap
       else { r.x += (p.x - r.x) * k; r.y += (p.y - r.y) * k; }
       r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
