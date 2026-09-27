@@ -450,7 +450,7 @@
     <p class="sub">Hide your pug somewhere cozy around the house, then switch sides and help the platypus find them!</p>
     <div class="mode-btns">
       <button class="big-btn" id="play-btn">🐶 Pug and Seek</button>
-      <button class="big-btn secondary" id="tag-btn">🦆 Platytag</button>
+      <button class="big-btn secondary" id="tag-btn">Platytag</button>
     </div>
     <button class="howto-toggle" id="howto-btn">How to play</button>
     <div class="howto-card" id="howto-card" style="display:none;">
@@ -469,7 +469,7 @@
   </div>
 
   <div id="lobby-screen" class="screen hidden">
-    <h2>🦆 Platytag</h2>
+    <h2>Platytag</h2>
     <p class="lobby-note" id="lobby-status">One platypus, lots of pugs. Tagged pugs join the hunt!</p>
     <div class="lobby-card" id="lobby-join">
       <input class="lobby-input" id="nick-input" maxlength="14" placeholder="Your name" autocomplete="off">
@@ -1859,7 +1859,7 @@
       phasePill.innerHTML = "🐶 Hiding";
       statPill.textContent = "Pick a cozy spot";
     } else if(state.phase === "seeking"){
-      phasePill.innerHTML = "🦆 Seeking";
+      phasePill.innerHTML = "Seeking";
       statPill.textContent = "Spots checked: " + state.checkedSpots;
     }
   }
@@ -2760,7 +2760,7 @@
     const tg = G.tg || [];
     if(tg.length > mp.tgSeen){
       const last = tg[tg.length - 1];
-      if(last.id !== Net.myId()) showToast(`${last.n} was tagged! 🦆`, 1800);
+      if(last.id !== Net.myId()) showToast(`${last.n} was tagged!`, 1800);
       mp.tgSeen = tg.length;
     }
     updateHud();
@@ -2822,7 +2822,7 @@
     mp.lastX = s.x;
     spriteEl.style.visibility = ""; footEl.style.visibility = "";
     plainBtn.classList.toggle("show", mp.myRole === "pug");
-    if(mp.myRole === "plat") showToast("Go find those pugs! 🦆", 1600);
+    if(mp.myRole === "plat") showToast("Go find those pugs!", 1600);
     sendMe(true);
     updateHud();
   }
@@ -3030,7 +3030,7 @@
   function mpHud(){
     const G = mp.g || {};
     const pugs = Object.values(G.roles || {}).filter(r => r === "pug").length;
-    phasePill.innerHTML = mp.myRole === "pug" ? "🐶 Pug" : "🦆 Platypus";
+    phasePill.innerHTML = mp.myRole === "pug" ? "🐶 Pug" : "Platypus";
     if(G.ph === "head") statPill.textContent = mp.myRole === "pug" ? `Platypus in ${G.hl}s — hide!` : `Released in ${G.hl}s`;
     else statPill.textContent = `Pugs left: ${pugs} · ${fmt(G.el)}`;
   }
