@@ -239,8 +239,6 @@
     box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25); opacity: 0.8; }
   .garage-plate.pressed { background: radial-gradient(circle at 40% 35%, #9BE3B8, #3FA56A); box-shadow: inset 0 2px 0 rgba(0,0,0,0.3); }
 
-  .dirt-patch { position: absolute; width: 70px; height: 44px; margin: -22px 0 0 -35px; z-index: 1; pointer-events: none; }
-  .dirt-patch svg { width: 100%; height: 100%; display: block; }
   .secret-path { z-index: 10; }
   .tunnel-hole { position: absolute; width: 80px; height: 54px; margin: -27px 0 0 -40px; z-index: 2; pointer-events: none; }
   .tunnel-path { position: absolute; z-index: 10; pointer-events: none; display: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
@@ -2055,10 +2053,12 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     const dy = Math.max(item.y - py, 0, py - (item.y + item.h));
     return Math.hypot(dx, dy);
   }
+  // underground you can't reach the furniture up in the rooms overhead (only a blanket down in the tunnel)
+  function reachable(item){ return !state.underground || (item.id === "blanket" && blanketRoom === "tunnel"); }
   function nearestItem(){
     let best = null, bestD = Infinity;
     for(const item of FURN_LIST){
-      if(item.hidden) continue;
+      if(item.hidden || !reachable(item)) continue;
       const d = distToItem(item, state.pos.x, state.pos.y);
       if(d < bestD){ bestD = d; best = item; }
     }
@@ -2391,9 +2391,11 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   const SECRET_JX = 948;                                            // tunnel-floor x right above the diamond
   // straight 45° drop from the tunnel floor to the bottom of the yard, a flat run west, then the same
   // steep climb up to the hole as the original tunnel's ends
-  const SECRET_PTS = [[948,1414],[772,1590],[136,1590],[96,1510],[92,1508]];
-  const SECRET_HOLE = {x: 92, y: 1506};
-  const SECRET_OUT = {x: 136, y: 1506};
+  // 45° drop off the tunnel floor, a short run west, then 45° switchbacks north under the house,
+  // finishing with a steep climb (like the tunnel's ends) up into the backyard doghouse
+  const SECRET_PTS = [[948,1414],[860,1502],[626,1502],[426,1302],[626,1102],[426,902],[626,702],[426,502],[480,400],[484,398]];
+  const SECRET_HOLE = {x: 480, y: 408, r: 24};   // the doghouse doorway (walk into it to go down)
+  const SECRET_OUT = {x: 480, y: 452};
   const SECRET_SEGS = (() => { const a = []; let L = 0;
     for(let i = 1; i < SECRET_PTS.length; i++){ const [x0, y0] = SECRET_PTS[i-1], [x1, y1] = SECRET_PTS[i]; const l = Math.hypot(x1-x0, y1-y0); a.push({x0, y0, x1, y1, l, s: L}); L += l; }
     a.L = L; return a; })();
@@ -2412,7 +2414,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     }
     return best;
   }
-  const SECRET_O = {x: 20, y: 1380};                                // overlay origin (world)
+  const SECRET_O = {x: 360, y: 340};                                // overlay origin (world)
   function secretPathSVG(){
     const O = SECRET_O, CEIL = 66, MAIN_FLOOR = 1414;
     const P = SECRET_PTS.map(([x, y]) => [x - O.x, y - O.y]);
@@ -2431,7 +2433,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     const outsideMain = `M -200 -300 H 1200 V 500 H -200 Z M ${M.x0} ${M.y0} H ${M.x1} V ${M.y1} H ${M.x0} Z`;
     let pebbles = "";
     for(let t = 60; t < SECRET_SEGS.L - 60; t += 52){ const q = secretPoint(t); pebbles += `<ellipse cx="${(q.x - O.x + ((t*7)%23) - 11).toFixed(1)}" cy="${(q.y - O.y + 20).toFixed(1)}" rx="${3 + t%4}" ry="2.5" fill="#6B4A33"/>`; }
-    return `<svg viewBox="0 0 1000 240" width="1000" height="240" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+    return `<svg viewBox="0 0 700 1300" width="700" height="1300" xmlns="http://www.w3.org/2000/svg" overflow="visible">
 <defs>
   <linearGradient id="scCave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C2340"/><stop offset="1" stop-color="#171226"/></linearGradient>
   <clipPath id="scBelow"><path d="${outsideMain}" clip-rule="evenodd"/></clipPath>
@@ -2446,23 +2448,8 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
 <path d="${line(ceil)}" fill="none" stroke="#5A4232" stroke-width="14" stroke-dasharray="3 22" stroke-linejoin="round"/>
 </svg>`;
   }
-  const DIRT_PATCH_SVG = `<svg viewBox="0 0 70 44" width="70" height="44" xmlns="http://www.w3.org/2000/svg">
-<path d="M 6 24 Q 4 12 18 10 Q 26 3 38 7 Q 52 3 60 12 Q 69 18 64 28 Q 66 38 52 38 Q 40 43 28 39 Q 12 42 8 34 Q 2 30 6 24 Z" fill="#8C6440" stroke="#6E4E32" stroke-width="2"/>
-<g fill="#6E4E32"><circle cx="20" cy="20" r="2.4"/><circle cx="44" cy="16" r="2"/><circle cx="52" cy="30" r="2.6"/><circle cx="30" cy="31" r="1.8"/></g>
-<g fill="#A67C55"><circle cx="34" cy="18" r="1.8"/><circle cx="14" cy="30" r="1.6"/><circle cx="58" cy="22" r="1.5"/></g>
-</svg>`;
-  let secretPathEl = null, secretHoleEl = null;
+  let secretPathEl = null;
   function buildSecret(){
-    const patch = document.createElement("div");
-    patch.className = "dirt-patch";
-    patch.style.left = SECRET_HOLE.x + "px"; patch.style.top = SECRET_HOLE.y + "px";
-    patch.innerHTML = DIRT_PATCH_SVG;
-    worldEl.appendChild(patch);
-    secretHoleEl = document.createElement("div");
-    secretHoleEl.className = "tunnel-hole secret-hole";
-    secretHoleEl.style.left = SECRET_HOLE.x + "px"; secretHoleEl.style.top = SECRET_HOLE.y + "px";
-    secretHoleEl.innerHTML = HOLE_SVG;
-    worldEl.appendChild(secretHoleEl);
     secretPathEl = document.createElement("div");
     secretPathEl.className = "tunnel-path secret-path";
     secretPathEl.style.left = SECRET_O.x + "px"; secretPathEl.style.top = SECRET_O.y + "px";
@@ -2471,7 +2458,6 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     applySecret();
   }
   function applySecret(){
-    if(secretHoleEl) secretHoleEl.style.display = state.secretOpen ? "" : "none";
     if(secretPathEl) secretPathEl.classList.toggle("show", !!(state.secretOpen && state.underground));
   }
   function openSecret(announce){
@@ -2524,13 +2510,14 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     const aX = Math.max(TX_MIN, Math.min(TX_MAX, tx));
     const dA = Math.hypot(tx - aX, ty - tunnelFloorY(aX));
     let goal = "A", tb = 0;
+    const endP = secretPoint(SECRET_SEGS.L);
+    const toYard = state.secretOpen && roomAt(tx, ty) === "backyard" && Math.hypot(tx - endP.x, ty - endP.y) > 30;
     if(state.secretOpen){
-      tb = secretProject(tx, ty);
+      tb = toYard ? SECRET_SEGS.L : secretProject(tx, ty);          // aiming anywhere in the backyard = head for the doghouse
       const bp = secretPoint(tb);
-      if(Math.hypot(tx - bp.x, ty - bp.y) < dA) goal = "B";
+      if(toYard || Math.hypot(tx - bp.x, ty - bp.y) < dA) goal = "B";
     }
-    if(seg === "B" && goal === "B" && unlocked && t >= SECRET_SEGS.L - 3 && tb >= SECRET_SEGS.L - 0.5 &&
-       Math.hypot(tx - SECRET_HOLE.x, ty - SECRET_HOLE.y) > 14){
+    if(seg === "B" && goal === "B" && unlocked && t >= SECRET_SEGS.L - 3 && toYard){
       setUnderground(false); state.holeExited = SECRET_HOLE; state.holePull = null;
       const out = {x: SECRET_OUT.x, y: SECRET_OUT.y};
       state.target = {x: out.x, y: out.y};
@@ -2554,7 +2541,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       state.target = {x: (tx < TX_MIN || tx > TX_MAX) ? tx : aX, y: tunnelFloorY(aX)};
     } else {
       const bp = secretPoint(tb);
-      state.target = (tb >= SECRET_SEGS.L - 0.5 && Math.hypot(tx - SECRET_HOLE.x, ty - SECRET_HOLE.y) > 14) ? {x: tx, y: ty} : {x: bp.x, y: bp.y};
+      state.target = toYard ? {x: tx, y: ty} : {x: bp.x, y: bp.y};
     }
     if(seg === "A") return {x, y: tunnelFloorY(x)};
     return secretPoint(t);
@@ -2566,8 +2553,9 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     if(state.underground || state.sliding) return;
     for(const h of (state.secretOpen ? HOLES.concat([SECRET_HOLE]) : HOLES)){
       const d = Math.hypot(state.pos.x - h.x, state.pos.y - h.y);
-      if(state.holeExited === h){ if(d > HOLE_GRAB_R + 8) state.holeExited = null; else continue; }
-      if(d < HOLE_GRAB_R && d >= HOLE_ENTER_R && !state.holePull){
+      const grab = h.r || HOLE_GRAB_R;
+      if(state.holeExited === h){ if(d > grab + 8) state.holeExited = null; else continue; }
+      if(d < grab && d >= HOLE_ENTER_R && !state.holePull){
         state.holePull = h;                                   // start the slurp toward the hole
         state.target = {x: h.x, y: h.y};
         continue;
@@ -2576,7 +2564,8 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
         state.holePull = null;
         if(h === SECRET_HOLE){
           state.tunSeg = "B"; state.tunT = SECRET_SEGS.L;
-          state.pos.x = SECRET_HOLE.x; state.pos.y = SECRET_HOLE.y;
+          const e = secretPoint(SECRET_SEGS.L);
+          state.pos.x = e.x; state.pos.y = e.y;
           state.target = {x: state.pos.x, y: state.pos.y};
           state.tunnelLockUntil = performance.now() + 600;
           setUnderground(true);
@@ -2610,7 +2599,6 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     if(state.phase !== "hiding" || state.busy || state.underground || state.sliding) return false;
     const r = roomAt(state.pos.x, state.pos.y);
     if(onPoolDeck(state.pos.x, state.pos.y)) return false;
-    if(Math.hypot(state.pos.x - SECRET_HOLE.x, state.pos.y - SECRET_HOLE.y) < 48) return false;   // hard-packed dirt patch
     return r === "frontyard" || r === "backyard";
   }
   function nearDig(x, y){
@@ -2659,7 +2647,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       const it = FURN_LIST.find(f => f.id === id);
       if(!it || distToItem(it, px, py) > REARM_D) state.touchLatch.delete(id);
     }
-    const touching = FURN_LIST.filter(it => !it.hidden && distToItem(it, px, py) <= TOUCH_D);
+    const touching = FURN_LIST.filter(it => !it.hidden && reachable(it) && distToItem(it, px, py) <= TOUCH_D);
     touching.sort((a, b) => (b.id === "blanket") - (a.id === "blanket"));   // blanket first
     // classic: pug snuggled under the bed covers (blanket button in bed) — she has to get under there too
     if(!state.mp && state.hidingSpot === "bedlump" && state.pugLumpPos && !state.busy &&
