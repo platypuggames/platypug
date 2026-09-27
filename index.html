@@ -198,6 +198,9 @@
   @keyframes bubble { 0% { opacity: 0; transform: translateY(0) scale(0.5); } 8% { opacity: 1; } 22% { opacity: 1; transform: translateY(-10px) scale(1); }
     26% { opacity: 0; transform: translateY(-12px) scale(1.6); } 100% { opacity: 0; transform: translateY(-12px) scale(1.6); } }
   .foot-shadow.in-water { opacity: 0; }
+  .paw-print { position: absolute; width: 13px; height: 13px; z-index: 2; pointer-events: none; opacity: 0; animation: pawFade 6s linear forwards; }
+  .paw-print svg { width: 100%; height: 100%; display: block; }
+  @keyframes pawFade { 0% { opacity: 0; } 4% { opacity: 0.55; } 50% { opacity: 0.5; } 100% { opacity: 0; } }
   .world-ext { position: absolute; left: 0; background-color: #D9EEC0; background-image: var(--paw); background-size: 50px 50px; }
   #world {
     position: absolute; top: 0; left: 0;
@@ -1294,6 +1297,34 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     tubeEl.style.display = free ? "" : "none";
     if(free){ tubeEl.style.left = free.x + "px"; tubeEl.style.top = free.y + "px"; }
   }
+  /* Wet paw prints: for a few seconds after climbing out of the pool, anyone walking leaves
+     little paw prints that linger a moment and then fade away. */
+  const WET_MS = 4000, PAW_STEP = 20;
+  const PAW_SVG = `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><g fill="#2C6E96">
+<ellipse cx="10" cy="13" rx="4.6" ry="4"/><ellipse cx="4.2" cy="7.6" rx="1.9" ry="2.4"/><ellipse cx="8" cy="4.6" rx="1.9" ry="2.5"/>
+<ellipse cx="12" cy="4.6" rx="1.9" ry="2.5"/><ellipse cx="15.8" cy="7.6" rx="1.9" ry="2.4"/></g></svg>`;
+  // who: any object we can hang trail state on (state for me, the remote record for others)
+  function pawTrail(who, x, y, wetNow, blocked){
+    const now = performance.now();
+    if(who._wasWet && !wetNow) who._wetUntil = now + WET_MS;          // just climbed out
+    who._wasWet = wetNow;
+    if(wetNow || blocked || !(who._wetUntil > now)){ who._pawLast = null; return; }
+    const L = who._pawLast;
+    if(!L){ who._pawLast = {x, y}; return; }
+    const d = Math.hypot(x - L.x, y - L.y);
+    if(d < PAW_STEP) return;
+    const ang = Math.atan2(y - L.y, x - L.x);
+    who._pawSide = -(who._pawSide || 1);
+    const ox = -Math.sin(ang) * 5 * who._pawSide, oy = Math.cos(ang) * 5 * who._pawSide;
+    const el = document.createElement("div");
+    el.className = "paw-print";
+    el.style.left = (x + ox) + "px"; el.style.top = (y + oy) + "px";
+    el.style.transform = `translate(-50%, -50%) rotate(${(ang * 180 / Math.PI + 90).toFixed(0)}deg)`;
+    el.innerHTML = PAW_SVG;
+    worldEl.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+    who._pawLast = {x, y};
+  }
   // goggles + vest for the original purple platypus (side view, eyes further forward)
   const SWIM_GEAR_OLDPLAT = `<svg viewBox="0 0 56 65" xmlns="http://www.w3.org/2000/svg">
 <path d="M 24 43 Q 27 40 32 40 L 34 42.5 Q 38 44 42 42.5 L 44 40 Q 48 40 50 43 L 51 50 L 23 50 Z" fill="#FF7A2F" stroke="#241811" stroke-width="1.6" stroke-linejoin="round"/>
@@ -1694,6 +1725,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       }
       if(swimNow) state.lastSwimPos = {x: state.pos.x, y: state.pos.y};
       updateTube();
+      pawTrail(state, state.pos.x, state.pos.y, swimNow || !!state.diving, state.underground || state.sliding);
       footEl.style.left = state.pos.x + "px";
       footEl.style.top = (state.pos.y + 3) + "px";
 
@@ -1760,7 +1792,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     FURN_LIST = [];
     ROOM_FOG = {}; curSeekRoom = null; blanketEl = null; blanketRoom = null;
     state.holePull = null; state.holeExited = null;
-    state.tube = {x: TUBE_HOME.x, y: TUBE_HOME.y, holder: null}; state.lastSwimPos = null; state.swimming = false; state.wearingTube = false;
+    state.tube = {x: TUBE_HOME.x, y: TUBE_HOME.y, holder: null}; state.lastSwimPos = null; state.swimming = false; state.wearingTube = false; state._wasWet = false; state._wetUntil = 0; state._pawLast = null;
     SOLID_RECTS = [];
     bedWorldRect = null;
     inBedNow = false;
@@ -3568,7 +3600,9 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       if(face !== r.face && r.flip){ r.flip.style.transform = face; r.face = face; }
       r.el.classList.toggle("xray", !!p.ug);
       if(!!p.dv !== !!r.dv){ if(r.dv && !p.dv) makeSplash(p.x, p.y); r.dv = !!p.dv; r.el.classList.toggle("diving", r.dv); r.el.style.zIndex = r.dv ? "7" : ""; }
-      r.el.classList.toggle("swimming", !p.ug && !p.dv && inPool(r.x, r.y));
+      const rSwim = !p.ug && !p.dv && inPool(r.x, r.y);
+      r.el.classList.toggle("swimming", rSwim);
+      pawTrail(r, r.x, r.y, rSwim || !!p.dv, !!p.ug || !!p.hid || !!p.bl);
       r.el.classList.toggle("tubed", !!(mp.g && mp.g.tube && mp.g.tube.h === pp.id) && inPool(r.x, r.y));
       const inBed = !p.ug && pointInBed(r.x, r.y);
       const tunnelHidden = !!p.ug && !state.underground;          // underground players are only visible from the tunnel
