@@ -138,8 +138,26 @@
   @keyframes poolCaustic { from { transform: translateX(0); } to { transform: translateX(40px); } }
   .pool-float { animation: poolFloat 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
   @keyframes poolFloat { 0%,100% { translate: 0 0; rotate: -4deg; } 50% { translate: 6px 3px; rotate: 5deg; } }
-  .swim-gear, .swim-straw, .swim-ring { display: none; position: absolute; pointer-events: none; }
-  .swim-gear { left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+  .swim-gear, .swim-straw, .swim-ring, .tube-worn { display: none; position: absolute; pointer-events: none; }
+  .critter-sprite .flip { position: relative; }
+  .swim-gear { left: 0; top: 0; width: 100%; height: 100%; }
+  .swim-gear svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .tube-worn { left: -6px; width: 68px; height: 42px; top: 33px; }
+  .tube-worn svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .tube-back { z-index: -1; }
+  .critter-sprite.swimming.tubed .tube-worn { display: block; }
+  .critter-sprite.swimming.tubed .swim-ring { display: none; }
+  .critter-sprite.swimming.tubed { animation: tubeBob 1.1s ease-in-out infinite !important; }
+  @keyframes tubeBob { 0%,100% { translate: 0 0; rotate: -2deg; } 50% { translate: 0 2px; rotate: 2deg; } }
+  /* a platypus in the tube floats on top like the dogs: vest + goggles, no straw */
+  .critter-sprite.plat.swimming.tubed > .flip > svg,
+  .critter-sprite.plat.it.swimming.tubed > .flip > svg { opacity: 1; filter: none !important; translate: none; clip-path: inset(0 0 25% 0); }
+  .critter-sprite.plat.it.swimming.tubed > .flip > svg { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A) !important; }
+  .critter-sprite.plat.swimming.tubed .swim-gear { display: block; }
+  .critter-sprite.plat.swimming.tubed .swim-straw { display: none; }
+  .float-tube { position: absolute; width: 68px; height: 42px; margin: -21px 0 0 -34px; z-index: 4; pointer-events: none; animation: tubeDrift 3.4s ease-in-out infinite; }
+  .float-tube svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  @keyframes tubeDrift { 0%,100% { translate: 0 0; rotate: -4deg; } 50% { translate: 3px 3px; rotate: 4deg; } }
   .critter-sprite.swimming .swim-ring { display: block; left: -2px; right: -2px; top: 71%; height: 12px; border-radius: 50%;
     border: 2.5px solid rgba(255,255,255,0.85); background: rgba(80,190,235,0.35); animation: swimRing 1.4s ease-in-out infinite; }
   @keyframes swimRing { 0%,100% { transform: scale(0.94); opacity: 0.9; } 50% { transform: scale(1.06); opacity: 0.6; } }
@@ -1148,12 +1166,10 @@
   <path d="M ${d + w*0.5} ${d+14} V ${d + h - 14}" stroke="#1F7FB0" stroke-width="3" stroke-dasharray="14 10" opacity="0.35"/>
 </g>
 ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
-<g class="pool-float" transform="translate(${d + w*0.72} ${d + h*0.34})"><ellipse rx="30" ry="18" fill="#FF8FB3" stroke="#241811" stroke-width="3"/><ellipse rx="12" ry="7" fill="#57C2E8" stroke="#241811" stroke-width="2.5"/>
-  <path d="M -22 -8 Q -14 -15 -4 -16" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.8"/><path d="M 10 12 l 6 -2 M 20 6 l 4 -4 M -18 10 l -6 -3" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
 </svg>`;
   }
   // float vest + goggles for a swimming dog (drawn over the 56x65 sprite box)
-  const SWIM_GEAR = `<svg class="swim-gear" viewBox="0 0 56 65" xmlns="http://www.w3.org/2000/svg">
+  const SWIM_GEAR = `<svg viewBox="0 0 56 65" xmlns="http://www.w3.org/2000/svg">
 <path d="M 9 41 Q 13 37 20 37 L 22 41 Q 28 44 34 41 L 36 37 Q 43 37 47 41 L 48 50 L 8 50 Z" fill="#FF7A2F" stroke="#241811" stroke-width="1.6" stroke-linejoin="round"/>
 <path d="M 10 45 H 46" stroke="#FFD34D" stroke-width="2.2"/><rect x="25.5" y="43" width="5" height="4.5" rx="1" fill="#3A3F46"/>
 <path d="M 6 31 Q 28 25 50 31" fill="none" stroke="#2A6FA0" stroke-width="2.4" stroke-linecap="round"/>
@@ -1162,13 +1178,98 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
 <path d="M 25.6 32 Q 28 30 30.4 32" fill="none" stroke="#1E5E86" stroke-width="2"/>
 <path d="M 16 29.5 Q 18 28 20 28.6 M 33 29.5 Q 35 28 37 28.6" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity="0.9"/>
 </svg>`;
+  // ---- the pool float tube (3D-ish torus). part: "full" | "back" | "front"
+  let _tubeN = 0;
+  function tubeSVG(part){
+    const id = "tb" + (++_tubeN);
+    const clip = part === "back" ? `<clipPath id="${id}c"><rect x="0" y="0" width="80" height="23"/></clipPath>`
+               : part === "front" ? `<clipPath id="${id}c"><rect x="0" y="23" width="80" height="30"/></clipPath>` : "";
+    const ring = "M 4 23 A 36 17 0 1 0 76 23 A 36 17 0 1 0 4 23 Z M 24 21 A 16 7 0 1 1 56 21 A 16 7 0 1 1 24 21 Z";
+    return `<svg viewBox="0 0 80 50" xmlns="http://www.w3.org/2000/svg" overflow="visible"><defs>
+<linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD0E0"/><stop offset="0.45" stop-color="#FF86AE"/><stop offset="1" stop-color="#C23D72"/></linearGradient>
+<radialGradient id="${id}h" cx="0.5" cy="0.35" r="0.6"><stop offset="0" stop-color="#1B5E88" stop-opacity="0.85"/><stop offset="1" stop-color="#3FA4D6" stop-opacity="0.55"/></radialGradient>
+<clipPath id="${id}r"><path d="${ring}" clip-rule="evenodd"/></clipPath>${clip}</defs>
+<g${clip ? ` clip-path="url(#${id}c)"` : ""}>
+${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opacity="0.28"/><ellipse cx="40" cy="21" rx="16" ry="7" fill="url(#${id}h)"/>` : ""}
+<path d="${ring}" fill-rule="evenodd" fill="url(#${id}g)" stroke="#241811" stroke-width="2.4"/>
+<g clip-path="url(#${id}r)" fill="#FFFFFF" opacity="0.92">
+  <path d="M 40 21 L 2 8 L 2 24 Z"/><path d="M 40 21 L 78 8 L 78 24 Z"/><path d="M 40 21 L 30 50 L 50 50 Z"/><path d="M 40 21 L 33 -2 L 47 -2 Z"/>
+</g>
+<g clip-path="url(#${id}r)"><ellipse cx="40" cy="30" rx="36" ry="12" fill="none" stroke="#8E2352" stroke-width="7" opacity="0.28"/>
+  <ellipse cx="40" cy="19" rx="18" ry="8.5" fill="none" stroke="#7A1E47" stroke-width="3" opacity="0.35"/></g>
+<path d="M 10 17 Q 20 8 38 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" opacity="0.85"/>
+<path d="M 60 34 Q 68 31 72 26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.45"/>
+<path d="${ring}" fill="none" stroke="#241811" stroke-width="2.4"/>
+</g></svg>`;
+  }
+  const TUBE_GRAB = 30, TUBE_BOOST = 1.4;
+  const TUBE_HOME = {x: POOL.x + POOL.w * 0.72, y: POOL.y + POOL.h * 0.42};
+  function clampIntoPool(x, y){
+    const m = 30;
+    return {x: Math.max(POOL.x + m, Math.min(POOL.x + POOL.w - m, x)), y: Math.max(POOL.y + m, Math.min(POOL.y + POOL.h - m, y))};
+  }
+  /* One float tube in the pool. Swim into it to put it on (only one wearer at a time);
+     it follows you around, gives a speed boost, and slips off where you climb out.
+     Single player: all local. Platytag: the host decides who has it (G.tube = {x, y, h}). */
+  function updateTube(){
+    if(!tubeEl || !spriteEl) return;
+    const near = t => Math.hypot(state.pos.x - t.x, state.pos.y - t.y) < TUBE_GRAB;
+    let free = null, mine = false;
+    if(!state.mp){
+      const T = state.tube;
+      if(T.holder === "me" && !state.swimming){
+        const d = clampIntoPool((state.lastSwimPos || T).x, (state.lastSwimPos || T).y);
+        T.x = d.x; T.y = d.y; T.holder = null;
+      } else if(!T.holder && state.swimming && near(T)){ T.holder = "me"; }
+      mine = T.holder === "me";
+      if(!T.holder) free = T;
+    } else {
+      const T = mp.g && mp.g.tube;
+      if(!T){ tubeEl.style.display = "none"; state.wearingTube = false; spriteEl.classList.remove("tubed"); return; }
+      const me = Net.myId();
+      if(T.h !== me) mp.tubeDropPending = null;
+      mine = T.h === me && !mp.tubeDropPending;
+      if(mine && !state.swimming){
+        const d = clampIntoPool((state.lastSwimPos || state.pos).x, (state.lastSwimPos || state.pos).y);
+        mp.tdN = (mp.tdN || 0) + 1; mp.td = {n: mp.tdN, x: Math.round(d.x), y: Math.round(d.y)};
+        mp.tubeDropPending = d; mine = false; sendMe(true);
+      }
+      if(mp.tubeDropPending) free = mp.tubeDropPending;
+      else if(!T.h){
+        free = T;
+        if(state.swimming && near(T) && Date.now() - (mp.tqAt || 0) > 500){
+          mp.tqAt = Date.now(); mp.tqN = (mp.tqN || 0) + 1; mp.tq = mp.tqN; sendMe(true);
+        }
+      }
+    }
+    state.wearingTube = mine && state.swimming;
+    spriteEl.classList.toggle("tubed", state.wearingTube);
+    tubeEl.style.display = free ? "" : "none";
+    if(free){ tubeEl.style.left = free.x + "px"; tubeEl.style.top = free.y + "px"; }
+  }
+  // goggles + vest for the original purple platypus (side view, eyes further forward)
+  const SWIM_GEAR_OLDPLAT = `<svg viewBox="0 0 56 65" xmlns="http://www.w3.org/2000/svg">
+<path d="M 24 43 Q 27 40 32 40 L 34 42.5 Q 38 44 42 42.5 L 44 40 Q 48 40 50 43 L 51 50 L 23 50 Z" fill="#FF7A2F" stroke="#241811" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 24 46.5 H 50" stroke="#FFD34D" stroke-width="2.2"/><rect x="35.5" y="44.5" width="5" height="4.5" rx="1" fill="#3A3F46"/>
+<path d="M 17 29 Q 34 23 52 27" fill="none" stroke="#2A6FA0" stroke-width="2.4" stroke-linecap="round"/>
+<circle cx="11.7" cy="29.6" r="6.6" fill="rgba(140,220,255,0.45)" stroke="#1E5E86" stroke-width="2"/>
+<circle cx="32.5" cy="30.7" r="6.6" fill="rgba(140,220,255,0.45)" stroke="#1E5E86" stroke-width="2"/>
+<path d="M 18.3 29.4 Q 22 27.6 25.9 30" fill="none" stroke="#1E5E86" stroke-width="2"/>
+<path d="M 8 26.5 Q 10 25 12 25.6 M 29 27.6 Q 31 26 33 26.6" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity="0.9"/>
+</svg>`;
   // the platypus's breathing straw + sporadic bubbles
   const SWIM_STRAW = `<div class="swim-straw"><svg viewBox="0 0 20 40" xmlns="http://www.w3.org/2000/svg">
 <path d="M 10 40 L 10 12 Q 10 5 16 5" fill="none" stroke="#241811" stroke-width="6.5" stroke-linecap="round"/>
 <path d="M 10 40 L 10 12 Q 10 5 16 5" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
 <path d="M 10 40 L 10 12 Q 10 5 16 5" fill="none" stroke="#E8263A" stroke-width="4" stroke-dasharray="4 4" stroke-linecap="butt"/>
 </svg><i class="bub b1"></i><i class="bub b2"></i><i class="bub b3"></i></div>`;
-  function spriteMarkup(kind, svg){ return `<span class="flip">${svg}</span>` + (kind === "pug" ? SWIM_GEAR : SWIM_STRAW) + `<span class="swim-ring"></span>`; }
+  function spriteMarkup(kind, svg, look){
+    const gear = (kind === "plat" && (!look || look.b === "purple")) ? SWIM_GEAR_OLDPLAT : SWIM_GEAR;
+    return `<span class="tube-worn tube-back">${tubeSVG("back")}</span>` +
+      `<span class="flip">${svg}<span class="swim-gear">${gear}</span></span>` +
+      (kind === "plat" ? SWIM_STRAW : "") + `<span class="swim-ring"></span>` +
+      `<span class="tube-worn tube-front">${tubeSVG("front")}</span>`;
+  }
   const ATTIC_DECALS = `<svg viewBox="0 0 260 330" width="260" height="330" xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:0;top:0;pointer-events:none;z-index:1">
 <g stroke="#5A3A22" stroke-width="2.5" fill="none" stroke-linecap="round">
 <path d="M 40 150 l 30 0 M 36 162 l 38 0"/>
@@ -1264,7 +1365,7 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
       rect: {x:300, y:-300, w:980, h:780}, wallH: 135, decals: "POOL",
       furniture: [
         {id:"shed",     label:"Shed",     emoji:"🏚️", x:30,  y:8,   w:170, h:170, wall:true},
-        {id:"doghouse", label:"Doghouse", emoji:"🏠", x:290, y:570, w:140, h:130, wall:false},
+        {id:"doghouse", label:"Doghouse", emoji:"🏠", x:110, y:570, w:140, h:130, wall:false},
         {id:"slide",    label:"Slide",    emoji:"🛝", x:690, y:450, w:200, h:170, wall:false, passthrough:true, zTop:true},
       ]
     },
@@ -1423,7 +1524,7 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
   document.getElementById("title-critters").innerHTML = pugSVG({b: "pugFawn", g: false}) + platypusSVG({b: "purple"});
   document.getElementById("win-critters").innerHTML = pugSVG() + platypusSVG();
 
-  let spriteEl = null, footEl = null;
+  let spriteEl = null, footEl = null, tubeEl = null;
   let freestandingEls = [];
   let FURN_LIST = [];
   let garageDoorEl = null, garagePlateEl = null, garageDoorSolid = null;
@@ -1489,7 +1590,10 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
     if(spriteEl && (state.phase === "hiding" || state.phase === "seeking")){
       let speed = state.sliding ? 760 : (state.mp && state.phase === "seeking" ? 350 : 300); // world px per second; platytag platypus ~17% faster
       if(state.phase === "seeking" && !state.sliding && nearDig(state.pos.x, state.pos.y)) speed *= 0.7;
-      if(!state.sliding && !state.underground && inPool(state.pos.x, state.pos.y)) speed = state.phase === "seeking" ? SWIM_SPEED_PLAT : SWIM_SPEED_PUG;
+      if(!state.sliding && !state.underground && inPool(state.pos.x, state.pos.y)){
+        speed = state.phase === "seeking" ? SWIM_SPEED_PLAT : SWIM_SPEED_PUG;
+        if(state.wearingTube) speed *= TUBE_BOOST;                  // the float tube is fast
+      }
       const dx = state.target.x - state.pos.x;
       const dy = state.target.y - state.pos.y;
       const dist = Math.hypot(dx, dy);
@@ -1540,6 +1644,8 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
         spriteEl.classList.toggle("swimming", swimNow);
         footEl.classList.toggle("in-water", swimNow);
       }
+      if(swimNow) state.lastSwimPos = {x: state.pos.x, y: state.pos.y};
+      updateTube();
       footEl.style.left = state.pos.x + "px";
       footEl.style.top = (state.pos.y + 3) + "px";
 
@@ -1606,6 +1712,7 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
     FURN_LIST = [];
     ROOM_FOG = {}; curSeekRoom = null; blanketEl = null; blanketRoom = null;
     state.holePull = null; state.holeExited = null;
+    state.tube = {x: TUBE_HOME.x, y: TUBE_HOME.y, holder: null}; state.lastSwimPos = null; state.swimming = false; state.wearingTube = false;
     SOLID_RECTS = [];
     bedWorldRect = null;
     inBedNow = false;
@@ -1763,9 +1870,15 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
       }
     }
 
+    tubeEl = document.createElement("div");
+    tubeEl.className = "float-tube";
+    tubeEl.innerHTML = tubeSVG("full");
+    tubeEl.style.left = TUBE_HOME.x + "px"; tubeEl.style.top = TUBE_HOME.y + "px";
+    worldEl.appendChild(tubeEl);
+
     spriteEl = document.createElement("div");
     spriteEl.className = "critter-sprite idle" + (state.phase === "hiding" ? " pug" : " plat");
-    spriteEl.innerHTML = state.phase === "hiding" ? spriteMarkup("pug", pugSVG((state.looks || {}).pug)) : spriteMarkup("plat", platypusSVG((state.looks || {}).plat));
+    spriteEl.innerHTML = state.phase === "hiding" ? spriteMarkup("pug", pugSVG((state.looks || {}).pug), (state.looks || {}).pug) : spriteMarkup("plat", platypusSVG((state.looks || {}).plat), (state.looks || {}).plat);
     worldEl.appendChild(spriteEl);
 
     if(bedWorldRect){
@@ -2782,7 +2895,10 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
       const d = String((peerById[id] || {}).dog || "");
       lk[id] = id === platId ? "purple|-" : (DOG_BREEDS.includes(d.split("|")[0]) ? d : dogCode(randLook("pug")));
     });
-    mp.hostG = {ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, lk, tg: [], hl: HEAD_START, el: 0};
+    mp.hostG = {ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, lk, tg: [], hl: HEAD_START, el: 0,
+      tube: {x: Math.round(TUBE_HOME.x), y: Math.round(TUBE_HOME.y), h: null}};
+    mp.tubeSeenTq = {}; mp.tubeSeenTd = {}; mp.tubeLast = null;
+    roster().forEach(pp => { mp.tubeSeenTq[pp.id] = pp.p.tq || 0; mp.tubeSeenTd[pp.id] = pp.p.td ? pp.p.td.n : 0; });
     mp.hostT0 = Date.now();
     pushHost();
   });
@@ -2822,6 +2938,29 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
       const hl = Math.max(0, Math.ceil(HEAD_START - elapsed));
       if(hl !== G.hl){ G.hl = hl; changed = true; }
       if(elapsed >= HEAD_START){ G.ph = "play"; changed = true; }
+    }
+    if(G.tube){
+      const T = G.tube;
+      mp.tubeSeenTq = mp.tubeSeenTq || {}; mp.tubeSeenTd = mp.tubeSeenTd || {};
+      if(T.h){
+        const hp = byId.get(T.h);
+        if(!hp || !hp.sp || hp.x == null){                 // wearer left the game: tube floats where they were
+          const d = clampIntoPool((mp.tubeLast || T).x, (mp.tubeLast || T).y);
+          T.x = Math.round(d.x); T.y = Math.round(d.y); T.h = null; changed = true;
+        } else mp.tubeLast = {x: hp.x, y: hp.y};
+      }
+      for(const [id, p] of byId){
+        if(!p) continue;
+        if(p.td && p.td.n !== mp.tubeSeenTd[id]){
+          mp.tubeSeenTd[id] = p.td.n;
+          if(T.h === id){ const d = clampIntoPool(p.td.x, p.td.y); T.x = Math.round(d.x); T.y = Math.round(d.y); T.h = null; changed = true; }
+        }
+      }
+      for(const [id, p] of byId){
+        if(!p || !p.tq || p.tq === mp.tubeSeenTq[id]) continue;
+        mp.tubeSeenTq[id] = p.tq;
+        if(!T.h && p.sp && p.x != null && !p.ug && inPool(p.x, p.y) && Math.hypot(p.x - T.x, p.y - T.y) < 70){ T.h = id; changed = true; }
+      }
     }
     if(G.ph === "play"){
       const el = Math.floor(elapsed - HEAD_START);
@@ -2916,7 +3055,7 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
     state.looks = {pug: lookFromCode(code, "pug"), plat: lookFromCode(code, "plat")};
     mp.myLook = code;
     spriteEl.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat it") + (state.underground ? " xray" : "");
-    spriteEl.innerHTML = role === "pug" ? spriteMarkup("pug", pugSVG(state.looks.pug)) : spriteMarkup("plat", platypusSVG(state.looks.plat));
+    spriteEl.innerHTML = role === "pug" ? spriteMarkup("pug", pugSVG(state.looks.pug), state.looks.pug) : spriteMarkup("plat", platypusSVG(state.looks.plat), state.looks.plat);
     state.walkingClassApplied = false;
   }
   function pickSpawn(){
@@ -2929,7 +3068,8 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
   }
   function startTagRound(role){
     state.mp = true;
-    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map()});
+    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
+      tq: 0, td: null, tubeDropPending: null});
     Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
       hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set(), touchLatch: new Set()});
@@ -3054,7 +3194,8 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
       bl: h && h.type === "blanket" ? {x: h.x, y: h.y, t: h.t} : null,
       chk: chkList || null, ug: state.underground ? 1 : 0,
       dg: mp.myDigs && mp.myDigs.length ? mp.myDigs.map(d => [d.x, d.y]) : null,
-      dgr: mp.g ? mp.g.rid : 0
+      dgr: mp.g ? mp.g.rid : 0,
+      tq: mp.tq || 0, td: mp.td || null
     };
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
@@ -3071,7 +3212,7 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
   function makeRemote(role, p, lk){
     const el = document.createElement("div");
     el.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat it");
-    el.innerHTML = role === "pug" ? spriteMarkup("pug", pugSVG(lookFromCode(lk, "pug"))) : spriteMarkup("plat", platypusSVG(lookFromCode(lk, "plat")));
+    el.innerHTML = role === "pug" ? spriteMarkup("pug", pugSVG(lookFromCode(lk, "pug")), lookFromCode(lk, "pug")) : spriteMarkup("plat", platypusSVG(lookFromCode(lk, "plat")), lookFromCode(lk, "plat"));
     worldEl.appendChild(el);
     const tag = document.createElement("div");
     tag.className = "name-tag" + (role === "plat" ? " plat" : "");
@@ -3126,6 +3267,7 @@ ${ladder(d + 40, d + 2, false)}${ladder(d + w - 100, d + h - 2, true)}
       if(face !== r.face && r.flip){ r.flip.style.transform = face; r.face = face; }
       r.el.classList.toggle("xray", !!p.ug);
       r.el.classList.toggle("swimming", !p.ug && inPool(r.x, r.y));
+      r.el.classList.toggle("tubed", !!(mp.g && mp.g.tube && mp.g.tube.h === pp.id) && inPool(r.x, r.y));
       const inBed = !p.ug && pointInBed(r.x, r.y);
       const tunnelHidden = !!p.ug && !state.underground;          // underground players are only visible from the tunnel
       const hidden = !!p.hid || !!p.bl || inBed || tunnelHidden;
