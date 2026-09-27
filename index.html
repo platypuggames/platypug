@@ -236,6 +236,9 @@
     box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25); opacity: 0.8; }
   .garage-plate.pressed { background: radial-gradient(circle at 40% 35%, #9BE3B8, #3FA56A); box-shadow: inset 0 2px 0 rgba(0,0,0,0.3); }
 
+  .dirt-patch { position: absolute; width: 70px; height: 44px; margin: -22px 0 0 -35px; z-index: 1; pointer-events: none; }
+  .dirt-patch svg { width: 100%; height: 100%; display: block; }
+  .secret-path { z-index: 10; }
   .tunnel-hole { position: absolute; width: 80px; height: 54px; margin: -27px 0 0 -40px; z-index: 2; pointer-events: none; }
   .tunnel-path { position: absolute; z-index: 10; pointer-events: none; display: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
   .tunnel-path.show { display: block; animation: tunIn .25s ease-out; }
@@ -1852,6 +1855,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     });
 
     buildTunnel();
+    buildSecret();
     (state.digs || []).forEach(d => addDigEl(d, false));
     const DOOR = {x:104, y:910, w:182, h:30};
     const door = document.createElement("div");
@@ -1998,7 +2002,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     return bestD <= NEAR ? best : null;
   }
   function updateProximity(){
-    digBtn.classList.toggle("show", canDigHere() && !state.pendingSpot && !confirmFab.classList.contains("show"));
+    digBtn.classList.toggle("show", (canDigHere() || canDigUnder()) && !state.pendingSpot && !confirmFab.classList.contains("show"));
     if(blanketEl && blanketRoom === "tunnel" && state.phase === "seeking"){
       const vis = !!state.underground;
       blanketEl.style.display = vis ? "" : "none";
@@ -2300,6 +2304,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     spriteEl.classList.toggle("xray", on);
     footEl.style.visibility = on ? "hidden" : "";
     if(tunnelPathEl) tunnelPathEl.classList.toggle("show", on);
+    applySecret();
   }
   function buildTunnel(){
     HOLES.forEach(h => {
@@ -2316,36 +2321,166 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     worldEl.appendChild(tunnelPathEl);
   }
   // underground: move left/right along the tunnel floor; only exit out the two ends
+  /* ---------------- Secret passage ----------------
+     Dig on the tunnel floor right above the buried diamond and a hidden passage opens, running
+     under the front yard to a bare dirt patch in its bottom-left corner. Until it's dug open
+     there's no sign of it underground, and the dirt patch can't be dug from above. */
+  const SECRET_JX = 948;                                            // tunnel-floor x right above the diamond
+  const SECRET_PTS = [[948,1414],[948,1466],[912,1520],[820,1552],[600,1562],[340,1562],[170,1556],[100,1570],[62,1584]];
+  const SECRET_HOLE = {x: 62, y: 1584};
+  const SECRET_OUT = {x: 104, y: 1566};
+  const SECRET_SEGS = (() => { const a = []; let L = 0;
+    for(let i = 1; i < SECRET_PTS.length; i++){ const [x0, y0] = SECRET_PTS[i-1], [x1, y1] = SECRET_PTS[i]; const l = Math.hypot(x1-x0, y1-y0); a.push({x0, y0, x1, y1, l, s: L}); L += l; }
+    a.L = L; return a; })();
+  function secretPoint(t){
+    t = Math.max(0, Math.min(SECRET_SEGS.L, t));
+    for(const g of SECRET_SEGS){ if(t <= g.s + g.l){ const u = (t - g.s) / g.l; return {x: g.x0 + (g.x1-g.x0)*u, y: g.y0 + (g.y1-g.y0)*u}; } }
+    const e = SECRET_PTS[SECRET_PTS.length-1]; return {x: e[0], y: e[1]};
+  }
+  function secretProject(px, py){
+    let best = 0, bd = Infinity;
+    for(const g of SECRET_SEGS){
+      const vx = g.x1-g.x0, vy = g.y1-g.y0;
+      const u = Math.max(0, Math.min(1, ((px-g.x0)*vx + (py-g.y0)*vy) / (g.l*g.l)));
+      const d = Math.hypot(px - (g.x0+vx*u), py - (g.y0+vy*u));
+      if(d < bd){ bd = d; best = g.s + g.l*u; }
+    }
+    return best;
+  }
+  const SECRET_O = {x: 20, y: 1380};                                // overlay origin (world)
+  function secretPathSVG(){
+    const d = "M " + SECRET_PTS.map(([x, y]) => `${x - SECRET_O.x} ${y - SECRET_O.y}`).join(" L ");
+    let pebbles = "";
+    for(let t = 30; t < SECRET_SEGS.L - 20; t += 46){ const p = secretPoint(t); pebbles += `<ellipse cx="${(p.x - SECRET_O.x + ((t*7)%23) - 11).toFixed(1)}" cy="${(p.y - SECRET_O.y + (t%2 ? 26 : -25)).toFixed(1)}" rx="${3 + t%4}" ry="2.5" fill="#6B4A33"/>`; }
+    return `<svg viewBox="0 0 1000 240" width="1000" height="240" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+<path d="${d}" fill="none" stroke="#241811" stroke-width="74" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="${d}" fill="none" stroke="#523624" stroke-width="68" stroke-linejoin="round" stroke-linecap="round"/>
+${pebbles}
+<path d="${d}" fill="none" stroke="#1C152A" stroke-width="42" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="${d}" fill="none" stroke="#A0785A" stroke-width="7" stroke-linejoin="round" transform="translate(0 18)" opacity="0.9"/>
+<path d="${d}" fill="none" stroke="#8C6A55" stroke-width="5" stroke-linejoin="round" transform="translate(0 -18)" opacity="0.8"/>
+<g fill="#8FE8FF" opacity="0.55"><circle cx="${760-SECRET_O.x}" cy="${1560-SECRET_O.y}" r="2"/><circle cx="${420-SECRET_O.x}" cy="${1566-SECRET_O.y}" r="1.6"/><circle cx="${220-SECRET_O.x}" cy="${1552-SECRET_O.y}" r="2"/></g>
+</svg>`;
+  }
+  const DIRT_PATCH_SVG = `<svg viewBox="0 0 70 44" width="70" height="44" xmlns="http://www.w3.org/2000/svg">
+<path d="M 6 24 Q 4 12 18 10 Q 26 3 38 7 Q 52 3 60 12 Q 69 18 64 28 Q 66 38 52 38 Q 40 43 28 39 Q 12 42 8 34 Q 2 30 6 24 Z" fill="#8C6440" stroke="#6E4E32" stroke-width="2"/>
+<g fill="#6E4E32"><circle cx="20" cy="20" r="2.4"/><circle cx="44" cy="16" r="2"/><circle cx="52" cy="30" r="2.6"/><circle cx="30" cy="31" r="1.8"/></g>
+<g fill="#A67C55"><circle cx="34" cy="18" r="1.8"/><circle cx="14" cy="30" r="1.6"/><circle cx="58" cy="22" r="1.5"/></g>
+</svg>`;
+  let secretPathEl = null, secretHoleEl = null;
+  function buildSecret(){
+    const patch = document.createElement("div");
+    patch.className = "dirt-patch";
+    patch.style.left = SECRET_HOLE.x + "px"; patch.style.top = SECRET_HOLE.y + "px";
+    patch.innerHTML = DIRT_PATCH_SVG;
+    worldEl.appendChild(patch);
+    secretHoleEl = document.createElement("div");
+    secretHoleEl.className = "tunnel-hole secret-hole";
+    secretHoleEl.style.left = SECRET_HOLE.x + "px"; secretHoleEl.style.top = SECRET_HOLE.y + "px";
+    secretHoleEl.innerHTML = HOLE_SVG;
+    worldEl.appendChild(secretHoleEl);
+    secretPathEl = document.createElement("div");
+    secretPathEl.className = "tunnel-path secret-path";
+    secretPathEl.style.left = SECRET_O.x + "px"; secretPathEl.style.top = SECRET_O.y + "px";
+    secretPathEl.innerHTML = secretPathSVG();
+    worldEl.appendChild(secretPathEl);
+    applySecret();
+  }
+  function applySecret(){
+    if(secretHoleEl) secretHoleEl.style.display = state.secretOpen ? "" : "none";
+    if(secretPathEl) secretPathEl.classList.toggle("show", !!(state.secretOpen && state.underground));
+  }
+  function openSecret(announce){
+    if(state.secretOpen) return;
+    state.secretOpen = true;
+    applySecret();
+    if(state.mp) sendMe(true);
+    if(announce) showToast("💎 You dug up a secret passage!", 2200);
+  }
+  function canDigUnder(){
+    if(!state.underground || state.busy || state.sliding || state.phase !== "hiding") return false;
+    if(state.mp && (mp.hide || mp.myRole !== "pug")) return false;
+    return true;
+  }
+  function digUnder(){
+    state.busy = true;
+    state.target = {x: state.pos.x, y: state.pos.y};
+    spriteEl.classList.add("digging");
+    setTimeout(() => {
+      spriteEl.classList.remove("digging");
+      state.busy = false;
+      const above = (state.tunSeg || "A") === "A" && Math.abs(state.pos.x - SECRET_JX) < 24;
+      if(above && !state.secretOpen) openSecret(true);
+      else if(above) showToast("Already dug through here!");
+      else showToast("Just dirt down here…", 1200);
+    }, 550);
+  }
+
+  // underground: move along the tunnel floor (and the secret passage once it's open);
+  // you only come up out of the ends
   function tunnelMove(nx, ny){
     if(!state.underground) return null;
     const step = Math.hypot(nx - state.pos.x, ny - state.pos.y);
-    const tx = state.target.x;
+    const tx = state.target.x, ty = state.target.y;
     const unlocked = performance.now() >= (state.tunnelLockUntil || 0);
-    if(unlocked && state.pos.x <= TX_MIN + 3 && tx < HOLES[0].x - 10){
+    let seg = state.tunSeg || "A", t = state.tunT || 0, x = state.pos.x;
+    if(seg === "A" && unlocked && state.pos.x <= TX_MIN + 3 && tx < HOLES[0].x - 10){
       setUnderground(false); state.holeExited = HOLES[0]; state.holePull = null;
       const out = {x: HOLES[0].x - 42, y: HOLES[0].y};
       state.target = {x: out.x, y: out.y};
       return out;
     }
-    if(unlocked && state.pos.x >= TX_MAX - 3 && tx > HOLES[1].x + 10){
+    if(seg === "A" && unlocked && state.pos.x >= TX_MAX - 3 && tx > HOLES[1].x + 10){
       setUnderground(false); state.holeExited = HOLES[1]; state.holePull = null;
       const out = {x: HOLES[1].x + 42, y: HOLES[1].y};
       state.target = {x: out.x, y: out.y};
       return out;
     }
-    const cx = Math.max(TX_MIN, Math.min(TX_MAX, tx));
-    const d = cx - state.pos.x;
-    const x = Math.abs(d) <= step ? cx : state.pos.x + Math.sign(d) * step;
-    state.target = {x: tx < TX_MIN || tx > TX_MAX ? cx : tx, y: tunnelFloorY(cx)};
-    if(tx < TX_MIN || tx > TX_MAX){ state.target.x = tx; }   // keep the push so the exit can trigger
-    return {x, y: tunnelFloorY(x)};
+    // where on the tunnels is the player aiming?
+    const aX = Math.max(TX_MIN, Math.min(TX_MAX, tx));
+    const dA = Math.hypot(tx - aX, ty - tunnelFloorY(aX));
+    let goal = "A", tb = 0;
+    if(state.secretOpen){
+      tb = secretProject(tx, ty);
+      const bp = secretPoint(tb);
+      if(Math.hypot(tx - bp.x, ty - bp.y) < dA) goal = "B";
+    }
+    if(seg === "B" && goal === "B" && unlocked && t >= SECRET_SEGS.L - 3 && tb >= SECRET_SEGS.L - 0.5 &&
+       Math.hypot(tx - SECRET_HOLE.x, ty - SECRET_HOLE.y) > 14){
+      setUnderground(false); state.holeExited = SECRET_HOLE; state.holePull = null;
+      const out = {x: SECRET_OUT.x, y: SECRET_OUT.y};
+      state.target = {x: out.x, y: out.y};
+      return out;
+    }
+    let rem = step;
+    for(let k = 0; k < 3 && rem > 0; k++){
+      if(seg === "A"){
+        const gx = goal === "A" ? aX : SECRET_JX, d = gx - x;
+        if(Math.abs(d) <= rem){ x = gx; rem -= Math.abs(d); if(goal === "B"){ seg = "B"; t = 0; continue; } break; }
+        x += Math.sign(d) * rem; rem = 0;
+      } else {
+        const gt = goal === "B" ? tb : 0, d = gt - t;
+        if(Math.abs(d) <= rem){ t = gt; rem -= Math.abs(d); if(goal === "A"){ seg = "A"; x = SECRET_JX; continue; } break; }
+        t += Math.sign(d) * rem; rem = 0;
+      }
+    }
+    state.tunSeg = seg; state.tunT = t;
+    // keep the tick heading for a point on the tunnels (or keep pushing past an end so the exit can trigger)
+    if(goal === "A"){
+      state.target = {x: (tx < TX_MIN || tx > TX_MAX) ? tx : aX, y: tunnelFloorY(aX)};
+    } else {
+      const bp = secretPoint(tb);
+      state.target = (tb >= SECRET_SEGS.L - 0.5 && Math.hypot(tx - SECRET_HOLE.x, ty - SECRET_HOLE.y) > 14) ? {x: tx, y: ty} : {x: bp.x, y: bp.y};
+    }
+    if(seg === "A") return {x, y: tunnelFloorY(x)};
+    return secretPoint(t);
   }
   // Like the top of the slide: get anywhere near an entrance (from any side) and you're
   // pulled into it. Just after climbing out, the hole you left ignores you until you step away.
   const HOLE_GRAB_R = 40, HOLE_ENTER_R = 12;
   function checkHoleEntry(){
     if(state.underground || state.sliding) return;
-    for(const h of HOLES){
+    for(const h of (state.secretOpen ? HOLES.concat([SECRET_HOLE]) : HOLES)){
       const d = Math.hypot(state.pos.x - h.x, state.pos.y - h.y);
       if(state.holeExited === h){ if(d > HOLE_GRAB_R + 8) state.holeExited = null; else continue; }
       if(d < HOLE_GRAB_R && d >= HOLE_ENTER_R && !state.holePull){
@@ -2355,6 +2490,15 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       }
       if(d < HOLE_ENTER_R){
         state.holePull = null;
+        if(h === SECRET_HOLE){
+          state.tunSeg = "B"; state.tunT = SECRET_SEGS.L;
+          state.pos.x = SECRET_HOLE.x; state.pos.y = SECRET_HOLE.y;
+          state.target = {x: state.pos.x, y: state.pos.y};
+          state.tunnelLockUntil = performance.now() + 600;
+          setUnderground(true);
+          return;
+        }
+        state.tunSeg = "A"; state.tunT = 0;
         const x = h === HOLES[0] ? TX_MIN : TX_MAX;
         state.pos.x = x; state.pos.y = tunnelFloorY(x);
         state.target = {x: state.pos.x, y: state.pos.y};
@@ -2382,6 +2526,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     if(state.phase !== "hiding" || state.busy || state.underground || state.sliding) return false;
     const r = roomAt(state.pos.x, state.pos.y);
     if(onPoolDeck(state.pos.x, state.pos.y)) return false;
+    if(Math.hypot(state.pos.x - SECRET_HOLE.x, state.pos.y - SECRET_HOLE.y) < 48) return false;   // hard-packed dirt patch
     return r === "frontyard" || r === "backyard";
   }
   function nearDig(x, y){
@@ -2390,6 +2535,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   digBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
   digBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    if(canDigUnder()){ digUnder(); return; }
     if(!canDigHere()) return;
     if((state.digs || []).some(d => Math.hypot(state.pos.x - d.x, state.pos.y - d.y) < 34)){ showToast("Already dug here!"); return; }
     state.busy = true;
@@ -2636,6 +2782,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
 
   function startHidingPhase(){
     state.mp = false;
+    state.secretOpen = false;
     state.looks = {pug: {b: myDog.b, g: myDog.g}, plat: {b: "purple", g: false}};   // the dog you picked vs the classic platypus
     document.getElementById("win-critters").innerHTML = pugSVG(state.looks.pug) + platypusSVG(state.looks.plat);
     state.phase = "hiding";
@@ -3156,7 +3303,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.mp = true;
     Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
       tq: 0, td: null, tubeDropPending: null});
-    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false,
+    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, secretOpen: false, tunSeg: "A", tunT: 0,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
       hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set(), touchLatch: new Set()});
     confirmFab.classList.remove("show"); digBtn.classList.remove("show"); plainBtn.classList.remove("show");
@@ -3281,7 +3428,8 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       chk: chkList || null, ug: state.underground ? 1 : 0,
       dg: mp.myDigs && mp.myDigs.length ? mp.myDigs.map(d => [d.x, d.y]) : null,
       dgr: mp.g ? mp.g.rid : 0,
-      tq: mp.tq || 0, td: mp.td || null, dv: state.diving ? 1 : 0
+      tq: mp.tq || 0, td: mp.td || null, dv: state.diving ? 1 : 0,
+      so: state.secretOpen && mp.g ? mp.g.rid : 0
     };
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
@@ -3327,6 +3475,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   }
   function renderRemotes(dt){
     syncHoles();
+    if(!state.secretOpen && mp.g && Net.peers().some(pp => !pp.isMe && pp.p && pp.p.so && pp.p.so === mp.g.rid)) openSecret(false);   // someone dug it open
     const roles = (mp.g && mp.g.roles) || {};
     const seen = new Set();
     const k = Math.min(1, dt * 12);
