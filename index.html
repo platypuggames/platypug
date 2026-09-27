@@ -133,6 +133,23 @@
   #stage {
     position: absolute; inset: 0; overflow: hidden; cursor: pointer;
   }
+  /* ---------- Diving board ---------- */
+  .dive-board { position: absolute; width: 170px; height: 60px; z-index: 4; pointer-events: none; }
+  .dive-board svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .dive-board .db-plank { transform-box: view-box; transform-origin: 140px 28px; }
+  .dive-board.boing .db-plank { animation: boardBoing .5s ease-out; }
+  @keyframes boardBoing { 0% { transform: none; } 25% { transform: rotate(-4deg) scaleY(0.9); } 50% { transform: rotate(3deg); } 75% { transform: rotate(-1.5deg); } 100% { transform: none; } }
+  .critter-sprite.board-squash { animation: boardSquash .26s ease-in-out !important; }
+  @keyframes boardSquash { 0%,100% { scale: 1 1; } 50% { scale: 1.12 0.82; } }
+  .critter-sprite.diving { animation: diveArc .62s cubic-bezier(.3,.6,.5,1) forwards !important; z-index: 8 !important; }
+  @keyframes diveArc { 0% { translate: 0 0; rotate: 0deg; } 40% { translate: 0 -78px; rotate: -14deg; } 75% { translate: 0 -40px; rotate: 10deg; } 100% { translate: 0 6px; rotate: 0deg; } }
+  .splash { position: absolute; width: 100px; height: 70px; margin: -46px 0 0 -50px; z-index: 6; pointer-events: none; }
+  .splash svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .splash .sp-ring { transform-box: fill-box; transform-origin: center; animation: spRing .7s ease-out forwards; }
+  .splash .sp-ring.r2 { animation-delay: .12s; opacity: 0; }
+  @keyframes spRing { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+  .splash .sp-drop { animation: spDrop .75s cubic-bezier(.2,.7,.4,1) forwards; }
+  @keyframes spDrop { 0% { transform: translate(0, 0); opacity: 1; } 55% { transform: translate(calc(var(--dx) * 0.8), var(--dy)); opacity: 1; } 100% { transform: translate(var(--dx), 10px); opacity: 0; } }
   /* ---------- Pool + swimming ---------- */
   .pool-caustic { animation: poolCaustic 3.2s linear infinite; }
   @keyframes poolCaustic { from { transform: translateX(0); } to { transform: translateX(40px); } }
@@ -1586,9 +1603,10 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     if(typeof keysDown !== "undefined" && keysDown.size) updateKeyboardTarget();
     if(state.frozenUntil && performance.now() < state.frozenUntil){ state.target = {x: state.pos.x, y: state.pos.y}; }
     else if(state.holePull && !state.underground && !state.sliding){ state.target = {x: state.holePull.x, y: state.holePull.y}; checkHoleEntry(); }
+    if(spriteEl && !(state.frozenUntil && performance.now() < state.frozenUntil)) handleBoard();
 
     if(spriteEl && (state.phase === "hiding" || state.phase === "seeking")){
-      let speed = state.sliding ? 760 : (state.mp && state.phase === "seeking" ? 350 : 300); // world px per second; platytag platypus ~17% faster
+      let speed = state.sliding ? (state.slideMode === "dive" ? (state.diving ? 440 : 380) : 760) : (state.mp && state.phase === "seeking" ? 350 : 300); // world px per second; platytag platypus ~17% faster
       if(state.phase === "seeking" && !state.sliding && nearDig(state.pos.x, state.pos.y)) speed *= 0.7;
       if(!state.sliding && !state.underground && inPool(state.pos.x, state.pos.y)){
         speed = state.phase === "seeking" ? SWIM_SPEED_PLAT : SWIM_SPEED_PUG;
@@ -1870,6 +1888,8 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       }
     }
 
+    buildBoard();
+    state.boardPull = false; state.boardLatch = false; state.diving = false;
     tubeEl = document.createElement("div");
     tubeEl.className = "float-tube";
     tubeEl.innerHTML = tubeSVG("full");
@@ -2168,6 +2188,75 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     }
   }
 
+  /* ---------------- Diving board (right end of the pool) ----------------
+     Step near the back of the board and it pulls you on (like the slide top / tunnel holes):
+     you trot to the tip, the board flexes, and you bounce up in an arc and splash into the middle. */
+  const BOARD = {x: 1100, y: -40, backX: 1236, tipX: 1114, cy: -12, grabR: 40};
+  const DIVE_LAND = {x: POOL.x + POOL.w / 2, y: POOL.y + POOL.h / 2};
+  const BOARD_SVG = `<svg viewBox="0 0 170 60" width="170" height="60" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+<defs><linearGradient id="dbTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DCEAF5"/></linearGradient></defs>
+<ellipse cx="44" cy="50" rx="44" ry="7" fill="#0E4E78" opacity="0.22"/>
+<rect x="124" y="30" width="38" height="24" rx="4" fill="#8E9AA6" stroke="#241811" stroke-width="2.5"/>
+<rect x="128" y="34" width="30" height="6" rx="2" fill="#B8C3CD"/>
+<circle cx="131" cy="48" r="2" fill="#241811"/><circle cx="155" cy="48" r="2" fill="#241811"/>
+<g class="db-plank">
+  <rect x="6" y="18" width="150" height="24" rx="11" fill="#1F7FB0" stroke="#241811" stroke-width="2.5"/>
+  <rect x="6" y="14" width="150" height="24" rx="11" fill="url(#dbTop)" stroke="#241811" stroke-width="2.5"/>
+  <g fill="#9FC3DE">${Array.from({length: 18}, (_, i) => `<circle cx="${20 + i * 7}" cy="${22 + (i % 2) * 7}" r="1.4"/>`).join("")}</g>
+  <path d="M 16 18 H 146" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+</g>
+</svg>`;
+  let boardEl = null;
+  function buildBoard(){
+    boardEl = document.createElement("div");
+    boardEl.className = "dive-board";
+    boardEl.style.left = BOARD.x + "px"; boardEl.style.top = BOARD.y + "px";
+    boardEl.innerHTML = BOARD_SVG;
+    worldEl.appendChild(boardEl);
+  }
+  function makeSplash(x, y){
+    const el = document.createElement("div");
+    el.className = "splash";
+    el.style.left = x + "px"; el.style.top = y + "px";
+    el.innerHTML = `<svg viewBox="-50 -40 100 70" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+<ellipse class="sp-ring" cx="0" cy="12" rx="30" ry="10" fill="none" stroke="#fff" stroke-width="4"/>
+<ellipse class="sp-ring r2" cx="0" cy="12" rx="30" ry="10" fill="none" stroke="#DFF6FF" stroke-width="3"/>
+${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:${dx}px;--dy:${-22 - (i % 3) * 9}px" cx="0" cy="8" r="${3 + (i % 2)}" fill="#E6F8FF" stroke="#2E9BD1" stroke-width="1.5"/>`).join("")}
+</svg>`;
+    worldEl.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+  function handleBoard(){
+    if(state.busy || state.sliding || state.underground || state.swimming) { if(!state.sliding) state.boardPull = false; return; }
+    if(state.phase !== "hiding" && state.phase !== "seeking") return;
+    if(state.mp && mp.hide) return;
+    const d = Math.hypot(state.pos.x - BOARD.backX, state.pos.y - BOARD.cy);
+    if(state.boardLatch){ if(d > BOARD.grabR + 12) state.boardLatch = false; else return; }
+    if(d < 10){ state.boardPull = false; startDive(); return; }
+    if(d < BOARD.grabR){ state.boardPull = true; state.target = {x: BOARD.backX, y: BOARD.cy}; state.onArrive = null; }
+    else state.boardPull = false;
+  }
+  function startDive(){
+    state.busy = true; state.sliding = true; state.slideMode = "dive";
+    onTopOfSlide(true);
+    state.pos.x = BOARD.backX; state.pos.y = BOARD.cy;
+    const flip = spriteEl.querySelector(".flip"); if(flip) flip.style.transform = "scaleX(1)";   // face the pool
+    setTarget(BOARD.tipX, BOARD.cy, () => {
+      boardEl.classList.remove("boing"); void boardEl.offsetWidth; boardEl.classList.add("boing");
+      spriteEl.classList.add("board-squash");
+      setTimeout(() => {
+        spriteEl.classList.remove("board-squash");
+        spriteEl.classList.add("diving"); state.diving = true;
+        setTarget(DIVE_LAND.x, DIVE_LAND.y, () => {
+          spriteEl.classList.remove("diving"); state.diving = false;
+          state.sliding = false; state.busy = false; state.slideMode = null;
+          onTopOfSlide(false);
+          state.boardLatch = true;
+          makeSplash(state.pos.x, state.pos.y);
+        });
+      }, 260);
+    });
+  }
   /* ---------------- Front-yard tunnel ---------------- */
   const HOLES = [{x:720, y:1330}, {x:1010, y:1330}];
   const TUNNEL_FLOOR = [[716, 1332], [724, 1334], [764, 1414], [966, 1414], [1006, 1334], [1014, 1332]];   // side-view floor line: dips down, runs flat, comes back up
@@ -3192,7 +3281,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       chk: chkList || null, ug: state.underground ? 1 : 0,
       dg: mp.myDigs && mp.myDigs.length ? mp.myDigs.map(d => [d.x, d.y]) : null,
       dgr: mp.g ? mp.g.rid : 0,
-      tq: mp.tq || 0, td: mp.td || null
+      tq: mp.tq || 0, td: mp.td || null, dv: state.diving ? 1 : 0
     };
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
@@ -3263,7 +3352,8 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       const face = p.f ? "scaleX(-1)" : "scaleX(1)";
       if(face !== r.face && r.flip){ r.flip.style.transform = face; r.face = face; }
       r.el.classList.toggle("xray", !!p.ug);
-      r.el.classList.toggle("swimming", !p.ug && inPool(r.x, r.y));
+      if(!!p.dv !== !!r.dv){ if(r.dv && !p.dv) makeSplash(p.x, p.y); r.dv = !!p.dv; r.el.classList.toggle("diving", r.dv); r.el.style.zIndex = r.dv ? "7" : ""; }
+      r.el.classList.toggle("swimming", !p.ug && !p.dv && inPool(r.x, r.y));
       r.el.classList.toggle("tubed", !!(mp.g && mp.g.tube && mp.g.tube.h === pp.id) && inPool(r.x, r.y));
       const inBed = !p.ug && pointInBed(r.x, r.y);
       const tunnelHidden = !!p.ug && !state.underground;          // underground players are only visible from the tunnel
