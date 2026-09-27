@@ -461,12 +461,11 @@
   #finale-face.show { display: block; }
   #finale-face .ff-wrap { position: absolute; left: -30%; width: 160%; aspect-ratio: 160 / 185; top: 100%; transition: top .35s cubic-bezier(.3,1.3,.5,1); }
   #finale-face.up .ff-wrap { top: -4%; animation: faceBob 1.2s ease-in-out infinite .35s; }
-  @keyframes faceBob { 0%,100% { translate: 0 0; rotate: -1.5deg; } 50% { translate: 0 8px; rotate: 1.5deg; } }
+  @keyframes faceBob { 0%,100% { rotate: -1.5deg; } 50% { rotate: 1.5deg; } }
   #finale-face .ff-dog, #finale-face .ff-dog svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  #finale-face .ff-tongue { position: absolute; left: 50%; width: 17%; top: 56.5%; height: 46%; margin-left: -8.5%; transform-origin: 50% 4%; transform: scaleY(0.2); }
+  #finale-face .ff-tongue { position: absolute; left: 50%; width: 30%; top: 55.5%; aspect-ratio: 100 / 200; margin-left: -15%; }
   #finale-face .ff-tongue svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  #finale-face.lick .ff-tongue { animation: lick 1s ease-in-out 2; }
-  @keyframes lick { 0% { transform: scale(1, 0.2) rotate(0deg); } 30% { transform: scale(1.2, 1) rotate(-9deg); } 55% { transform: scale(1.35, 1.05) rotate(10deg); } 80%,100% { transform: scale(1, 0.2) rotate(0deg); } }
+
   #finale-face.out { transition: opacity .4s ease; opacity: 0; }
   .lick-smear { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .25s ease;
     background: radial-gradient(ellipse at 40% 40%, rgba(255,255,255,0.55) 0%, rgba(210,240,255,0.25) 40%, rgba(255,255,255,0) 70%); filter: blur(1px); }
@@ -3624,11 +3623,82 @@ ${pebbles}
 
   /* Final tag scene (~5s, everyone at once): every screen snaps to the spot, the last pug
      does a little dance and runs off the bottom of the screen, then pops up huge and licks the glass. */
-  const TONGUE_SVG = `<svg viewBox="0 0 60 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-<ellipse cx="30" cy="5" rx="29" ry="6" fill="#5A1E2E" stroke="#241811" stroke-width="2.5"/>
-<path d="M 8 5 Q 8 2 14 3 L 46 3 Q 52 2 52 5 L 53 88 Q 53 118 30 118 Q 7 118 7 88 Z" fill="#F7839D" stroke="#241811" stroke-width="3"/>
-<path d="M 30 12 L 30 94" stroke="#D95C7A" stroke-width="4" stroke-linecap="round"/>
-<path d="M 15 22 Q 17 60 19 92" stroke="#FFC2D0" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.8"/></svg>`;
+  // Tongue for the big face: one soft, rounded shape whose length / sideways bend / squash are
+  // animated every frame, so it flops out, flattens against the glass, swipes, and slurps back in.
+  const TONGUE_SVG = `<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+<defs>
+  <linearGradient id="tgFill" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#DE557A"/><stop offset="0.3" stop-color="#FF8CA8"/><stop offset="0.7" stop-color="#FF8CA8"/><stop offset="1" stop-color="#CF4C70"/></linearGradient>
+  <radialGradient id="tgWet" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#FFE4EC" stop-opacity="0.9"/><stop offset="1" stop-color="#FFE4EC" stop-opacity="0"/></radialGradient>
+  <clipPath id="tgClip"><rect x="-200" y="9" width="500" height="600"/></clipPath>
+</defs>
+<ellipse cx="50" cy="9" rx="34" ry="11" fill="#3E1420" stroke="#241811" stroke-width="2.5"/>
+<g clip-path="url(#tgClip)"><g class="tg-rot">
+  <path class="tg-body" fill="url(#tgFill)" stroke="#241811" stroke-width="2.6" stroke-linejoin="round"/>
+  <path class="tg-groove" fill="none" stroke="#C0415F" stroke-width="3.4" stroke-linecap="round"/>
+  <path class="tg-shine" fill="none" stroke="#FFD6E0" stroke-width="4.5" stroke-linecap="round" opacity="0.8"/>
+  <ellipse class="tg-wet" rx="0" ry="0" fill="url(#tgWet)"/>
+</g></g>
+</svg>`;
+  // len: 0..1 how far out, ang: swing in degrees, drag: how much the tip lags the swing,
+  // wide/flat: squash when it's pressed flat against the glass
+  function drawTongue(svg, len, ang, drag, wide, flat){
+    const bx = 50, by = 2, bw = 24;
+    const tw = 34 * wide;
+    const tx = bx + drag * 26, ty = by + 26 + len * 150;
+    const sh = ty - tw * 0.8, k = sh - by;
+    const lx = tx - tw, rx = tx + tw;
+    const body = `M ${bx-bw} ${by} C ${bx-bw-4} ${by + k*0.5} ${lx + drag*8} ${sh - k*0.35} ${lx} ${sh} ` +
+      `C ${lx} ${ty + tw*flat} ${rx} ${ty + tw*flat} ${rx} ${sh} ` +
+      `C ${rx + drag*8} ${sh - k*0.35} ${bx+bw+4} ${by + k*0.5} ${bx+bw} ${by} Z`;
+    svg.querySelector(".tg-rot").setAttribute("transform", `rotate(${ang.toFixed(2)} 50 8)`);
+    svg.querySelector(".tg-body").setAttribute("d", body);
+    svg.querySelector(".tg-groove").setAttribute("d", `M ${bx} ${by + 14} Q ${(bx + tx)/2 + drag*10} ${(by + sh)/2} ${tx} ${ty - tw*0.45}`);
+    svg.querySelector(".tg-shine").setAttribute("d", len > 0.3 ? `M ${bx - bw*0.55} ${by + 20} Q ${(bx + tx)/2 - tw*0.55 + drag*8} ${(by + sh)/2} ${tx - tw*0.62} ${sh}` : "");
+    const wet = svg.querySelector(".tg-wet");
+    wet.setAttribute("cx", tx); wet.setAttribute("cy", ty - tw*0.25);
+    wet.setAttribute("rx", (tw * 0.8 * (1 - flat) * 1.4).toFixed(1)); wet.setAttribute("ry", (tw * 0.35 * (1 - flat) * 1.4).toFixed(1));
+    const r = ang * Math.PI / 180, dx = tx - 50, dy = ty - 8;              // tip in svg coords after rotation
+    return {x: 50 + dx*Math.cos(r) - dy*Math.sin(r), y: 8 + dx*Math.sin(r) + dy*Math.cos(r)};
+  }
+  const easeIO = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+  const easeOutBack = t => { const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+  // Two big slurpy licks (the second swipes the other way); panting wobble in between
+  function animateTongue(face, t0, licksAt, onSmear){
+    const svg = face.querySelector(".ff-tongue svg"), wrap = face.querySelector(".ff-wrap"), box = face.querySelector(".ff-tongue");
+    const LICK = 950;
+    const smeared = new Set();
+    const frame = now => {
+      if(!face.classList.contains("show")){ wrap.style.scale = ""; wrap.style.translate = ""; return; }
+      const t = now - t0;
+      // resting: tongue hanging out, panting
+      let len = 0.22 + 0.06 * Math.max(0, Math.sin(t / 70)), ang = 4 * Math.sin(t / 160), drag = 0, wide = 1, flat = 1, push = 0;
+      const i = licksAt.findIndex(st => t >= st && t < st + LICK);
+      if(i >= 0){
+        const p = (t - licksAt[i]) / LICK, dir = i % 2 ? -1 : 1;
+        if(p < 0.2){                                        // shoots out, a little past, cocked to one side
+          const e = easeOutBack(p / 0.2);
+          len = 0.22 + 0.78 * e; ang = 22 * dir * Math.min(1, e); drag = -0.15 * dir * e;
+        } else if(p < 0.62){                                // pressed on the glass, swiping across
+          const q = easeIO((p - 0.2) / 0.42), bump = Math.sin(q * Math.PI);
+          ang = dir * (22 - 44 * q); drag = dir * (0.45 * q - 0.25) * 1.2;   // tip trails behind the swing
+          len = 1 - 0.12 * bump; wide = 1 + 0.4 * bump; flat = 1 - 0.65 * bump; push = bump;
+          if(q > 0.5 && !smeared.has(i)){
+            smeared.add(i);
+            const tip = drawTongue(svg, len, ang, drag, wide, flat), r = box.getBoundingClientRect(), fr = face.getBoundingClientRect();
+            onSmear((r.left - fr.left + tip.x / 100 * r.width) / fr.width * 100, (r.top - fr.top + tip.y / 200 * r.height) / fr.height * 100, dir);
+          }
+        } else {                                            // slurps back in with a flick
+          const e = easeIO((p - 0.62) / 0.38);
+          len = 1 - 0.78 * e; ang = dir * (-22 * (1 - e) + 6 * Math.sin(e * Math.PI)); drag = dir * 0.3 * (1 - e);
+        }
+      }
+      drawTongue(svg, len, ang, drag, wide, flat);
+      wrap.style.scale = String(1 + 0.06 * push);               // face leans into the screen
+      wrap.style.translate = `0 ${(4 * Math.sin(t / 190) - 12 * push).toFixed(1)}px`;
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }
   function playFinale(G, done){
     const F = G.fin, me = Net.myId();
     const look = lookFromCode((G.lk || {})[F.id], "pug");
@@ -3670,13 +3740,11 @@ ${pebbles}
       actor.style.top = (state.camY + H + 120) + "px";
     });
     at(2250, () => { face.classList.add("show"); void face.offsetWidth; face.classList.add("up"); });
-    at(2650, () => face.classList.add("lick"));
-    const smear = (x, y, w, h, r) => { const e = document.createElement("div"); e.className = "lick-smear";
-      e.style.cssText = `left:${x}%;top:${y}%;width:${w}%;height:${h}%;transform:rotate(${r}deg)`; face.appendChild(e); requestAnimationFrame(() => e.classList.add("on")); };
-    at(2950, () => smear(12, 58, 66, 20, -14));
-    at(3950, () => smear(24, 70, 60, 18, 16));
-    at(4700, () => { face.classList.add("out"); banner.classList.remove("show"); });
-    at(5150, () => {
+    const smear = (cx, cy, dir) => { const e = document.createElement("div"); e.className = "lick-smear";
+      e.style.cssText = `left:${cx - 30}%;top:${cy - 9}%;width:60%;height:18%;transform:rotate(${dir * 18}deg)`; face.appendChild(e); requestAnimationFrame(() => e.classList.add("on")); };
+    at(2250, () => animateTongue(face, performance.now(), [450, 1400], smear));
+    at(4800, () => { face.classList.add("out"); banner.classList.remove("show"); });
+    at(5250, () => {
       face.className = ""; actor.remove();
       state.busy = false;
       done();
