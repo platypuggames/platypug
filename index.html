@@ -570,7 +570,9 @@
       <div class="stat-card"><div class="num" id="tagover-count">0</div><div class="lbl">PUGS TAGGED</div></div>
     </div>
     <ol class="player-list" id="tagover-list"></ol>
-    <button class="big-btn secondary" id="tagover-btn">Back to lobby</button>
+    <button class="big-btn" id="tagover-again">Play again</button>
+    <p class="lobby-note" id="tagover-wait">Waiting for the host to start the next game…</p>
+    <button class="howto-toggle" id="tagover-btn">Leave game</button>
   </div>
 
   <div id="game-screen" class="screen hidden">
@@ -3114,7 +3116,8 @@ ${pebbles}
       ` · ${Net.allDevices()} device${Net.allDevices() === 1 ? "" : "s"} on this game link`;
   }
 
-  startBtn.addEventListener("click", () => {
+  startBtn.addEventListener("click", hostStartRound);
+  function hostStartRound(){
     if(!mp.isHost) return;
     const ids = roster().slice(0, MAX_PLAYERS).map(pp => pp.id);
     if(ids.length < 2) return;
@@ -3133,14 +3136,25 @@ ${pebbles}
     mp.tubeSeenTq = {}; mp.tubeSeenTd = {}; mp.tubeLast = null;
     roster().forEach(pp => { mp.tubeSeenTq[pp.id] = pp.p.tq || 0; mp.tubeSeenTd[pp.id] = pp.p.td ? pp.p.td.n : 0; });
     mp.hostT0 = Date.now();
+    mp.overShown = false;
     pushHost();
-  });
+  }
 
-  tagoverBtn.addEventListener("click", () => {
-    if(mp.isHost && mp.hostG){ mp.hostG.ph = "lobby"; pushHost(); }
+  // Results screen: the host starts the next round for everyone straight away
+  const tagoverAgain = document.getElementById("tagover-again");
+  const tagoverWait = document.getElementById("tagover-wait");
+  function updateTagoverButtons(){
+    const n = roster().slice(0, MAX_PLAYERS).length;
+    tagoverAgain.style.display = mp.isHost ? "" : "none";
+    tagoverAgain.disabled = n < 2;
+    tagoverWait.style.display = mp.isHost ? (n < 2 ? "" : "none") : "";
+    tagoverWait.textContent = mp.isHost ? "Everyone else left. Waiting for another player…" : "Waiting for the host to start the next game…";
+    tagoverBtn.style.display = mp.isHost ? "none" : "";
+  }
+  tagoverAgain.addEventListener("click", () => { if(mp.isHost) hostStartRound(); });
+  tagoverBtn.addEventListener("click", async () => {
+    await leaveRoom();
     switchScreen(lobbyScreen);
-    if(mp.code){ lobbyJoin.style.display = "none"; lobbyRoom.style.display = ""; renderLobby(); }
-    else showJoinCard();
   });
 
   /* ---------- Host: referee for the whole room ---------- */
@@ -3236,6 +3250,7 @@ ${pebbles}
     if(checkFull()) return;
     mpSync();
     if(!lobbyScreen.classList.contains("hidden")) renderLobby();
+    if(!tagoverScreen.classList.contains("hidden")) updateTagoverButtons();
   }
 
   async function hostGone(){
@@ -3571,6 +3586,7 @@ ${pebbles}
     });
     const last = tg[tg.length - 1];
     document.getElementById("tagover-sub").textContent = last ? `${last.n} was the last pug standing.` : "Every pug has been found.";
+    updateTagoverButtons();
     setTimeout(() => { if(!mp.inGame) switchScreen(tagoverScreen); }, 900);
   }
 
