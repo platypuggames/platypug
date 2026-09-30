@@ -143,6 +143,16 @@
     box-shadow: inset 0 0 0 3px rgba(58,38,24,.35); }
   .flower { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; z-index: 6; pointer-events: none; will-change: transform; }
   .flower svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  /* ---------- Kitchen belly slide (platypus) ---------- */
+  .critter-sprite.belly { animation: none !important; }
+  .critter-sprite.belly > .flip > svg { transform-origin: 50% 88%; transition: transform .14s ease-out; transform: translateY(6px) rotate(-62deg) scale(1.05, .95); }
+  .critter-sprite.belly .crit-arm, .critter-sprite.belly .pf-l, .critter-sprite.belly .plat-tail { animation: none !important; }
+  .critter-sprite.belly > .flip::after { content: ""; position: absolute; top: 44%; left: 78%; width: 34px; height: 22px; pointer-events: none;
+    background: repeating-linear-gradient(180deg, rgba(255,255,255,.95) 0 3px, transparent 3px 8px);
+    -webkit-mask: linear-gradient(90deg, #000, transparent); mask: linear-gradient(90deg, #000, transparent);
+    border-radius: 3px; animation: bellyLines .18s linear infinite; }
+  @keyframes bellyLines { from { transform: translateX(0); opacity: .9; } to { transform: translateX(6px); opacity: .5; } }
+  .critter-sprite.belly + .foot-shadow { width: 44px; margin-left: -22px; }
   /* ---------- Living room light switch ---------- */
   .room-dark { position: absolute; inset: 0; background: rgba(5,4,12,0.95); z-index: 2; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
   .room-dark.on { opacity: 1; }
@@ -1876,6 +1886,28 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     state.target = {x: state.pos.x, y: state.pos.y};
   }
 
+  /* ---------------- Kitchen belly slide ----------------
+     The kitchen is the platypus's home turf: run in a straight line on the tile and she flops onto
+     her belly and slides, a bit faster. Turning, stopping, or leaving the kitchen stands her back up. */
+  const BELLY_BOOST = 1.35, BELLY_WINDUP = 0.35;
+  function bellySlideUpdate(dx, dy, dist, dt){
+    const iAmPlat = state.mp ? (mp.inGame && mp.myRole === "plat" && state.phase === "seeking") : state.phase === "seeking";
+    const can = iAmPlat && dist > 6 && !state.underground && !state.sliding && !state.onLadder && !state.exitGlide &&
+      !state.swimming && !(state.frozenUntil && performance.now() < state.frozenUntil) && roomAt(state.pos.x, state.pos.y) === "kitchen";
+    if(!can){ setBelly(false); state.bellyDir = null; state.bellyT = 0; return; }
+    const ux = dx / dist, uy = dy / dist, d = state.bellyDir;
+    const dot = d ? d.x * ux + d.y * uy : 0;
+    if(dot > (state.belly ? 0.9 : 0.97)){ state.bellyT = (state.bellyT || 0) + dt; }
+    else { state.bellyT = 0; setBelly(false); }
+    state.bellyDir = {x: ux, y: uy};
+    if(state.bellyT >= BELLY_WINDUP) setBelly(true);
+  }
+  function setBelly(on){
+    if(!!state.belly === on && (!spriteEl || spriteEl.classList.contains("belly") === on)) return;
+    state.belly = on;
+    if(spriteEl) spriteEl.classList.toggle("belly", on);
+  }
+
   /* ---------------- Living room light switch ----------------
      Step on the switch (lower-right corner) to turn the living room lights off or on.
      Lights off: the room goes very dark, furniture still shows, and you can't see anyone
@@ -2062,6 +2094,8 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       const dx = state.target.x - state.pos.x;
       const dy = state.target.y - state.pos.y;
       const dist = Math.hypot(dx, dy);
+      bellySlideUpdate(dx, dy, dist, dt);
+      if(state.belly) speed *= BELLY_BOOST;
 
       if(state.exitGlide){
         // sneaking out of a hiding spot: a quick straight run to the chosen side (no collisions)
@@ -4235,7 +4269,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       tq: mp.tq || 0, td: mp.td || null, dv: state.diving ? 1 : 0,
       so: state.secretOpen && mp.g ? mp.g.rid : 0,
       ld: state.onLadder ? 1 : 0, lsk: mp.lsk || null,
-      dq: mp.dq || 0, df: mp.df || null, lq: mp.lq || 0
+      dq: mp.dq || 0, df: mp.df || null, lq: mp.lq || 0, bs: state.belly ? 1 : 0
     };
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
@@ -4309,6 +4343,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       if(face !== r.face && r.flip){ r.flip.style.transform = face; r.face = face; }
       r.el.classList.toggle("xray", !!p.ug);
       r.el.classList.toggle("climbing", !!p.ld);
+      r.el.classList.toggle("belly", !!p.bs);
       if(r.lskN === undefined) r.lskN = p.lsk ? p.lsk.n : 0;
       else if(p.lsk && p.lsk.n !== r.lskN){
         r.lskN = p.lsk.n;
