@@ -1724,7 +1724,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
         const p = hideExitSpot(item, dir);
         if(p){                                              // run out smoothly instead of popping
           const d = Math.hypot(p.x - state.pos.x, p.y - state.pos.y);
-          if(d > 2) state.exitGlide = {sx: state.pos.x, sy: state.pos.y, ex: p.x, ey: p.y, d, t: 0};
+          if(d > 2){ state.exitGlide = {sx: state.pos.x, sy: state.pos.y, ex: p.x, ey: p.y, d, t: 0}; state.camLag = performance.now(); }
         }
       }
     }
@@ -2146,8 +2146,16 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       // camera follows, centered on character, clamped to world bounds
       const maxCamX = Math.max(0, WORLD.w - viewportW);
       const maxCamY = Math.max(camTop(), WORLD.h - viewportH);
-      state.camX = clamp(state.pos.x - viewportW/2, 0, maxCamX);
-      state.camY = clamp(state.pos.y - viewportH/2, camTop(), maxCamY);
+      const wantX = clamp(state.pos.x - viewportW/2, 0, maxCamX);
+      const wantY = clamp(state.pos.y - viewportH/2, camTop(), maxCamY);
+      if(state.camLag){
+        // just left a hiding spot: the camera trails behind and eases back onto you
+        const age = (performance.now() - state.camLag) / 1000;
+        const k = Math.min(1, (0.8 + age * age * 6) * dt);
+        state.camX += (wantX - state.camX) * k;
+        state.camY += (wantY - state.camY) * k;
+        if(age > 0.8 && Math.abs(wantX - state.camX) < 0.5 && Math.abs(wantY - state.camY) < 0.5) state.camLag = null;
+      } else { state.camX = wantX; state.camY = wantY; }
       worldEl.style.transform = `translate(${-state.camX}px, ${-state.camY}px)`;
     }
     if(state.mp) mpFrame(dt);
@@ -4072,7 +4080,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.mp = true;
     Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, ldSeen: null, decoySeen: null, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
       tq: 0, td: null, tubeDropPending: null});
-    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, onSwitch: false, exitGlide: null, secretOpen: false, tunSeg: "A", tunT: 0,
+    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, onSwitch: false, exitGlide: null, camLag: null, secretOpen: false, tunSeg: "A", tunT: 0,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
       hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set(), touchLatch: new Set()});
     confirmFab.classList.remove("show"); digBtn.classList.remove("show"); plainBtn.classList.remove("show");
