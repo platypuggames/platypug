@@ -1692,8 +1692,38 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     showToast._t = setTimeout(()=> toast.classList.remove("show"), ms || 1400);
   }
 
+  // Coming out of a hiding spot: pop out on whichever side you pushed/tapped toward
+  // (tries neighbouring directions if that side is a wall or blocked).
+  function hideExitSpot(item, dir){
+    const cx = item.x + item.w / 2, cy = item.y + item.h / 2;
+    const L = Math.hypot(dir.x, dir.y);
+    if(!L) return null;
+    const a0 = Math.atan2(dir.y / L, dir.x / L);
+    const tries = [0, 0.4, -0.4, 0.8, -0.8, 1.57, -1.57, 2.2, -2.2, 3.14];
+    const ok = (x, y) => isWalkable(x, y) && isWalkable(x - 10, y) && isWalkable(x + 10, y) && isWalkable(x, y - 8) &&
+      roomAt(x, y) === roomAt(cx, cy);
+    for(const da of tries){
+      const ux = Math.cos(a0 + da), uy = Math.sin(a0 + da);
+      const t = Math.min(ux ? (item.w / 2) / Math.abs(ux) : Infinity, uy ? (item.h / 2) / Math.abs(uy) : Infinity);
+      for(const gap of [26, 40, 56]){
+        const x = cx + ux * (t + gap), y = cy + uy * (t + gap + (uy > 0 ? 14 : 0));   // feet sit low on the sprite
+        if(ok(x, y)) return {x, y};
+      }
+    }
+    return null;
+  }
   function setTarget(x, y, onArrive){
-    if(state.mp && mp.hide && Math.hypot(x - state.pos.x, y - state.pos.y) > 8) mpUnhide();   // moving sneaks you out
+    if(state.mp && mp.hide && Math.hypot(x - state.pos.x, y - state.pos.y) > 8){   // moving sneaks you out
+      const h = mp.hide;
+      const item = h.type === "furn" ? FURN_LIST.find(f => f.id === h.id) : null;
+      mpUnhide();
+      if(item){
+        const cx = item.x + item.w / 2, cy = item.y + item.h / 2;
+        const dir = (keyboardActive && state.keyDir) ? state.keyDir : {x: x - cx, y: y - cy};
+        const p = hideExitSpot(item, dir);
+        if(p){ state.pos = {x: p.x, y: p.y}; sendMe(true); }
+      }
+    }
     state.target = {x, y};
     state.onArrive = onArrive || null;
   }
