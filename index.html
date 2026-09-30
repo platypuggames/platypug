@@ -513,6 +513,11 @@
 
   /* ---------- Platytag (multiplayer) ---------- */
   .mode-btns { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; align-items: stretch; margin-top: 4px; }
+  .mode-card { position: relative; z-index: 1; background: var(--panel); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: min(300px, 100%); box-sizing: border-box; }
+  .mode-card .mode-tag { align-self: center; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #fff; background: var(--accent); border-radius: 999px; padding: 3px 12px; }
+  .mode-card .mode-tag.solo { background: var(--accent-2); }
+  .mode-card .mode-desc { margin: 0; font-size: 13px; line-height: 1.4; font-weight: 600; color: var(--ink-soft); }
+  .mode-card .big-btn { padding: 12px 20px; }
   #lobby-screen, #tagover-screen, #dog-screen {
     align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 20px;
     overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -552,10 +557,18 @@
   <div id="title-screen" class="screen">
     <div class="title-badge" id="title-critters"></div>
     <h1><span>Platypug</span><br>Hide and Seek</h1>
-    <p class="sub">Hide your pug somewhere cozy around the house, then switch sides and help the platypus find them!</p>
+    <p class="sub">Choose a game mode</p>
     <div class="mode-btns">
-      <button class="big-btn" id="play-btn">🐶 Pug and Seek</button>
-      <button class="big-btn secondary" id="tag-btn">Platytag</button>
+      <div class="mode-card">
+        <div class="mode-tag">Multiplayer · 2–10 players</div>
+        <p class="mode-desc">One player is the platypus, everyone else is a pug. Hide, run, and dodge the platypus, because every pug that gets tagged joins the hunt!</p>
+        <button class="big-btn" id="tag-btn">Play Platytag</button>
+      </div>
+      <div class="mode-card">
+        <div class="mode-tag solo">Solo · 1 player</div>
+        <p class="mode-desc">Hide your pug somewhere cozy around the house, then switch sides and help the platypus find them.</p>
+        <button class="big-btn secondary" id="play-btn">Play Pug and Seek</button>
+      </div>
     </div>
     <button class="howto-toggle" id="howto-btn">How to play</button>
     <div class="howto-card" id="howto-card" style="display:none;">
