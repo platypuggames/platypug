@@ -160,7 +160,67 @@
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
     mp.lastSent = s;
+    o.t = Math.round(Net.serverNow());            // when this was true (shared server clock) for smooth playback
     Net.setMe(o);
+  }
+
+  /* ---------- ?debug overlay: frame rate + network health ---------- */
+  const DEBUG = /[?&]debug\b/.test(location.search);
+  const dbg = {el: null, frames: 0, t0: 0, ev0: 0, se0: 0, worst: 0};
+  function debugFrame(ts){
+    if(!DEBUG) return;
+    if(!dbg.el){
+      dbg.el = document.createElement("div");
+      dbg.el.style.cssText = "position:fixed;left:6px;bottom:6px;z-index:9999;background:rgba(0,0,0,.72);color:#9f9;font:11px/1.35 ui-monospace,Menlo,monospace;padding:5px 7px;border-radius:6px;pointer-events:none;white-space:pre";
+      document.body.appendChild(dbg.el);
+      dbg.t0 = ts; dbg.ev0 = NetStats.events; dbg.se0 = NetStats.sends;
+    }
+    dbg.frames++;
+    if(dbg.last) dbg.worst = Math.max(dbg.worst, ts - dbg.last);
+    dbg.last = ts;
+    const span = ts - dbg.t0;
+    if(span < 1000) return;
+    const s = span / 1000;
+    const fps = dbg.frames / s, ev = (NetStats.events - dbg.ev0) / s, se = (NetStats.sends - dbg.se0) / s;
+    const players = (state.mp && mp.code) ? Net.peers().length : 0;
+    dbg.el.textContent =
+      `fps ${fps.toFixed(0)}  worst frame ${dbg.worst.toFixed(0)}ms\n` +
+      `net in ${ev.toFixed(1)}/s  out ${se.toFixed(1)}/s  players ${players}\n` +
+      `delay ${NetStats.age == null ? "-" : NetStats.age.toFixed(0) + "ms"}  jitter ${NetStats.jit == null ? "-" : NetStats.jit.toFixed(0) + "ms"}`;
+    dbg.frames = 0; dbg.worst = 0; dbg.t0 = ts; dbg.ev0 = NetStats.events; dbg.se0 = NetStats.sends;
+  }
+
+  /* ---------- Smooth playback of other players ----------
+     Every position update carries a server-clock time. Other players are drawn a little in the past
+     (INTERP_DELAY), gliding between the two updates around that moment, so uneven network delivery
+     doesn't make them stutter or rubber-band. Big jumps (tunnel, spawn, ladder) snap. */
+  const INTERP_DELAY = 130, INTERP_KEEP = 1000;
+  function remoteInterp(r, p){
+    const buf = r.buf || (r.buf = []);
+    const t = p.t || 0;
+    if(p.x != null && t && t !== r.lastT){
+      const now = Net.serverNow(), lag = now - t;
+      // fastest delivery seen lately (drifts up slowly): absorbs clock differences between phones
+      r.minLag = r.minLag == null ? lag : Math.min(lag, r.minLag + (now - (r.lastRecv || now)) * 0.01);
+      r.lastRecv = now; r.lastT = t;
+      const last = buf[buf.length - 1];
+      if(last && Math.hypot(p.x - last.x, p.y - last.y) > 160) buf.length = 0;   // teleport-sized jump: don't glide
+      buf.push({t: t + r.minLag, x: p.x, y: p.y});
+      if(buf.length > 30) buf.shift();
+      NetStats.age = NetStats.age == null ? lag : NetStats.age * 0.9 + lag * 0.1;
+      NetStats.jit = NetStats.jit == null ? lag - r.minLag : NetStats.jit * 0.9 + (lag - r.minLag) * 0.1;
+    }
+    if(!buf.length){ if(p.x != null){ r.x = p.x; r.y = p.y; } return; }
+    const rt = Net.serverNow() - INTERP_DELAY;
+    while(buf.length > 2 && buf[1].t <= rt) buf.shift();
+    while(buf.length > 1 && buf[0].t < rt - INTERP_KEEP) buf.shift();
+    const a = buf[0], b = buf[1];
+    if(!b || rt <= a.t){ r.x = a.x; r.y = a.y; if(rt >= a.t || !b) return; }
+    if(b){
+      if(rt >= b.t){ r.x = b.x; r.y = b.y; return; }
+      const u = Math.max(0, Math.min(1, (rt - a.t) / ((b.t - a.t) || 1)));
+      r.x = a.x + (b.x - a.x) * u; r.y = a.y + (b.y - a.y) * u;
+    }
   }
 
   /* ---------- Drawing the other players ---------- */
@@ -219,8 +279,7 @@
         if(wasPug && role === "plat"){ r.el.classList.add("just-tagged"); setTimeout(() => r.el.classList.remove("just-tagged"), 1900); }
       }
       atticGhostRemote(pp.id, p.x, p.y, !!p.ug, role);
-      if(Math.hypot(p.x - r.x, p.y - r.y) > 160){ r.x = p.x; r.y = p.y; }   // big jumps (tunnel, spawn): snap
-      else { r.x += (p.x - r.x) * k; r.y += (p.y - r.y) * k; }
+      remoteInterp(r, p);
       r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
       r.tag.style.left = r.x + "px"; r.tag.style.top = (r.y + 6) + "px";
       const walking = !!p.w;

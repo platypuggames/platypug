@@ -431,6 +431,7 @@
     flowersFrame(dt);
     decoyFrame();
     lightsFrame();
+    debugFrame(ts);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);

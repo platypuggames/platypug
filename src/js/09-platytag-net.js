@@ -14,6 +14,8 @@
        onChange(fn)  -> void               fn() whenever anyone's state/presence changes
        leave()       -> Promise
      Everything below talks only to Net, never to claude.* directly. */
+  // counters for the ?debug overlay
+  const NetStats = {events: 0, sends: 0};
   function createClaudeNet(){
     let roomNs = null, code = null, myId = null, mine = {}, subscribed = false;
     const listeners = [];
@@ -63,6 +65,7 @@
       },
       connected(){ return !!(roomNs && roomNs.connected()); },
       allDevices(){ return roomNs ? roomNs.peers().length : 0; },
+      serverNow(){ return Date.now(); },
       onChange(fn){ listeners.push(fn); },
       async leave(){
         if(!roomNs || !code) return;
@@ -82,17 +85,18 @@
     appId: "1:266525704767:web:98764adae656dd79d52e8a"
   };
   function createFirebaseNet(){
-    let db = null, code = null, meRef = null, playersRef = null, players = {}, mine = {}, isConnected = false;
+    let db = null, code = null, meRef = null, playersRef = null, players = {}, mine = {}, isConnected = false, clockOffset = 0;
     let pending = null, flushTimer = null;
     const myId = "p" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
     const listeners = [];
-    const fire = (err) => listeners.forEach(fn => { try{ fn(err); }catch(e){ console.error(e); } });
+    const fire = (err, id) => { NetStats.events++; listeners.forEach(fn => { try{ fn(err, id); }catch(e){ console.error(e); } }); };
     function init(){
       if(db) return true;
       try{
         const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
         db = app.database();
         db.ref(".info/connected").on("value", snap => { isConnected = !!snap.val(); if(code) fire(); });
+        db.ref(".info/serverTimeOffset").on("value", snap => { clockOffset = snap.val() || 0; });
         return true;
       }catch(e){ console.error(e); return false; }
     }
@@ -100,6 +104,7 @@
       flushTimer = null;
       if(!pending || !meRef) return;
       const patch = pending; pending = null;
+      NetStats.sends++;
       meRef.update(patch).catch(() => {});
     }
     const clean = (v) => JSON.parse(JSON.stringify(v === undefined ? null : v));
@@ -114,7 +119,11 @@
         playersRef = db.ref(`rooms/${code}/players`);
         await meRef.onDisconnect().remove();
         await meRef.set(mine);
-        playersRef.on("value", snap => { players = snap.val() || {}; fire(); }, err => fire(err));
+        // one event per player that changed (not the whole room every time)
+        const upd = snap => { if(snap.key === myId) return; players[snap.key] = snap.val() || {}; fire(null, snap.key); };
+        playersRef.on("child_added", upd, err => fire(err));
+        playersRef.on("child_changed", upd, err => fire(err));
+        playersRef.on("child_removed", snap => { delete players[snap.key]; fire(null, snap.key); }, err => fire(err));
       },
       setMe(obj){
         if(!meRef) return;
@@ -129,6 +138,7 @@
         return Object.keys(all).map(id => ({id, isMe: id === myId, p: all[id] || {}}));
       },
       myId(){ return code ? myId : null; },
+      serverNow(){ return Date.now() + clockOffset; },
       connected(){ return isConnected; },
       allDevices(){ return code ? Object.keys(Object.assign({}, players, {[myId]: 1})).length : 0; },
       onChange(fn){ listeners.push(fn); },

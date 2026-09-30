@@ -153,6 +153,7 @@
 
   /* ---------- Host: referee for the whole room ---------- */
   function pushHost(){
+    mp.hostG.gv = (mp.hostG.gv || 0) + 1;       // version: lets clients skip work when nothing changed
     mp.g = mp.hostG;
     Net.setMe({g: JSON.parse(JSON.stringify(mp.hostG))});
     onNetChange();
@@ -275,7 +276,7 @@
 
   /* ---------- Everyone: follow the host's game state ---------- */
   Net.onChange(onNetChange);
-  function onNetChange(err){
+  function onNetChange(err, id){
     if(!mp.code) return;
     if(err){ if(!mp.inGame) showJoinCard("Lost connection to the room."); return; }
     if(mp.isHost){ mp.g = mp.hostG; }
@@ -284,6 +285,9 @@
       if(hosts.length){ mp.hadHost = true; mp.g = hosts[0].p.g; }
       else if(mp.hadHost){ hostGone(); return; }
     }
+    // mid-game, a player just moved: the frame loop draws them; only re-sync when the host's state changed
+    if(mp.inGame && id && mp.g && mp.g.gv != null && mp.g.gv === mp.lastGv) return;
+    if(mp.g) mp.lastGv = mp.g.gv;
     if(checkFull()) return;
     mpSync();
     if(!lobbyScreen.classList.contains("hidden")) renderLobby();
