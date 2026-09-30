@@ -133,6 +133,13 @@
   #stage {
     position: absolute; inset: 0; overflow: hidden; cursor: pointer;
   }
+  /* ---------- Front-yard flower bed ---------- */
+  .flower-soil { position: absolute; z-index: 1; pointer-events: none; border-radius: 22px;
+    background: radial-gradient(circle at 30% 20%, #7A5236 0 2px, transparent 3px) 0 0 / 14px 16px,
+                radial-gradient(circle at 70% 60%, #5E3F2A 0 2px, transparent 3px) 0 0 / 18px 14px, #8B6242;
+    box-shadow: inset 0 0 0 3px rgba(58,38,24,.35); }
+  .flower { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; z-index: 6; pointer-events: none; will-change: transform; }
+  .flower svg { width: 100%; height: 100%; display: block; overflow: visible; }
   /* ---------- Attic ghost pug (visual only) ---------- */
   .attic-ghost { position: absolute; left: 0; top: 0; width: 44px; height: 48px; z-index: 8; pointer-events: none; opacity: 0; will-change: transform, opacity;
     filter: drop-shadow(0 0 6px rgba(205,185,255,.85)); }
@@ -1683,6 +1690,101 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
 
   /* ---------------- Movement + camera engine ---------------- */
   let lastTs = null;
+  /* ---------------- Front-yard flower bed ----------------
+     Two rows of billowy white flowers down the left edge of the front yard. Anyone walking through
+     pushes them aside for a moment (you can see the soil underneath). A blanket dropped in the bed
+     tucks beneath the petals and snaps to the middle of the bed so it's fully covered. */
+  const FLOWER_BED = {x: 26, y: 1194, w: 80, h: 416};
+  const FLOWER_CX = FLOWER_BED.x + FLOWER_BED.w / 2;
+  function inFlowerBed(x, y){
+    const b = FLOWER_BED;
+    return x >= b.x - 6 && x <= b.x + b.w + 6 && y >= b.y - 6 && y <= b.y + b.h + 6;
+  }
+  function flowerSVG(hue){
+    let petals = "";
+    for(let i = 0; i < 8; i++){
+      const a = i * 45;
+      petals += `<ellipse cx="0" cy="-11" rx="7.5" ry="11" transform="rotate(${a})" fill="${hue}" stroke="#D6CEE3" stroke-width="1.3"/>`;
+    }
+    let inner = "";
+    for(let i = 0; i < 8; i++){
+      inner += `<ellipse cx="0" cy="-7" rx="5" ry="7" transform="rotate(${i * 45 + 22.5})" fill="#FFFFFF" stroke="#E4DDEE" stroke-width="1"/>`;
+    }
+    return `<svg viewBox="-25 -25 50 50" xmlns="http://www.w3.org/2000/svg">
+      <path d="M-4 6 Q-20 10 -22 22 Q-10 20 -2 10 Z" fill="#6DBE5A" stroke="#3F8A35" stroke-width="1.2"/>
+      <path d="M4 6 Q20 10 22 22 Q10 20 2 10 Z" fill="#79C865" stroke="#3F8A35" stroke-width="1.2"/>
+      ${petals}${inner}
+      <circle r="4.6" fill="#F7CF4A" stroke="#D9A628" stroke-width="1.2"/>
+      <circle cx="-1.5" cy="-1.5" r="1.4" fill="#FFF3B8"/>
+    </svg>`;
+  }
+  let FLOWERS = [];
+  function buildFlowers(){
+    FLOWERS = [];
+    const b = FLOWER_BED;
+    const soil = document.createElement("div");
+    soil.className = "flower-soil";
+    soil.style.left = b.x + "px"; soil.style.top = b.y + "px";
+    soil.style.width = b.w + "px"; soil.style.height = b.h + "px";
+    worldEl.appendChild(soil);
+    const svgs = [flowerSVG("#FFFFFF"), flowerSVG("#FBF8FF"), flowerSVG("#FFFDF7")];
+    let n = 0;
+    for(let y = b.y + 18; y <= b.y + b.h - 14; y += 22){
+      for(let c = 0; c < 2; c++){
+        const x = b.x + 21 + c * 38 + ((n * 7) % 5) - 2;
+        const yy = y + (c ? 11 : 0) + ((n * 3) % 4) - 2;
+        if(yy > b.y + b.h - 10) continue;
+        const el = document.createElement("div");
+        el.className = "flower";
+        el.style.left = x + "px"; el.style.top = yy + "px";
+        el.innerHTML = svgs[n % 3];
+        const rot = (n * 37) % 60 - 30, sc = 0.95 + ((n * 13) % 20) / 100;
+        el.style.transform = `rotate(${rot}deg) scale(${sc})`;
+        worldEl.appendChild(el);
+        FLOWERS.push({el, x, y: yy, rot, sc, ox: 0, oy: 0, sq: 0, key: ""});
+        n++;
+      }
+    }
+  }
+  const FLOWER_R = 50;
+  function flowersFrame(dt){
+    if(!FLOWERS.length || !FLOWERS[0].el.isConnected) return;
+    const movers = [];
+    const playing = spriteEl && (state.phase === "hiding" || state.phase === "seeking");
+    if(playing && !state.underground && !spriteEl.classList.contains("hidden-away") && !(state.mp && mp.hide))
+      movers.push(state.pos);
+    if(state.mp && mp.remotes) for(const r of mp.remotes.values()) if(!r._hid && !r._ug) movers.push(r);
+    const b = FLOWER_BED;
+    const near = movers.filter(m => m.x > b.x - FLOWER_R && m.x < b.x + b.w + FLOWER_R && m.y > b.y - FLOWER_R && m.y < b.y + b.h + FLOWER_R);
+    if(!near.length && FLOWERS.every(f => f.key === "rest")) return;
+    for(const f of FLOWERS){
+      let tx = 0, ty = 0, tsq = 0;
+      for(const m of near){
+        const dx = f.x - m.x, dy = (f.y - (m.y - 14)), d = Math.hypot(dx, dy);
+        if(d >= FLOWER_R) continue;
+        const k = 1 - d / FLOWER_R, ux = d ? dx / d : 1, uy = d ? dy / d : 0;
+        tx += ux * 34 * k; ty += uy * 16 * k; tsq = Math.max(tsq, k);
+      }
+      const rate = (tsq > 0 ? 14 : 2.6) * dt;          // push aside fast, billow back slowly
+      const e = Math.min(1, rate);
+      f.ox += (tx - f.ox) * e; f.oy += (ty - f.oy) * e; f.sq += (tsq - f.sq) * e;
+      if(Math.abs(f.ox) < 0.05 && Math.abs(f.oy) < 0.05 && f.sq < 0.005){ f.ox = f.oy = f.sq = 0; }
+      const key = (f.ox || f.oy || f.sq) ? `${f.ox.toFixed(1)},${f.oy.toFixed(1)},${f.sq.toFixed(2)}` : "rest";
+      if(key === f.key) continue;
+      f.key = key;
+      const sc = f.sc * (1 - 0.55 * f.sq), rot = f.rot + f.ox * 1.6;
+      f.el.style.transform = `translate(${f.ox.toFixed(1)}px, ${f.oy.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(${sc.toFixed(3)})`;
+    }
+  }
+  // blanket dropped in the bed: centre it so the petals cover it completely
+  function snapToFlowerBed(){
+    if(state.underground || !inFlowerBed(state.pos.x, state.pos.y)) return;
+    const b = FLOWER_BED;
+    state.pos.x = FLOWER_CX;
+    state.pos.y = clamp(state.pos.y, b.y + 42, b.y + b.h - 8);
+    state.target = {x: state.pos.x, y: state.pos.y};
+  }
+
   /* ---------------- Attic ghost pug: purely decorative ----------------
      Each time you walk into the attic a little ghost pug swoops around for a few seconds.
      Lives inside the attic room div (clipped to it, under the fog), never touches game state. */
@@ -1872,6 +1974,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     }
     if(state.mp) mpFrame(dt);
     atticGhostFrame(ts);
+    flowersFrame(dt);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -2011,6 +2114,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       worldEl.appendChild(patch);
     });
 
+    buildFlowers();
     buildTunnel();
     buildSecret();
     buildLadder();
@@ -3047,6 +3151,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   // Blankets sit on the floor: tucked behind/under an object they layer beneath it
   function blanketZ(x, y, tunnel){
     if(tunnel) return "12";
+    if(inFlowerBed(x, y)) return "2";          // tucked under the flower petals
     const behind = FURN_LIST.some(it => it.id !== "blanket" && x >= it.x && x <= it.x + it.w && y - 10 >= it.y && y - 10 <= it.y + it.h);
     return behind ? "2" : "7";
   }
@@ -3094,6 +3199,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       return;
     }
 
+    snapToFlowerBed();
     state.blanketPos = {x: state.pos.x, y: state.pos.y};
     const el = makeBlanketEl(state.pos.x, state.pos.y);
     el.classList.add("blanket-drop");
@@ -3804,6 +3910,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.target = {x: state.pos.x, y: state.pos.y};
     if(inBedNow && !state.underground){ showToast("Snuggled under the covers 🛏️", 1400); return; }   // the lump is what everyone sees
     state.blanketTunnel = !!state.underground;
+    snapToFlowerBed();
     mp.hide = {type: "blanket", x: Math.round(state.pos.x), y: Math.round(state.pos.y), t: state.blanketTunnel ? 1 : 0};
     const el = makeBlanketEl(state.pos.x, state.pos.y);
     el.classList.add("blanket-drop");
@@ -3945,6 +4052,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       const inBed = !p.ug && pointInBed(r.x, r.y);
       const tunnelHidden = !!p.ug && !state.underground;          // underground players are only visible from the tunnel
       const hidden = !!p.hid || !!p.bl || inBed || tunnelHidden;
+      r._hid = !!p.hid || !!p.bl; r._ug = !!p.ug;
       r.el.style.visibility = hidden ? "hidden" : "";
       r.tag.style.visibility = hidden ? "hidden" : "";
       r.lump.classList.toggle("show", inBed && !p.hid && !p.bl);
