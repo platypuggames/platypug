@@ -1694,6 +1694,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
 
   // Coming out of a hiding spot: pop out on whichever side you pushed/tapped toward
   // (tries neighbouring directions if that side is a wall or blocked).
+  const EXIT_GLIDE_SPEED = 380;   // px/s: a little quicker than walking
   function hideExitSpot(item, dir){
     const cx = item.x + item.w / 2, cy = item.y + item.h / 2;
     const L = Math.hypot(dir.x, dir.y);
@@ -1721,7 +1722,10 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
         const cx = item.x + item.w / 2, cy = item.y + item.h / 2;
         const dir = (keyboardActive && state.keyDir) ? state.keyDir : {x: x - cx, y: y - cy};
         const p = hideExitSpot(item, dir);
-        if(p){ state.pos = {x: p.x, y: p.y}; sendMe(true); }
+        if(p){                                              // run out smoothly instead of popping
+          const d = Math.hypot(p.x - state.pos.x, p.y - state.pos.y);
+          if(d > 2) state.exitGlide = {sx: state.pos.x, sy: state.pos.y, ex: p.x, ey: p.y, d, t: 0};
+        }
       }
     }
     state.target = {x, y};
@@ -2034,7 +2038,20 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       const dy = state.target.y - state.pos.y;
       const dist = Math.hypot(dx, dy);
 
-      if(dist > 1.2){
+      if(state.exitGlide){
+        // sneaking out of a hiding spot: a quick straight run to the chosen side (no collisions)
+        const G = state.exitGlide;
+        G.t = Math.min(G.d, G.t + EXIT_GLIDE_SPEED * dt);
+        const u = G.t / G.d, e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;   // ease in-out
+        const px = state.pos.x;
+        state.pos = {x: G.sx + (G.ex - G.sx) * e, y: G.sy + (G.ey - G.sy) * e};
+        if(Math.abs(state.pos.x - px) > 0.3){
+          const flip = spriteEl.querySelector(".flip");
+          if(flip) flip.style.transform = state.pos.x < px ? "scaleX(1)" : "scaleX(-1)";
+        }
+        if(!state.walkingClassApplied){ spriteEl.classList.remove("idle"); spriteEl.classList.add("walking"); state.walkingClassApplied = true; }
+        if(G.t >= G.d) state.exitGlide = null;
+      } else if(dist > 1.2){
         const step = speed * dt;
         let nx, ny;
         if(step >= dist){ nx = state.target.x; ny = state.target.y; }
@@ -4055,7 +4072,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.mp = true;
     Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, ldSeen: null, decoySeen: null, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
       tq: 0, td: null, tubeDropPending: null});
-    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, onSwitch: false, secretOpen: false, tunSeg: "A", tunT: 0,
+    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, onSwitch: false, exitGlide: null, secretOpen: false, tunSeg: "A", tunT: 0,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
       hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set(), touchLatch: new Set()});
     confirmFab.classList.remove("show"); digBtn.classList.remove("show"); plainBtn.classList.remove("show");
@@ -4118,6 +4135,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     if(state.phase === "seeking"){ mpSearch(state.pendingSpot.spotId); return; }
     if(state.phase !== "hiding" || mp.hide) return;
     mp.hide = {type: "furn", id: state.pendingSpot.spotId};
+    state.exitGlide = null;
     state.target = {x: state.pos.x, y: state.pos.y};
     spriteEl.classList.add("hidden-away");
     confirmFab.classList.remove("show");
