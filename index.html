@@ -1698,8 +1698,29 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     <ellipse cx="30" cy="34" rx="2.1" ry="2.7" fill="#2A1E3A"/>
     <circle cx="15" cy="31" r="3" fill="#F5A9C6" fill-opacity="0.65"/><circle cx="45" cy="31" r="3" fill="#F5A9C6" fill-opacity="0.65"/>
   </svg>`;
-  const atticGhost = {host: null, el: null, start: 0, wasIn: false, lastRoom: null, phase: 0};
-  const GHOST_DUR = 7000, GHOST_W = 44, GHOST_H = 48;
+  const atticGhost = {host: null, el: null, start: 0, wasIn: false, lastRoom: null, phase: 0, remoteRooms: new Map()};
+  const GHOST_DUR = 6000, GHOST_W = 44, GHOST_H = 48;
+  // Someone walked into the attic: (re)start the 6-second ghost. In Platytag only pugs wake it,
+  // so a platypus who finds it floating knows a pug was just up there.
+  function triggerAtticGhost(){
+    const host = atticGhost.host;
+    if(!host || !host.isConnected) return;
+    if(!atticGhost.el || atticGhost.el.parentNode !== host){
+      atticGhost.el = document.createElement("div");
+      atticGhost.el.className = "attic-ghost";
+      atticGhost.el.innerHTML = GHOST_SVG;
+      host.appendChild(atticGhost.el);
+    }
+    atticGhost.start = performance.now(); atticGhost.phase = Math.random() * Math.PI * 2;
+  }
+  // remote players: call with their raw synced position each frame
+  function atticGhostRemote(id, x, y, ug, role){
+    const r = ug ? "tunnel" : roomAt(x, y);
+    const prev = atticGhost.remoteRooms.get(id);
+    if(!r) return;                                   // doorway: keep the last room
+    atticGhost.remoteRooms.set(id, r);
+    if(prev !== undefined && prev !== "attic" && r === "attic" && role === "pug") triggerAtticGhost();
+  }
   function atticGhostFrame(ts){
     const playing = spriteEl && (state.phase === "hiding" || state.phase === "seeking");
     let inAttic = false;
@@ -1707,21 +1728,13 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       const r = state.underground ? "tunnel" : roomAt(state.pos.x, state.pos.y);
       if(r) atticGhost.lastRoom = r;                  // doorways: keep the last room
       inAttic = atticGhost.lastRoom === "attic";
-    } else atticGhost.lastRoom = null;
-    const host = atticGhost.host;
-    if(inAttic && !atticGhost.wasIn && host && host.isConnected){
-      if(!atticGhost.el || atticGhost.el.parentNode !== host){
-        atticGhost.el = document.createElement("div");
-        atticGhost.el.className = "attic-ghost";
-        atticGhost.el.innerHTML = GHOST_SVG;
-        host.appendChild(atticGhost.el);
-      }
-      atticGhost.start = ts; atticGhost.phase = Math.random() * Math.PI * 2;
-    }
+    } else { atticGhost.lastRoom = null; atticGhost.remoteRooms.clear(); }
+    const iWake = !(state.mp && mp.inGame) || mp.myRole === "pug";
+    if(inAttic && !atticGhost.wasIn && iWake) triggerAtticGhost();
     atticGhost.wasIn = inAttic;
     const el = atticGhost.el;
     if(!el || !el.isConnected) return;
-    const e = ts - atticGhost.start;
+    const e = Math.max(0, ts - atticGhost.start);
     if(!atticGhost.start || e > GHOST_DUR || !playing){ el.style.opacity = "0"; return; }
     const t = e / 1000, ph = atticGhost.phase;
     const W = ROOMS.attic.rect.w, H = ROOMS.attic.rect.h;
@@ -3908,6 +3921,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
         if(r) removeRemote(r); r = makeRemote(role, p, lk); mp.remotes.set(pp.id, r);
         if(wasPug && role === "plat"){ r.el.classList.add("just-tagged"); setTimeout(() => r.el.classList.remove("just-tagged"), 1900); }
       }
+      atticGhostRemote(pp.id, p.x, p.y, !!p.ug, role);
       if(Math.hypot(p.x - r.x, p.y - r.y) > 160){ r.x = p.x; r.y = p.y; }   // big jumps (tunnel, spawn): snap
       else { r.x += (p.x - r.x) * k; r.y += (p.y - r.y) * k; }
       r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
