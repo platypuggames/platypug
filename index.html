@@ -3274,7 +3274,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   plainBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     if(!state.underground && inPool(state.pos.x, state.pos.y)){ showToast("Blankets don't float! Hop out of the pool first.", 1800); return; }
-    if(state.mp){ mpBlanket(); return; }
+    if(state.mp){ if(mp.hide && mp.hide.type === "blanket") mpUnhide(); else mpBlanket(); return; }
     if(state.busy || state.phase !== "hiding") return;
     state.busy = true;
     state.target = {x: state.pos.x, y: state.pos.y};
@@ -3396,7 +3396,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.blanketTunnel = false;
     state.pugLumpPos = null;
     state.digs = [];
-    plainBtn.classList.add("show");
+    plainBtn.classList.add("show"); blanketLabel();
     state.wantId = null;
     state.hidingRoom = null;
     state.hidingSpot = null;
@@ -3999,7 +3999,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     placeSpriteAt(s.x, s.y);
     mp.lastX = s.x;
     spriteEl.style.visibility = ""; footEl.style.visibility = "";
-    plainBtn.classList.toggle("show", mp.myRole === "pug");
+    plainBtn.classList.toggle("show", mp.myRole === "pug"); blanketLabel();
     if(mp.myRole === "plat") showToast("Go find those pugs!", 1600);
     sendMe(true);
     updateHud();
@@ -4012,7 +4012,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.phase = role === "pug" ? "hiding" : "seeking";
     setSpriteRole(role);
     if(inBedNow){ spriteEl.style.visibility = "hidden"; }
-    plainBtn.classList.toggle("show", role === "pug");
+    plainBtn.classList.toggle("show", role === "pug"); blanketLabel();
     state.pendingSpot = null; confirmFab.classList.remove("show");
     worldEl.querySelectorAll(".furniture.selected").forEach(x => x.classList.remove("selected"));
     if(wasPug && role === "plat" && state.onLadder) fallOffLadder(LADDER_BOT.x, LADDER_BOT.y);
@@ -4053,6 +4053,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     el.style.pointerEvents = "none";
     worldEl.appendChild(el);
     mp.myBlanketEl = el;
+    blanketLabel();
     confirmFab.classList.remove("show");
     setTimeout(() => { if(mp.hide && mp.hide.type === "blanket") spriteEl.classList.add("hidden-away"); }, 250);
     sendMe(true);
@@ -4063,7 +4064,12 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     spriteEl.classList.remove("hidden-away");
     if(mp.myBlanketEl){ mp.myBlanketEl.remove(); mp.myBlanketEl = null; }
     state.pendingSpot = null;                 // lets the Hide button reappear if still next to furniture
+    blanketLabel();
     sendMe(true);
+  }
+  // the blanket button toggles: under a blanket it becomes "Peek out" (peekaboo!)
+  function blanketLabel(){
+    plainBtn.textContent = (state.mp && mp.hide && mp.hide.type === "blanket") ? "🧺 Peek out" : "🧺 Blanket";
   }
 
   /* ---------- Platypus checking furniture (tag mode) ---------- */
