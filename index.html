@@ -143,6 +143,16 @@
     box-shadow: inset 0 0 0 3px rgba(58,38,24,.35); }
   .flower { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; z-index: 6; pointer-events: none; will-change: transform; }
   .flower svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  /* ---------- Living room light switch ---------- */
+  .room-dark { position: absolute; inset: 0; background: rgba(5,4,12,0.95); z-index: 2; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
+  .room-dark.on { opacity: 1; }
+  .light-switch { position: absolute; width: 24px; height: 34px; margin: -17px 0 0 -12px; z-index: 3; pointer-events: none;
+    background: #FFF8EC; border: 2.5px solid #241811; border-radius: 6px; box-shadow: 0 3px 0 rgba(0,0,0,0.25); box-sizing: border-box; }
+  .light-switch::before { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 16px; margin: -8px 0 0 -2.5px;
+    background: #CFC4B2; border-radius: 3px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.35); }
+  .light-switch::after { content: ""; position: absolute; left: 50%; top: 5px; width: 9px; height: 9px; margin-left: -4.5px;
+    background: #F5C542; border: 2px solid #241811; border-radius: 3px; box-sizing: border-box; transition: top .15s ease, background .15s ease; }
+  .light-switch.off::after { top: 16px; background: #8A8174; }
   /* ---------- Laundry basket decoy blanket ---------- */
   .decoy-blanket { pointer-events: none; }
   .decoy-blanket.pop { animation: decoyPop .7s cubic-bezier(.3,.7,.4,1) both; }
@@ -1807,6 +1817,33 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     state.target = {x: state.pos.x, y: state.pos.y};
   }
 
+  /* ---------------- Living room light switch ----------------
+     Step on the switch (lower-right corner) to turn the living room lights off or on.
+     Lights off: the room goes very dark, furniture still shows, and you can't see anyone
+     else in there (only yourself). Tagging works as normal. Platytag: the host owns it (G.lt). */
+  const LIGHT_SW = {x: 1250, y: 872}, LIGHT_SW_R = 18;
+  const lights = {darkEl: null, swEl: null, last: null};
+  function lightsAreOff(){ return (state.mp && mp.inGame) ? !!(mp.g && mp.g.lt) : !!state.lightsOff; }
+  function darkAt(x, y){ return lightsAreOff() && roomAt(x, y) === "livingroom"; }
+  function lightsFrame(){
+    const off = lightsAreOff();
+    if(lights.darkEl) lights.darkEl.classList.toggle("on", off);
+    if(lights.swEl) lights.swEl.classList.toggle("off", off);
+    const playing = spriteEl && (state.phase === "hiding" || state.phase === "seeking");
+    const myRoom = playing && !state.underground ? roomAt(state.pos.x, state.pos.y) : null;
+    if(lights.last !== null && off !== lights.last && myRoom === "livingroom") showToast(off ? "Lights out!" : "Lights on!", 1200);
+    lights.last = off;
+    // classic: the hidden pug's blanket can't be seen in the dark (it can still be found by touch)
+    if(!state.mp && blanketEl && blanketRoom === "livingroom") blanketEl.style.visibility = off ? "hidden" : "";
+    if(!playing || state.underground || state.onLadder || state.busy){ state.onSwitch = false; return; }
+    const on = Math.hypot(state.pos.x - LIGHT_SW.x, state.pos.y - LIGHT_SW.y) < LIGHT_SW_R;
+    if(on && !state.onSwitch){
+      if(state.mp && mp.inGame){ mp.lq = (mp.lq || 0) + 1; sendMe(true); }
+      else state.lightsOff = !state.lightsOff;
+    }
+    state.onSwitch = on;
+  }
+
   /* ---------------- Laundry basket decoy ----------------
      A pug touching the laundry basket makes an empty blanket pop out and land just below-left of it.
      It looks exactly like a pug's blanket. When a platypus touches it, it flattens and disappears.
@@ -2070,6 +2107,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     atticGhostFrame(ts);
     flowersFrame(dt);
     decoyFrame();
+    lightsFrame();
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -2191,6 +2229,12 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
         roomDiv.appendChild(el);
       });
 
+      if(key === "livingroom"){
+        const dark = document.createElement("div");
+        dark.className = "room-dark" + (lightsAreOff() ? " on" : "");
+        roomDiv.appendChild(dark);
+        lights.darkEl = dark;
+      }
       const fog = document.createElement("div");
       fog.className = "room-fog";
       roomDiv.appendChild(fog);
@@ -2228,6 +2272,11 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     plate.style.left = PLATE.x+"px"; plate.style.top = PLATE.y+"px";
     worldEl.appendChild(plate);
     garagePlateEl = plate;
+    const sw = document.createElement("div");
+    sw.className = "light-switch" + (lightsAreOff() ? " off" : "");
+    sw.style.left = LIGHT_SW.x + "px"; sw.style.top = LIGHT_SW.y + "px";
+    worldEl.appendChild(sw);
+    lights.swEl = sw;
 
     footEl = document.createElement("div");
     footEl.className = "foot-shadow";
@@ -3333,6 +3382,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.sliding = false; state.slideMode = null;
     state.garageOpen = false;
     state.onPlate = false;
+    state.onSwitch = false;             // lights stay how the pug left them
     state.pendingSpot = null;
     state.wantId = null;
     state.checkedSpots = 0;
@@ -3401,6 +3451,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.hidingRoom = null;
     state.hidingSpot = null;
     state.decoy = null;
+    state.lightsOff = false; state.onSwitch = false;
     state.pendingSpot = null;
     state.busy = false;
     confirmFab.classList.remove("show");
@@ -3753,7 +3804,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     mp.tubeSeenTq = {}; mp.tubeSeenTd = {}; mp.tubeLast = null;
     roster().forEach(pp => { mp.tubeSeenTq[pp.id] = pp.p.tq || 0; mp.tubeSeenTd[pp.id] = pp.p.td ? pp.p.td.n : 0; });
     mp.hostT0 = Date.now();
-    mp.hostDq = {};
+    mp.hostDq = {}; mp.hostLq = {};
     mp.overShown = false;
     pushHost();
   }
@@ -3821,7 +3872,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       }
     }
     // laundry decoy: a pug's touch makes one (if none out), a platypus's touch flattens it
-    mp.hostDq = mp.hostDq || {};
+    mp.hostDq = mp.hostDq || {}; mp.hostLq = mp.hostLq || {};
     for(const [id, p] of byId){
       if(!p) continue;
       const q = p.dq || 0;
@@ -3831,6 +3882,9 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
         if(!G.dc && G.roles[id] === "pug"){ G.dcn = (G.dcn || 0) + 1; G.dc = {k: G.rid * 1000 + G.dcn}; changed = true; }
       }
       if(G.dc && p.df === G.dc.k && G.roles[id] === "plat"){ G.dc = null; changed = true; }
+      const lq = p.lq || 0;                             // living room light switch
+      if(mp.hostLq[id] === undefined) mp.hostLq[id] = lq;
+      else if(lq !== mp.hostLq[id]){ mp.hostLq[id] = lq; if(G.roles[id]){ G.lt = G.lt ? 0 : 1; changed = true; } }
     }
     if(G.ph === "play"){
       const el = Math.floor(elapsed - HEAD_START);
@@ -3971,7 +4025,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.mp = true;
     Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, ldSeen: null, decoySeen: null, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
       tq: 0, td: null, tubeDropPending: null});
-    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, secretOpen: false, tunSeg: "A", tunT: 0,
+    Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, onSwitch: false, secretOpen: false, tunSeg: "A", tunT: 0,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
       hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set(), touchLatch: new Set()});
     confirmFab.classList.remove("show"); digBtn.classList.remove("show"); plainBtn.classList.remove("show");
@@ -4107,7 +4161,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       tq: mp.tq || 0, td: mp.td || null, dv: state.diving ? 1 : 0,
       so: state.secretOpen && mp.g ? mp.g.rid : 0,
       ld: state.onLadder ? 1 : 0, lsk: mp.lsk || null,
-      dq: mp.dq || 0, df: mp.df || null
+      dq: mp.dq || 0, df: mp.df || null, lq: mp.lq || 0
     };
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
@@ -4189,11 +4243,12 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       if(!!p.dv !== !!r.dv){ if(r.dv && !p.dv) makeSplash(p.x, p.y); r.dv = !!p.dv; r.el.classList.toggle("diving", r.dv); r.el.style.zIndex = r.dv ? "7" : ""; }
       const rSwim = !p.ug && !p.dv && inPool(r.x, r.y);
       r.el.classList.toggle("swimming", rSwim);
-      pawTrail(r, r.x, r.y, rSwim || !!p.dv, !!p.ug || !!p.hid || !!p.bl);
+      const rDark = !p.ug && darkAt(r.x, r.y);                   // lights out: can't see anyone else in there
+      pawTrail(r, r.x, r.y, rSwim || !!p.dv, !!p.ug || !!p.hid || !!p.bl || rDark);
       r.el.classList.toggle("tubed", !!(mp.g && mp.g.tube && mp.g.tube.h === pp.id) && inPool(r.x, r.y));
       const inBed = !p.ug && pointInBed(r.x, r.y);
       const tunnelHidden = !!p.ug && !state.underground;          // underground players are only visible from the tunnel
-      const hidden = !!p.hid || !!p.bl || inBed || tunnelHidden;
+      const hidden = !!p.hid || !!p.bl || inBed || tunnelHidden || rDark;
       r._hid = !!p.hid || !!p.bl; r._ug = !!p.ug;
       r.el.style.visibility = hidden ? "hidden" : "";
       r.tag.style.visibility = hidden ? "hidden" : "";
@@ -4214,7 +4269,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
         }
         r.blKey = bk;
       }
-      if(r.blanket) r.blanket.style.display = (p.bl && p.bl.t && !state.underground) ? "none" : "";
+      if(r.blanket) r.blanket.style.display = ((p.bl && p.bl.t && !state.underground) || (p.bl && !p.bl.t && darkAt(p.bl.x, p.bl.y))) ? "none" : "";
       if(r.blanket && mp.myRole === "plat" && state.phase === "seeking" && !!p.bl.t === !!state.underground && blanketTouchedBy(state.pos.x, state.pos.y, p.bl)){
         if(!r.blTouched){ r.blTouched = true; wiggleEl(r.blanket); }
       } else r.blTouched = false;
