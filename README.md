@@ -14,3 +14,6 @@ The source lives in `src/` and is stitched together, in `src/manifest.txt` order
                 yard mechanics, Pug and Seek, Platytag networking / lobby + host / client)
 
 All `src/js` pieces are one script in the built page, so they share the same scope.
+
+`vendor/` holds third-party files the page loads locally instead of from the internet:
+the Firebase 10.12.2 compat SDK (multiplayer) and the Baloo 2 / Fredoka fonts (SIL OFL).
