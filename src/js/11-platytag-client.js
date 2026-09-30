@@ -194,7 +194,7 @@
      Every position update carries a server-clock time. Other players are drawn a little in the past
      (INTERP_DELAY), gliding between the two updates around that moment, so uneven network delivery
      doesn't make them stutter or rubber-band. Big jumps (tunnel, spawn, ladder) snap. */
-  const INTERP_DELAY = 130, INTERP_KEEP = 1000;
+  const INTERP_DELAY = 100, INTERP_KEEP = 1000;
   function remoteInterp(r, p){
     const buf = r.buf || (r.buf = []);
     const t = p.t || 0;
@@ -231,7 +231,7 @@
   }
   function makeRemote(role, p, lk){
     const el = document.createElement("div");
-    el.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat it");
+    el.className = "critter-sprite remote idle " + (role === "pug" ? "pug" : "plat it");
     el.innerHTML = role === "pug" ? spriteMarkup("pug", pugSVG(lookFromCode(lk, "pug")), lookFromCode(lk, "pug")) : spriteMarkup("plat", platypusSVG(lookFromCode(lk, "plat")), lookFromCode(lk, "plat"));
     worldEl.appendChild(el);
     const tag = document.createElement("div");
@@ -260,8 +260,13 @@
     state.digs = [...want.values()];
   }
   function renderRemotes(dt){
-    syncHoles();
-    if(!state.secretOpen && mp.g && Net.peers().some(pp => !pp.isMe && pp.p && pp.p.so && pp.p.so === mp.g.rid)) openSecret(false);   // someone dug it open
+    // dig holes + the secret passage only change when someone digs: check a few times a second, not every frame
+    const nowMs = performance.now();
+    if(!(mp.slowAt > nowMs - 250) || (mp.myDigs || []).length !== mp.slowDigs){
+      mp.slowAt = nowMs; mp.slowDigs = (mp.myDigs || []).length;
+      syncHoles();
+      if(!state.secretOpen && mp.g && Net.peers().some(pp => !pp.isMe && pp.p && pp.p.so && pp.p.so === mp.g.rid)) openSecret(false);   // someone dug it open
+    }
     const roles = (mp.g && mp.g.roles) || {};
     const seen = new Set();
     const k = Math.min(1, dt * 12);
@@ -280,8 +285,12 @@
       }
       atticGhostRemote(pp.id, p.x, p.y, !!p.ug, role);
       remoteInterp(r, p);
-      r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
-      r.tag.style.left = r.x + "px"; r.tag.style.top = (r.y + 6) + "px";
+      const pk = Math.round(r.x * 4) + "," + Math.round(r.y * 4);
+      if(pk !== r.posKey){                                         // only move them when they moved
+        r.posKey = pk;
+        r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
+        r.tag.style.left = r.x + "px"; r.tag.style.top = (r.y + 6) + "px";
+      }
       const walking = !!p.w;
       if(walking !== r.walking){ r.el.classList.toggle("walking", walking); r.el.classList.toggle("idle", !walking); r.walking = walking; }
       const face = p.f ? "scaleX(-1)" : "scaleX(1)";

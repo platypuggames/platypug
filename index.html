@@ -145,7 +145,7 @@
   .flower svg { width: 100%; height: 100%; display: block; overflow: visible; }
   /* ---------- Kitchen belly slide (platypus) ---------- */
   .critter-sprite.belly { animation: none !important; }
-  .critter-sprite.belly > .flip > svg { transform-origin: 50% 88%; transition: transform .14s ease-out; transform: translateY(6px) rotate(-62deg) scale(1.05, .95); }
+  .critter-sprite.belly > .flip > svg, .critter-sprite.belly .plat-outline > svg { transform-origin: 50% 88%; transition: transform .14s ease-out; transform: translateY(6px) rotate(-62deg) scale(1.05, .95); }
   .critter-sprite.belly .crit-arm, .critter-sprite.belly .pf-l, .critter-sprite.belly .plat-tail { animation: none !important; }
   .critter-sprite.belly > .flip::after { content: ""; position: absolute; top: 44%; left: 78%; width: 34px; height: 22px; pointer-events: none;
     background: repeating-linear-gradient(180deg, rgba(255,255,255,.95) 0 3px, transparent 3px 8px);
@@ -232,7 +232,6 @@
   /* a platypus in the tube floats on top like the dogs: vest + goggles, no straw */
   .critter-sprite.plat.swimming.tubed > .flip > svg,
   .critter-sprite.plat.it.swimming.tubed > .flip > svg { opacity: 1; filter: none !important; translate: none; clip-path: inset(0 0 25% 0); }
-  .critter-sprite.plat.it.swimming.tubed > .flip > svg { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A) !important; }
   .critter-sprite.plat.swimming.tubed .swim-gear { display: block; }
   .critter-sprite.plat.swimming.tubed .swim-straw { display: none; }
   .float-tube { position: absolute; width: 68px; height: 42px; margin: -21px 0 0 -34px; z-index: 4; pointer-events: none; animation: tubeDrift 3.4s ease-in-out infinite; }
@@ -356,9 +355,23 @@
     margin-left: -28px; margin-top: -44px;
     pointer-events: none;
     transition: opacity .3s ease, transform .3s ease;
-    filter: drop-shadow(0 6px 5px rgba(0,0,0,.2));
     z-index: 5; transform-origin: 50% 85%;
   }
+  /* soft ground shadow for other players / the finale dog (your own dog has .foot-shadow);
+     a gradient, not a filter, so it costs nothing to redraw */
+  .critter-sprite.remote::before, .critter-sprite.finale-actor::before { content: ""; position: absolute; left: 50%; top: 52px;
+    width: 34px; height: 10px; margin-left: -17px; z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,.22) 0, rgba(0,0,0,.12) 45%, rgba(0,0,0,0) 70%); }
+  /* platypus-team red outline: a solid red copy of the art drawn just behind it (no filters) */
+  .critter-sprite .plat-outline { display: none; position: absolute; inset: 0; pointer-events: none; }
+  .critter-sprite .plat-outline > svg { width: 100%; height: 100%; display: block; }
+  .critter-sprite .flip > svg { position: relative; }   /* the real art paints on top of the red copy */
+  .critter-sprite .plat-outline * { fill: #E8263A !important; stroke: #E8263A !important; stroke-width: 3px !important;
+    vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+  .critter-sprite .plat-outline :is(defs, defs *, clipPath, clipPath *, mask, mask *) { stroke: none !important; }
+  .critter-sprite.it .plat-outline { display: block; }
+  .critter-sprite.it.swimming .plat-outline { display: none; }
+  .critter-sprite.it.swimming.tubed .plat-outline { display: block; clip-path: inset(0 0 25% 0); }
   .critter-sprite.pug, .critter-sprite.plat { width: 56px; height: 65px; margin-left: -28px; margin-top: -59px; }
   .critter-sprite svg, .title-badge svg { overflow: visible; }
   svg.nolash .lash { display: none; }
@@ -374,10 +387,8 @@
   .pl-dog { width: 26px; height: 30px; display: inline-block; vertical-align: middle; margin-right: 6px; }
   .pl-dog svg { width: 100%; height: 100%; overflow: visible; }
   /* Platytag: anyone on the platypus team wears a red outline; freshly tagged players pulse */
-  .critter-sprite.it > .flip > svg { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 1.5px 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A); }
-  .critter-sprite.just-tagged > .flip > svg { animation: tagPulse .45s ease-in-out 4; }
-  @keyframes tagPulse { 0%,100% { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 1.5px 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A); }
-    50% { filter: drop-shadow(3px 0 0 #FF1F35) drop-shadow(-3px 0 0 #FF1F35) drop-shadow(0 3px 0 #FF1F35) drop-shadow(0 -3px 0 #FF1F35) drop-shadow(0 0 6px #FF1F35); } }
+  .critter-sprite.just-tagged .plat-outline { animation: tagPulse .45s ease-in-out 4; transform-origin: 50% 60%; }
+  @keyframes tagPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: .85; } }
 
   /* pug tongue: out and panting when idle, pulled in while walking */
   .pug-tongue { transform-box: fill-box; transform-origin: 50% 0%; transition: transform .16s ease; }
@@ -1415,7 +1426,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
   function spriteMarkup(kind, svg, look){
     const gear = (kind === "plat" && (!look || look.b === "purple")) ? SWIM_GEAR_OLDPLAT : SWIM_GEAR;
     return `<span class="tube-worn tube-back">${tubeSVG("back")}</span>` +
-      `<span class="flip">${svg}<span class="swim-gear">${gear}</span></span>` +
+      `<span class="flip">${kind === "plat" ? `<span class="plat-outline">${platypusSVG(look)}</span>` : ""}${svg}<span class="swim-gear">${gear}</span></span>` +
       (kind === "plat" ? SWIM_STRAW : "") + `<span class="swim-ring"></span>` +
       `<span class="tube-worn tube-front">${tubeSVG("front")}</span>`;
   }
@@ -2199,7 +2210,8 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       // depth-sort: freestanding furniture covers the character when they're behind it
       for(let i=0;i<freestandingEls.length;i++){
         const item = freestandingEls[i];
-        item.el.style.zIndex = (state.pos.y < item.depthY) ? "6" : "3";
+        const z = (state.pos.y < item.depthY) ? "6" : "3";
+        if(item.z !== z){ item.z = z; item.el.style.zIndex = z; }   // only touch the page when it changes
       }
 
       // camera follows, centered on character, clamped to world bounds
@@ -4323,7 +4335,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
      Every position update carries a server-clock time. Other players are drawn a little in the past
      (INTERP_DELAY), gliding between the two updates around that moment, so uneven network delivery
      doesn't make them stutter or rubber-band. Big jumps (tunnel, spawn, ladder) snap. */
-  const INTERP_DELAY = 130, INTERP_KEEP = 1000;
+  const INTERP_DELAY = 100, INTERP_KEEP = 1000;
   function remoteInterp(r, p){
     const buf = r.buf || (r.buf = []);
     const t = p.t || 0;
@@ -4360,7 +4372,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   }
   function makeRemote(role, p, lk){
     const el = document.createElement("div");
-    el.className = "critter-sprite idle " + (role === "pug" ? "pug" : "plat it");
+    el.className = "critter-sprite remote idle " + (role === "pug" ? "pug" : "plat it");
     el.innerHTML = role === "pug" ? spriteMarkup("pug", pugSVG(lookFromCode(lk, "pug")), lookFromCode(lk, "pug")) : spriteMarkup("plat", platypusSVG(lookFromCode(lk, "plat")), lookFromCode(lk, "plat"));
     worldEl.appendChild(el);
     const tag = document.createElement("div");
@@ -4389,8 +4401,13 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.digs = [...want.values()];
   }
   function renderRemotes(dt){
-    syncHoles();
-    if(!state.secretOpen && mp.g && Net.peers().some(pp => !pp.isMe && pp.p && pp.p.so && pp.p.so === mp.g.rid)) openSecret(false);   // someone dug it open
+    // dig holes + the secret passage only change when someone digs: check a few times a second, not every frame
+    const nowMs = performance.now();
+    if(!(mp.slowAt > nowMs - 250) || (mp.myDigs || []).length !== mp.slowDigs){
+      mp.slowAt = nowMs; mp.slowDigs = (mp.myDigs || []).length;
+      syncHoles();
+      if(!state.secretOpen && mp.g && Net.peers().some(pp => !pp.isMe && pp.p && pp.p.so && pp.p.so === mp.g.rid)) openSecret(false);   // someone dug it open
+    }
     const roles = (mp.g && mp.g.roles) || {};
     const seen = new Set();
     const k = Math.min(1, dt * 12);
@@ -4409,8 +4426,12 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       }
       atticGhostRemote(pp.id, p.x, p.y, !!p.ug, role);
       remoteInterp(r, p);
-      r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
-      r.tag.style.left = r.x + "px"; r.tag.style.top = (r.y + 6) + "px";
+      const pk = Math.round(r.x * 4) + "," + Math.round(r.y * 4);
+      if(pk !== r.posKey){                                         // only move them when they moved
+        r.posKey = pk;
+        r.el.style.left = r.x + "px"; r.el.style.top = r.y + "px";
+        r.tag.style.left = r.x + "px"; r.tag.style.top = (r.y + 6) + "px";
+      }
       const walking = !!p.w;
       if(walking !== r.walking){ r.el.classList.toggle("walking", walking); r.el.classList.toggle("idle", !walking); r.walking = walking; }
       const face = p.f ? "scaleX(-1)" : "scaleX(1)";

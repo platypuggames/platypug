@@ -408,7 +408,8 @@
       // depth-sort: freestanding furniture covers the character when they're behind it
       for(let i=0;i<freestandingEls.length;i++){
         const item = freestandingEls[i];
-        item.el.style.zIndex = (state.pos.y < item.depthY) ? "6" : "3";
+        const z = (state.pos.y < item.depthY) ? "6" : "3";
+        if(item.z !== z){ item.z = z; item.el.style.zIndex = z; }   // only touch the page when it changes
       }
 
       // camera follows, centered on character, clamped to world bounds

@@ -43,9 +43,23 @@
     margin-left: -28px; margin-top: -44px;
     pointer-events: none;
     transition: opacity .3s ease, transform .3s ease;
-    filter: drop-shadow(0 6px 5px rgba(0,0,0,.2));
     z-index: 5; transform-origin: 50% 85%;
   }
+  /* soft ground shadow for other players / the finale dog (your own dog has .foot-shadow);
+     a gradient, not a filter, so it costs nothing to redraw */
+  .critter-sprite.remote::before, .critter-sprite.finale-actor::before { content: ""; position: absolute; left: 50%; top: 52px;
+    width: 34px; height: 10px; margin-left: -17px; z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,.22) 0, rgba(0,0,0,.12) 45%, rgba(0,0,0,0) 70%); }
+  /* platypus-team red outline: a solid red copy of the art drawn just behind it (no filters) */
+  .critter-sprite .plat-outline { display: none; position: absolute; inset: 0; pointer-events: none; }
+  .critter-sprite .plat-outline > svg { width: 100%; height: 100%; display: block; }
+  .critter-sprite .flip > svg { position: relative; }   /* the real art paints on top of the red copy */
+  .critter-sprite .plat-outline * { fill: #E8263A !important; stroke: #E8263A !important; stroke-width: 3px !important;
+    vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+  .critter-sprite .plat-outline :is(defs, defs *, clipPath, clipPath *, mask, mask *) { stroke: none !important; }
+  .critter-sprite.it .plat-outline { display: block; }
+  .critter-sprite.it.swimming .plat-outline { display: none; }
+  .critter-sprite.it.swimming.tubed .plat-outline { display: block; clip-path: inset(0 0 25% 0); }
   .critter-sprite.pug, .critter-sprite.plat { width: 56px; height: 65px; margin-left: -28px; margin-top: -59px; }
   .critter-sprite svg, .title-badge svg { overflow: visible; }
   svg.nolash .lash { display: none; }
@@ -61,10 +75,8 @@
   .pl-dog { width: 26px; height: 30px; display: inline-block; vertical-align: middle; margin-right: 6px; }
   .pl-dog svg { width: 100%; height: 100%; overflow: visible; }
   /* Platytag: anyone on the platypus team wears a red outline; freshly tagged players pulse */
-  .critter-sprite.it > .flip > svg { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 1.5px 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A); }
-  .critter-sprite.just-tagged > .flip > svg { animation: tagPulse .45s ease-in-out 4; }
-  @keyframes tagPulse { 0%,100% { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 1.5px 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A); }
-    50% { filter: drop-shadow(3px 0 0 #FF1F35) drop-shadow(-3px 0 0 #FF1F35) drop-shadow(0 3px 0 #FF1F35) drop-shadow(0 -3px 0 #FF1F35) drop-shadow(0 0 6px #FF1F35); } }
+  .critter-sprite.just-tagged .plat-outline { animation: tagPulse .45s ease-in-out 4; transform-origin: 50% 60%; }
+  @keyframes tagPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: .85; } }
 
   /* pug tongue: out and panting when idle, pulled in while walking */
   .pug-tongue { transform-box: fill-box; transform-origin: 50% 0%; transition: transform .16s ease; }

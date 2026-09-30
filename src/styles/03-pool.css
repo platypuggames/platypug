@@ -34,7 +34,6 @@
   /* a platypus in the tube floats on top like the dogs: vest + goggles, no straw */
   .critter-sprite.plat.swimming.tubed > .flip > svg,
   .critter-sprite.plat.it.swimming.tubed > .flip > svg { opacity: 1; filter: none !important; translate: none; clip-path: inset(0 0 25% 0); }
-  .critter-sprite.plat.it.swimming.tubed > .flip > svg { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A) !important; }
   .critter-sprite.plat.swimming.tubed .swim-gear { display: block; }
   .critter-sprite.plat.swimming.tubed .swim-straw { display: none; }
   .float-tube { position: absolute; width: 68px; height: 42px; margin: -21px 0 0 -34px; z-index: 4; pointer-events: none; animation: tubeDrift 3.4s ease-in-out infinite; }

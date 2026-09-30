@@ -178,7 +178,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
   function spriteMarkup(kind, svg, look){
     const gear = (kind === "plat" && (!look || look.b === "purple")) ? SWIM_GEAR_OLDPLAT : SWIM_GEAR;
     return `<span class="tube-worn tube-back">${tubeSVG("back")}</span>` +
-      `<span class="flip">${svg}<span class="swim-gear">${gear}</span></span>` +
+      `<span class="flip">${kind === "plat" ? `<span class="plat-outline">${platypusSVG(look)}</span>` : ""}${svg}<span class="swim-gear">${gear}</span></span>` +
       (kind === "plat" ? SWIM_STRAW : "") + `<span class="swim-ring"></span>` +
       `<span class="tube-worn tube-front">${tubeSVG("front")}</span>`;
   }
