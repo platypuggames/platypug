@@ -143,6 +143,23 @@
     box-shadow: inset 0 0 0 3px rgba(58,38,24,.35); }
   .flower { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; z-index: 6; pointer-events: none; will-change: transform; }
   .flower svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  /* ---------- Laundry basket decoy blanket ---------- */
+  .decoy-blanket { pointer-events: none; }
+  .decoy-blanket.pop { animation: decoyPop .7s cubic-bezier(.3,.7,.4,1) both; }
+  @keyframes decoyPop {
+    0%   { transform: translate(var(--fx), var(--fy)) scale(.3) rotate(-30deg); opacity: 0; }
+    15%  { opacity: 1; }
+    45%  { transform: translate(calc(var(--fx) * .45), calc(var(--fy) * .45 - 46px)) scale(.8) rotate(12deg); }
+    78%  { transform: translate(0, 0) scale(1.08, .88) rotate(-4deg); }
+    100% { transform: none; opacity: 1; }
+  }
+  .decoy-blanket.flatten { animation: decoyFlat .7s ease-in forwards; transform-origin: 50% 100%; }
+  @keyframes decoyFlat {
+    0%   { transform: none; opacity: 1; }
+    35%  { transform: scale(1.25, .18); opacity: 1; }
+    70%  { transform: scale(1.3, .12); opacity: .8; }
+    100% { transform: scale(1.35, .08); opacity: 0; }
+  }
   /* ---------- Attic ghost pug (visual only) ---------- */
   .attic-ghost { position: absolute; left: 0; top: 0; width: 44px; height: 48px; z-index: 8; pointer-events: none; opacity: 0; will-change: transform, opacity;
     filter: drop-shadow(0 0 6px rgba(205,185,255,.85)); }
@@ -1790,6 +1807,78 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     state.target = {x: state.pos.x, y: state.pos.y};
   }
 
+  /* ---------------- Laundry basket decoy ----------------
+     A pug touching the laundry basket makes an empty blanket pop out and land just below-left of it.
+     It looks exactly like a pug's blanket. When a platypus touches it, it flattens and disappears.
+     One decoy at a time. Classic: kept in state.decoy. Platytag: the host owns it (G.dc). */
+  const DECOY_TOUCH_D = 8, DECOY_FLAT_R = 36;
+  const decoy = {el: null, key: null, latched: false};
+  function basketItem(){ return FURN_LIST.find(f => f.id === "basket"); }
+  function decoySpot(){
+    const b = basketItem();
+    return b ? {x: Math.round(b.x - 8), y: Math.round(b.y + b.h + 34), bx: b.x + b.w / 2, by: b.y + b.h / 2} : null;
+  }
+  function showDecoy(key, animate){
+    const sp = decoySpot();
+    if(!sp) return;
+    if(decoy.el) decoy.el.remove();
+    const save = state.blanketTunnel; state.blanketTunnel = false;
+    const el = makeBlanketEl(sp.x, sp.y);
+    state.blanketTunnel = save;
+    el.classList.add("decoy-blanket");
+    el.removeAttribute("data-id");
+    el.style.zIndex = blanketZ(sp.x, sp.y, false);
+    if(animate){
+      el.style.setProperty("--fx", (sp.bx - sp.x) + "px");
+      el.style.setProperty("--fy", (sp.by - sp.y + 20) + "px");
+      el.classList.add("pop");
+    }
+    worldEl.appendChild(el);
+    decoy.el = el; decoy.key = key;
+  }
+  function flattenDecoy(){
+    const el = decoy.el;
+    decoy.el = null; decoy.key = null;
+    if(!el) return;
+    el.classList.remove("pop"); void el.offsetWidth;
+    el.classList.add("flatten");
+    setTimeout(() => el.remove(), 750);
+  }
+  function decoyFrame(){
+    const playing = spriteEl && (state.phase === "hiding" || state.phase === "seeking");
+    const inMp = state.mp && mp.inGame;
+    let want = inMp ? ((mp.g && mp.g.dc) ? mp.g.dc.k : null) : (state.decoy ? state.decoy.k : null);
+    if(inMp && want != null && want === mp.df) want = null;   // I just flattened it; the host will catch up
+    // keep the drawn decoy in step with the game (buildWorld wipes it; the host may clear it)
+    if(want == null){ if(decoy.el) flattenDecoy(); }
+    else if(!decoy.el || !decoy.el.isConnected || decoy.key !== want){
+      const fresh = inMp ? want !== decoy.key && (!mp.decoySeen || mp.decoySeen !== want) : !!(state.decoy && state.decoy.fresh);
+      showDecoy(want, fresh);
+      if(inMp) mp.decoySeen = want; else if(state.decoy) state.decoy.fresh = false;
+    }
+    if(!playing || state.underground || state.busy) return;
+    const px = state.pos.x, py = state.pos.y;
+    const iAmPug = inMp ? (mp.myRole === "pug" && !mp.hide) : state.phase === "hiding";
+    const iAmPlat = inMp ? (mp.myRole === "plat" && state.phase === "seeking") : state.phase === "seeking";
+    const b = basketItem();
+    if(iAmPug && b){
+      const near = distToItem(b, px, py) <= DECOY_TOUCH_D;
+      if(near && !decoy.latched && want == null){
+        if(inMp){ mp.dq = (mp.dq || 0) + 1; sendMe(true); }
+        else state.decoy = {k: Date.now(), fresh: true};
+      }
+      if(near) decoy.latched = true; else if(distToItem(b, px, py) > REARM_D) decoy.latched = false;
+    }
+    if(iAmPlat && want != null){
+      const sp = decoySpot();
+      if(sp && Math.hypot(px - sp.x, py - (sp.y - 14)) < DECOY_FLAT_R){
+        if(inMp){ mp.df = want; sendMe(true); flattenDecoy(); }
+        else { state.decoy = null; flattenDecoy(); }
+        showToast("Just laundry!", 1200);
+      }
+    }
+  }
+
   /* ---------------- Attic ghost pug: purely decorative ----------------
      Each time you walk into the attic a little ghost pug swoops around for a few seconds.
      Lives inside the attic room div (clipped to it, under the fog), never touches game state. */
@@ -1980,6 +2069,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
     if(state.mp) mpFrame(dt);
     atticGhostFrame(ts);
     flowersFrame(dt);
+    decoyFrame();
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -3310,6 +3400,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     state.wantId = null;
     state.hidingRoom = null;
     state.hidingSpot = null;
+    state.decoy = null;
     state.pendingSpot = null;
     state.busy = false;
     confirmFab.classList.remove("show");
@@ -3662,6 +3753,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     mp.tubeSeenTq = {}; mp.tubeSeenTd = {}; mp.tubeLast = null;
     roster().forEach(pp => { mp.tubeSeenTq[pp.id] = pp.p.tq || 0; mp.tubeSeenTd[pp.id] = pp.p.td ? pp.p.td.n : 0; });
     mp.hostT0 = Date.now();
+    mp.hostDq = {};
     mp.overShown = false;
     pushHost();
   }
@@ -3727,6 +3819,18 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
         mp.tubeSeenTq[id] = p.tq;
         if(!T.h && p.sp && p.x != null && !p.ug && inPool(p.x, p.y) && Math.hypot(p.x - T.x, p.y - T.y) < 70){ T.h = id; changed = true; }
       }
+    }
+    // laundry decoy: a pug's touch makes one (if none out), a platypus's touch flattens it
+    mp.hostDq = mp.hostDq || {};
+    for(const [id, p] of byId){
+      if(!p) continue;
+      const q = p.dq || 0;
+      if(mp.hostDq[id] === undefined){ mp.hostDq[id] = q; continue; }
+      if(q !== mp.hostDq[id]){
+        mp.hostDq[id] = q;
+        if(!G.dc && G.roles[id] === "pug"){ G.dcn = (G.dcn || 0) + 1; G.dc = {k: G.rid * 1000 + G.dcn}; changed = true; }
+      }
+      if(G.dc && p.df === G.dc.k && G.roles[id] === "plat"){ G.dc = null; changed = true; }
     }
     if(G.ph === "play"){
       const el = Math.floor(elapsed - HEAD_START);
@@ -3865,7 +3969,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   }
   function startTagRound(role){
     state.mp = true;
-    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, ldSeen: null, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
+    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, ldSeen: null, decoySeen: null, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
       tq: 0, td: null, tubeDropPending: null});
     Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, secretOpen: false, tunSeg: "A", tunT: 0,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
@@ -3996,7 +4100,8 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       dgr: mp.g ? mp.g.rid : 0,
       tq: mp.tq || 0, td: mp.td || null, dv: state.diving ? 1 : 0,
       so: state.secretOpen && mp.g ? mp.g.rid : 0,
-      ld: state.onLadder ? 1 : 0, lsk: mp.lsk || null
+      ld: state.onLadder ? 1 : 0, lsk: mp.lsk || null,
+      dq: mp.dq || 0, df: mp.df || null
     };
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
