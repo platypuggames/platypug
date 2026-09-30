@@ -122,6 +122,9 @@
     display: flex; align-items: center; gap: 6px; white-space: nowrap;
   }
   #stat-pill { color: var(--ink-soft); }
+  #lead-pill { background: #C9AEEA; color: #2A1E3A; min-width: 0; flex-shrink: 1; overflow: hidden; }
+  #lead-pill span { overflow: hidden; text-overflow: ellipsis; }
+  #hud .chip { min-width: 0; }
 
   /* ---------- Camera viewport ---------- */
   #stage-wrap {
@@ -621,7 +624,7 @@
 
   <div id="tagover-screen" class="screen hidden">
     <div class="title-badge" id="tagover-critters"></div>
-    <h2>All pugs tagged!</h2>
+    <h2 id="tagover-title">All pugs tagged!</h2>
     <p class="lobby-note" id="tagover-sub"></p>
     <div class="stat-row">
       <div class="stat-card"><div class="num" id="tagover-time">0s</div><div class="lbl">TIME</div></div>
@@ -634,6 +637,7 @@
   <div id="game-screen" class="screen hidden">
     <div id="hud">
       <div class="chip" id="phase-pill">🐶 Hiding</div>
+      <div class="chip" id="lead-pill" style="display:none"></div>
       <div class="chip" id="stat-pill">Pick a cozy spot</div>
     </div>
     <div id="stage-wrap">
@@ -1613,6 +1617,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
   const worldEl = document.getElementById("world");
   const phasePill = document.getElementById("phase-pill");
   const statPill = document.getElementById("stat-pill");
+  const leadPill = document.getElementById("lead-pill");
   const confirmFab = document.getElementById("confirm-fab");
   const plainBtn = document.getElementById("plain-btn");
   const digBtn = document.getElementById("dig-btn");
@@ -2382,6 +2387,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
 
   function updateHud(){
     if(state.mp){ mpHud(); return; }
+    leadPill.style.display = "none";
     if(state.phase === "hiding"){
       phasePill.innerHTML = "🐶 Hiding";
       statPill.textContent = "Pick a cozy spot";
@@ -3475,6 +3481,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   /* ---------- Rules ---------- */
   const MAX_PLAYERS = 10;
   const HEAD_START = 15;      // seconds the pugs get before the platypus spawns
+  const TAG_TIME = 150;       // Platytag round cap (after the head start): pugs still free at 2:30 win
   const TAG_R = 34;           // touch distance for a tag (a little forgiving for lag)
   const BLANKET_TAG_R = 40;   // touching a pug's blanket tags it
   const LUMP_SVG = `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
@@ -3650,6 +3657,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       lk[id] = id === platId ? "purple|-" : (DOG_BREEDS.includes(d.split("|")[0]) ? d : dogCode(randLook("pug")));
     });
     mp.hostG = {ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, lk, tg: [], hl: HEAD_START, el: 0,
+      ld: platId, ldn: String((peerById[platId] || {}).n || "Platypus").slice(0, 14),
       tube: {x: Math.round(TUBE_HOME.x), y: Math.round(TUBE_HOME.y), h: null}};
     mp.tubeSeenTq = {}; mp.tubeSeenTd = {}; mp.tubeLast = null;
     roster().forEach(pp => { mp.tubeSeenTq[pp.id] = pp.p.tq || 0; mp.tubeSeenTd[pp.id] = pp.p.td ? pp.p.td.n : 0; });
@@ -3743,14 +3751,31 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       }
       platIds.forEach(pid => { const q = byId.get(pid); mp.hostLsk = mp.hostLsk || {}; mp.hostLsk[pid] = q.lsk ? q.lsk.n : 0; });
     }
-    const pugIds = Object.keys(G.roles).filter(id => G.roles[id] === "pug");
+    let pugIds = Object.keys(G.roles).filter(id => G.roles[id] === "pug");
+    // time's up: every pug still free wins; one of them (random) gets the end-of-game scene
+    if(G.ph === "play" && pugIds.length > 0 && G.el >= TAG_TIME && Object.keys(G.roles).length >= 2){
+      G.el = TAG_TIME;
+      const live = pugIds.filter(id => { const q = byId.get(id); return q && q.sp && q.x != null; });
+      const pool = live.length ? live : pugIds;
+      const wid = pool[Math.floor(Math.random() * pool.length)], wq = byId.get(wid) || {};
+      G.sv = pugIds.map(id => String((byId.get(id) || {}).n || "Pug").slice(0, 14));
+      if(wq.x != null) G.win = {id: wid, x: Math.round(wq.x), y: Math.round(wq.y), ug: wq.ug ? 1 : 0, n: String(wq.n || "Pug").slice(0, 14)};
+      else G.win = {id: wid, none: 1, n: String(wq.n || "Pug").slice(0, 14)};
+      G.ph = "over"; pushHost(); return;
+    }
     const platCount = Object.keys(G.roles).length - pugIds.length;
     if(pugIds.length === 0 && lastTag && G.ph === "play") G.fin = lastTag;   // for everyone's end-of-game scene
     if(pugIds.length === 0 || Object.keys(G.roles).length < 2 && G.ph === "play"){
       if(G.ph !== "over"){ G.ph = "over"; changed = true; }
     } else if(platCount === 0){
-      G.roles[pugIds[Math.floor(Math.random()*pugIds.length)]] = "plat";   // the platypus left: promote a pug
+      const nid = pugIds[Math.floor(Math.random()*pugIds.length)];
+      G.roles[nid] = "plat";   // the platypus left: promote a pug
+      G.ld = nid; G.ldn = String((byId.get(nid) || {}).n || "Platypus").slice(0, 14);
       changed = true;
+    }
+    if(G.ld && !G.roles[G.ld]){                                        // the lead platypus left: next platypus takes over
+      const nid = Object.keys(G.roles).find(id => G.roles[id] === "plat");
+      if(nid){ G.ld = nid; G.ldn = String((byId.get(nid) || {}).n || "Platypus").slice(0, 14); changed = true; }
     }
     if(changed) pushHost();
   }
@@ -3799,6 +3824,12 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       if(c) c.textContent = G.hl;
       if(G.ph !== "head") spawnMe();
     }
+    if(G.ld && G.ld !== mp.ldSeen && (G.ph === "head" || G.ph === "play")){
+      const first = !mp.ldSeen;
+      mp.ldSeen = G.ld;
+      if(G.ld === Net.myId()){ if(!first) showToast("👑 You're the lead platypus now!", 2400); }
+      else showToast(first ? `👑 ${G.ldn} is the platypus!` : `👑 ${G.ldn} is the lead platypus now`, 2600);
+    }
     const tg = G.tg || [];
     if(tg.length > mp.tgSeen){
       const last = tg[tg.length - 1];
@@ -3834,7 +3865,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   }
   function startTagRound(role){
     state.mp = true;
-    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
+    Object.assign(mp, {inGame: true, overShown: false, tgSeen: 0, ldSeen: null, spawned: false, hide: null, myBlanketEl: null, chk: null, chks: {}, myRole: role, lastSent: "", myDigs: [], holeEls: new Map(),
       tq: 0, td: null, tubeDropPending: null});
     Object.assign(state, {underground: false, sliding: false, slideMode: null, garageOpen: false, onPlate: false, secretOpen: false, tunSeg: "A", tunT: 0,
       blanketPos: null, blanketTunnel: false, pugLumpPos: null, digs: [], wantId: null, hidingRoom: null,
@@ -4093,8 +4124,13 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     const G = mp.g || {};
     const pugs = Object.values(G.roles || {}).filter(r => r === "pug").length;
     phasePill.innerHTML = mp.myRole === "pug" ? "🐶 Pug" : "Platypus";
-    if(G.ph === "head") statPill.textContent = mp.myRole === "pug" ? `Platypus in ${G.hl}s — hide!` : `Released in ${G.hl}s`;
-    else statPill.textContent = `Pugs left: ${pugs} · ${fmt(G.el)}`;
+    if(G.ld){
+      leadPill.style.display = "";
+      leadPill.innerHTML = "👑 <span></span>";
+      leadPill.querySelector("span").textContent = G.ld === Net.myId() ? "You" : (G.ldn || "Platypus");
+    } else leadPill.style.display = "none";
+    if(G.ph === "head") statPill.textContent = mp.myRole === "pug" ? `Hide! ${G.hl}s` : `Released in ${G.hl}s`;
+    else statPill.textContent = `🐶 ${pugs} · ⏱ ${fmt(Math.max(0, TAG_TIME - (G.el | 0)))}`;
   }
 
   function showTagOver(){
@@ -4116,8 +4152,15 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       li.append(a, b); list.appendChild(li);
     });
     const last = tg[tg.length - 1];
-    document.getElementById("tagover-sub").textContent = last ? `${last.n} was the last pug standing.` : "Every pug has been found.";
-    if(G.fin) playFinale(G, () => { if(!mp.inGame) switchScreen(tagoverScreen); });
+    if(G.win){
+      document.getElementById("tagover-title").textContent = "Time's up! Pugs win!";
+      const sv = G.sv || [G.win.n];
+      document.getElementById("tagover-sub").textContent = sv.length > 1 ? `Still free: ${sv.join(", ")}.` : `${sv[0]} escaped the platypus!`;
+    } else {
+      document.getElementById("tagover-title").textContent = "All pugs tagged!";
+      document.getElementById("tagover-sub").textContent = last ? `${last.n} was the last pug standing.` : "Every pug has been found.";
+    }
+    if(G.fin || (G.win && !G.win.none)) playFinale(G, () => { if(!mp.inGame) switchScreen(tagoverScreen); });
     else setTimeout(() => { if(!mp.inGame) switchScreen(tagoverScreen); }, 900);
   }
 
@@ -4200,7 +4243,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     requestAnimationFrame(frame);
   }
   function playFinale(G, done){
-    const F = G.fin, me = Net.myId();
+    const F = G.fin || G.win, me = Net.myId(), timeUp = !G.fin;
     const look = lookFromCode((G.lk || {})[F.id], "pug");
     state.busy = true;
     [confirmFab, digBtn, plainBtn].forEach(b => b.classList.remove("show"));
@@ -4224,7 +4267,8 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     actor.style.left = F.x + "px"; actor.style.top = F.y + "px";
     worldEl.appendChild(actor);
     const banner = document.getElementById("finale-banner");
-    banner.textContent = F.by === me ? "🎉 You got the final tag!" : F.id === me ? `${F.bn} caught you last!` : `🎉 ${F.bn} got the final tag!`;
+    banner.textContent = timeUp ? (F.id === me ? "⏰ Time's up! You survived!" : `⏰ Time's up! ${F.n} and the pugs win!`)
+      : F.by === me ? "🎉 You got the final tag!" : F.id === me ? `${F.bn} caught you last!` : `🎉 ${F.bn} got the final tag!`;
     banner.classList.add("show");
     const face = document.getElementById("finale-face");
     face.querySelector(".ff-dog").innerHTML = pugSVG(look);
