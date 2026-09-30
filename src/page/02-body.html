@@ -1,0 +1,108 @@
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <div id="title-screen" class="screen">
+    <div class="title-badge" id="title-critters"></div>
+    <h1><span>Platypug</span><br>Hide and Seek</h1>
+    <p class="sub">Choose a game mode</p>
+    <div class="mode-btns">
+      <div class="mode-card">
+        <div class="mode-tag">Multiplayer · 2–10 players</div>
+        <button class="big-btn" id="tag-btn">Platytag</button>
+      </div>
+      <div class="mode-card">
+        <div class="mode-tag solo">Pass and play · 2 players</div>
+        <button class="big-btn secondary" id="play-btn">Pug and Seek</button>
+      </div>
+    </div>
+    <button class="howto-toggle" id="howto-btn">How to play</button>
+    <div class="howto-card" id="howto-card" style="display:none;">
+      <b>Hiding:</b> Drag or tap anywhere and your pug follows your finger around the whole house — just keep walking through doorways from room to room. Touch furniture and your pug walks over — confirm in the corner to hide there.<br><br>
+      <b>Seeking:</b> Walk the platypus around the house the same way and touch furniture to check it.<br><br>
+      <b>Platytag (multiplayer):</b> One player is the platypus, everyone else is a pug. Pugs get a 15-second head start. The platypus tags pugs by touching them, or by checking the furniture a pug is hiding in. Tagged pugs become platypuses and join the hunt until every pug is caught.<br><br>
+      <b>Keyboard:</b> Arrow keys or WASD to move, Space/Enter to confirm, F to dig, B for the blanket.
+    </div>
+  </div>
+
+  <div id="dog-screen" class="screen hidden">
+    <h2>Pick your pup</h2>
+    <div class="lobby-card"><div class="dog-picker"></div></div>
+    <button class="big-btn" id="dog-go-btn">Let's hide!</button>
+    <button class="howto-toggle" id="dog-back">← Back</button>
+  </div>
+
+  <div id="lobby-screen" class="screen hidden">
+    <h2>Platytag</h2>
+    <p class="lobby-note" id="lobby-status">One platypus, lots of pugs. Tagged pugs join the hunt!</p>
+    <div class="lobby-card" id="lobby-join">
+      <input class="lobby-input" id="nick-input" maxlength="14" placeholder="Your name" autocomplete="off">
+      <button class="big-btn" id="create-btn">Create game</button>
+      <div class="lobby-row">
+        <input class="lobby-input" id="code-input" maxlength="4" placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false">
+        <button class="small-btn" id="join-btn">Join</button>
+      </div>
+    </div>
+    <div class="lobby-card" id="lobby-room" style="display:none;">
+      <div class="lobby-note">Room code</div>
+      <div class="room-code" id="room-code">----</div>
+      <div class="lobby-note" style="font-weight:700;">Your name</div>
+      <input class="lobby-input" id="lobby-name" maxlength="14" placeholder="Your name" autocomplete="off" enterkeyhint="done">
+      <div class="lobby-note" style="font-weight:700;">Your dog</div>
+      <div class="dog-picker"></div>
+      <ul class="player-list" id="player-list"></ul>
+      <button class="big-btn" id="start-btn" style="display:none;">Start game</button>
+      <p class="lobby-note" id="wait-note">Waiting for the host to start…</p>
+      <p class="lobby-note" id="net-note" style="font-size:11px;opacity:.8;"></p>
+    </div>
+    <button class="howto-toggle" id="lobby-back">← Back</button>
+  </div>
+
+  <div id="tagover-screen" class="screen hidden">
+    <div class="title-badge" id="tagover-critters"></div>
+    <h2 id="tagover-title">All pugs tagged!</h2>
+    <p class="lobby-note" id="tagover-sub"></p>
+    <div class="stat-row">
+      <div class="stat-card"><div class="num" id="tagover-time">0s</div><div class="lbl">TIME</div></div>
+      <div class="stat-card"><div class="num" id="tagover-count">0</div><div class="lbl">PUGS TAGGED</div></div>
+    </div>
+    <ol class="player-list" id="tagover-list"></ol>
+    <button class="big-btn secondary" id="tagover-btn">Back to lobby</button>
+  </div>
+
+  <div id="game-screen" class="screen hidden">
+    <div id="hud">
+      <div class="chip" id="phase-pill">🐶 Hiding</div>
+      <div class="chip" id="lead-pill" style="display:none"></div>
+      <div class="chip" id="stat-pill">Pick a cozy spot</div>
+    </div>
+    <div id="stage-wrap">
+      <div id="stage"><div id="world"></div></div>
+      <div id="toast"></div>
+      <div id="finale-banner"></div>
+      <div id="finale-face"><div class="ff-wrap"><div class="ff-dog"></div><div class="ff-tongue"></div></div></div>
+      <button id="confirm-fab" class="confirm-fab" aria-label="Confirm hiding spot">✅ Hide!</button>
+      <button id="dig-btn" class="confirm-fab dig-fab" aria-label="Dig a hole">⛏️ Dig</button>
+      <button id="plain-btn" class="plain-btn" aria-label="Hide under a blanket right here">🧺 Blanket</button>
+      <div id="interstitial" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="win-screen" class="screen hidden">
+    <div class="title-badge" id="win-critters"></div>
+    <h2 id="win-title">Found you!</h2>
+    <p class="sub" id="win-sub">The platypus checked a few spots before spotting that wiggly tail.</p>
+    <div class="stat-row">
+      <div class="stat-card"><div class="num" id="win-time">0s</div><div class="lbl">TIME</div></div>
+      <div class="stat-card"><div class="num" id="win-checks">0</div><div class="lbl">SPOTS CHECKED</div></div>
+      <div class="stat-card"><div class="num" id="win-best">--</div><div class="lbl">BEST TIME</div></div>
+    </div>
+    <button class="big-btn secondary" id="again-btn">Play Again</button>
+  </div>
+
+</div>
+
+<script>

@@ -1,0 +1,151 @@
+  /* ---------- Furniture ---------- */
+  .f-shadow { position: absolute; background: rgba(0,0,0,0.16); border-radius: 50%; filter: blur(1px); z-index: 2; }
+  .furniture {
+    position: absolute;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    border-radius: 22px; cursor: pointer; z-index: 3;
+    transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease, filter .2s ease;
+    box-shadow: 0 5px 0 rgba(0,0,0,0.12), 0 8px 14px rgba(0,0,0,0.14);
+    border: 4px solid rgba(255,255,255,0.9);
+  }
+  .furniture .f-emoji { font-size: 26px; line-height: 1; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.12)); }
+  .furniture .f-label {
+    font-family: var(--font-display); font-size: 10px; font-weight: 600;
+    color: rgba(0,0,0,0.55); background: rgba(255,255,255,0.55);
+    padding: 1px 7px; border-radius: 999px;
+  }
+  .furniture.selected {
+    box-shadow: 0 0 0 5px rgba(255,126,156,0.45), 0 5px 0 rgba(0,0,0,0.12), 0 8px 14px rgba(0,0,0,0.14);
+    filter: brightness(1.05);
+  }
+  .furniture.checked-empty { filter: grayscale(0.65) opacity(0.5); cursor: default; box-shadow: none; }
+
+  .furniture.not-here, .furniture.illustrated.not-here { animation: shake .45s ease; }
+  .furniture.checking { animation: shake .5s ease; }
+  .furniture.found-here { box-shadow: 0 0 0 6px rgba(79,203,141,0.5), 0 5px 0 rgba(0,0,0,0.12); }
+  .furniture.illustrated { background: none; border: none; box-shadow: none; border-radius: 18px; }
+  .furniture.illustrated .custom-svg { width: 100%; height: 100%; filter: drop-shadow(0 5px 4px rgba(0,0,0,0.2)); }
+  .furniture.illustrated .custom-svg svg { width: 100%; height: 100%; display: block; }
+  .furniture.illustrated.selected { box-shadow: 0 0 0 5px rgba(255,126,156,0.45); }
+  .furniture.illustrated.found-here { box-shadow: 0 0 0 6px rgba(79,203,141,0.5); }
+  .furniture.illustrated.checked-empty { filter: grayscale(0.7) opacity(0.55); box-shadow: none; }
+  @keyframes shake {
+    0%,100% { transform: rotate(var(--rot,0deg)); }
+    20% { transform: rotate(calc(var(--rot,0deg) - 6deg)); }
+    40% { transform: rotate(calc(var(--rot,0deg) + 5deg)); }
+    60% { transform: rotate(calc(var(--rot,0deg) - 4deg)); }
+    80% { transform: rotate(calc(var(--rot,0deg) + 3deg)); }
+  }
+
+  /* ---------- Character sprite ---------- */
+  .critter-sprite {
+    position: absolute; width: 56px; height: 56px;
+    margin-left: -28px; margin-top: -44px;
+    pointer-events: none;
+    transition: opacity .3s ease, transform .3s ease;
+    filter: drop-shadow(0 6px 5px rgba(0,0,0,.2));
+    z-index: 5; transform-origin: 50% 85%;
+  }
+  .critter-sprite.pug, .critter-sprite.plat { width: 56px; height: 65px; margin-left: -28px; margin-top: -59px; }
+  .critter-sprite svg, .title-badge svg { overflow: visible; }
+  svg.nolash .lash { display: none; }
+  .dog-picker { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .dog-picker .sex-row { display: flex; gap: 8px; justify-content: center; }
+  .dog-picker .sex-row button { font-family: var(--font-display); font-weight: 600; font-size: 15px; border: 2px solid transparent; border-radius: 999px; padding: 6px 18px; background: var(--bg); color: var(--ink); cursor: pointer; }
+  .dog-picker .sex-row button.sel { border-color: var(--accent); background: rgba(255,126,156,0.22); }
+  .dog-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .dog-opt { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 2px solid transparent; border-radius: 12px; background: var(--bg); padding: 4px 2px 3px; font: 700 10.5px/1.1 var(--font); color: var(--ink); cursor: pointer; }
+  .dog-opt.sel { border-color: var(--accent); background: rgba(255,126,156,0.22); }
+  .dog-pic { width: 42px; height: 48px; display: block; }
+  .dog-pic svg { width: 100%; height: 100%; overflow: visible; }
+  .pl-dog { width: 26px; height: 30px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .pl-dog svg { width: 100%; height: 100%; overflow: visible; }
+  /* Platytag: anyone on the platypus team wears a red outline; freshly tagged players pulse */
+  .critter-sprite.it > .flip > svg { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 1.5px 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A); }
+  .critter-sprite.just-tagged > .flip > svg { animation: tagPulse .45s ease-in-out 4; }
+  @keyframes tagPulse { 0%,100% { filter: drop-shadow(1.5px 0 0 #E8263A) drop-shadow(-1.5px 0 0 #E8263A) drop-shadow(0 1.5px 0 #E8263A) drop-shadow(0 -1.5px 0 #E8263A); }
+    50% { filter: drop-shadow(3px 0 0 #FF1F35) drop-shadow(-3px 0 0 #FF1F35) drop-shadow(0 3px 0 #FF1F35) drop-shadow(0 -3px 0 #FF1F35) drop-shadow(0 0 6px #FF1F35); } }
+
+  /* pug tongue: out and panting when idle, pulled in while walking */
+  .pug-tongue { transform-box: fill-box; transform-origin: 50% 0%; transition: transform .16s ease; }
+  .critter-sprite.idle .pug-tongue { animation: tongueOut .2s ease-out, pant .55s ease-in-out .2s infinite; }
+  .critter-sprite.walking .pug-tongue { transform: scale(0.6, 0.02); animation: none; }
+  @keyframes tongueOut { from { transform: scale(0.6, 0.02); } to { transform: scale(1, 1); } }
+  @keyframes pant { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.88); } }
+
+  /* pug legs: bottoms kick out and back in together while walking */
+  .pug-leg { transform-box: fill-box; transform-origin: 50% 0%; }
+  .critter-sprite.walking .pug-leg.leg-l { animation: legL .28s ease-in-out infinite; }
+  .critter-sprite.walking .pug-leg.leg-r { animation: legR .28s ease-in-out infinite; }
+  @keyframes legL { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-38%); } }
+  @keyframes legR { 0%,100% { transform: translateY(-38%); } 50% { transform: translateY(0); } }
+  /* pug: tail wags, ears flop, little arms swing */
+  .pug-tail { transform-box: fill-box; transform-origin: 0% 45%; }
+  .critter-sprite.idle .pug-tail { animation: platWagFast .3s ease-in-out infinite; }
+  .critter-sprite.walking .pug-tail { animation: platWagSlow .56s ease-in-out infinite; }
+  .crit-ear { transform-box: fill-box; }
+  .crit-ear.ear-l { transform-origin: 92% 6%; }
+  .crit-ear.ear-r { transform-origin: 8% 6%; }
+  .critter-sprite.walking .crit-ear.ear-l { animation: earFlopL .28s ease-in-out infinite; }
+  .critter-sprite.walking .crit-ear.ear-r { animation: earFlopR .28s ease-in-out infinite; }
+  @keyframes earFlopL { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(9deg); } }
+  @keyframes earFlopR { 0%,100% { transform: rotate(3deg); } 50% { transform: rotate(-9deg); } }
+  .crit-arm { transform-box: fill-box; transform-origin: 60% 0%; }
+  .crit-arm.arm-r { transform-origin: 40% 0%; }
+  .critter-sprite.walking .crit-arm.arm-l { animation: armSwing .28s ease-in-out infinite; }
+  .critter-sprite.walking .crit-arm.arm-r { animation: armSwing .28s ease-in-out -.14s infinite; }
+  .critter-sprite.plat.walking .crit-arm.arm-l { animation-duration: .36s; }
+  .critter-sprite.plat.walking .crit-arm.arm-r { animation-duration: .36s; animation-delay: -.18s; }
+  @keyframes armSwing { 0%,100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+  .critter-sprite.pug.idle .crit-lid { animation: pugBlink 3.6s ease-in-out infinite; }
+  @keyframes pugBlink { 0%, 90% { transform: scaleY(0); } 94% { transform: scaleY(1); } 98%, 100% { transform: scaleY(0); } }
+  .plat-tuft { transform-box: fill-box; transform-origin: 50% 100%; }
+  .critter-sprite.plat.walking .plat-tuft { animation: tuftBob .36s ease-in-out infinite; }
+  @keyframes tuftBob { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+
+  /* platypus: sized box, tail wag, stepping feet, sleepy blink */
+  
+  .plat-tail { transform-box: fill-box; transform-origin: 0% 55%; }
+  .plat-foot { transform-box: fill-box; transform-origin: 50% 0%; }
+  .critter-sprite.walking .plat-tail { animation: platWagSlow 1s ease-in-out infinite; }
+  .critter-sprite.idle .plat-tail { animation: platWagFast .32s ease-in-out infinite; }
+  .critter-sprite.walking .pf-l { animation: platStep .36s ease-in-out infinite; }
+  .critter-sprite.walking .pf-r { animation: platStep .36s ease-in-out -.18s infinite; }
+  .critter-sprite.plat.idle .crit-lid, .critter-sprite.plat.idle .plat-lid { animation: platBlink 3.2s ease-in-out infinite; }
+  @keyframes platWagSlow { 0%,100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+  @keyframes platWagFast { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+  @keyframes platStep { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-40%) rotate(-10deg); } }
+  @keyframes platBlink {
+    0%, 55% { transform: scaleY(0); }
+    68% { transform: scaleY(0.62); }
+    80% { transform: scaleY(0.62); }
+    86% { transform: scaleY(0.9); }
+    94%, 100% { transform: scaleY(0); }
+  }
+
+  .critter-sprite.sliding { animation: slideWob .18s ease-in-out infinite !important; }
+  .critter-sprite.sliding .pug-leg, .critter-sprite.sliding .plat-foot, .critter-sprite.sliding .crit-arm, .critter-sprite.sliding .crit-ear { animation: none !important; }
+  .critter-sprite.sliding .pug-tongue { animation: none !important; transform: none !important; }
+  @keyframes slideWob { 0%,100% { transform: rotate(-7deg) scale(1.06); } 50% { transform: rotate(7deg) scale(1.06); } }
+  .critter-sprite .flip { transition: transform .2s ease; display:block; width:100%; height:100%; }
+  .critter-sprite.idle { animation: bounce 1.7s ease-in-out infinite; }
+  .critter-sprite.walking { animation: walk .28s ease-in-out infinite; }
+  .critter-sprite.hidden-away { opacity: 0; transform: scale(0.15) translateY(10px); }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes walk { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-7px) rotate(3deg); } }
+  .foot-shadow { position: absolute; width: 32px; height: 9px; margin-left: -16px; background: rgba(0,0,0,0.2); border-radius: 50%; z-index: 4; filter: blur(1px); }
+
+  .bed-lump {
+    position: absolute; width: 62px; height: 42px;
+    margin-left: -31px; margin-top: -24px;
+    z-index: 4; pointer-events: none;
+    display: none;
+    filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));
+    animation: wiggle 0.9s ease-in-out infinite;
+  }
+  .bed-lump.show { display: block; }
+  @keyframes wiggle {
+    0%,100% { transform: rotate(-4deg) scale(1); }
+    50% { transform: rotate(4deg) scale(1.04); }
+  }
+
