@@ -133,6 +133,10 @@
   #stage {
     position: absolute; inset: 0; overflow: hidden; cursor: pointer;
   }
+  /* ---------- Attic ghost pug (visual only) ---------- */
+  .attic-ghost { position: absolute; left: 0; top: 0; width: 44px; height: 48px; z-index: 8; pointer-events: none; opacity: 0; will-change: transform, opacity;
+    filter: drop-shadow(0 0 6px rgba(205,185,255,.85)); }
+  .attic-ghost svg { width: 100%; height: 100%; display: block; overflow: visible; }
   /* ---------- Attic window + trellis ---------- */
   .attic-window { position: absolute; width: 30px; height: 48px; z-index: 3; pointer-events: none; }
   .trellis { position: absolute; width: 40px; height: 160px; z-index: 3; pointer-events: none; }
@@ -1679,6 +1683,59 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
 
   /* ---------------- Movement + camera engine ---------------- */
   let lastTs = null;
+  /* ---------------- Attic ghost pug: purely decorative ----------------
+     Each time you walk into the attic a little ghost pug swoops around for a few seconds.
+     Lives inside the attic room div (clipped to it, under the fog), never touches game state. */
+  const GHOST_SVG = `<svg viewBox="0 0 60 66" xmlns="http://www.w3.org/2000/svg">
+    <path d="M9 32 C9 12 19 4 30 4 C41 4 51 12 51 32 L51 56 Q46 64 41 56 Q35.5 64 30 56 Q24.5 64 19 56 Q14 64 9 56 Z" fill="#FFFFFF" fill-opacity="0.93" stroke="#CDBFEA" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M14 13 Q4 14 5 27 Q12 25 16 18 Z" fill="#8E84A6" fill-opacity="0.75"/>
+    <path d="M46 13 Q56 14 55 27 Q48 25 44 18 Z" fill="#8E84A6" fill-opacity="0.75"/>
+    <path d="M9 38 Q3 40 4 46 Q8 44 10 42 Z M51 38 Q57 40 56 46 Q52 44 50 42 Z" fill="#FFFFFF" fill-opacity="0.9" stroke="#CDBFEA" stroke-width="1.5"/>
+    <ellipse cx="30" cy="31" rx="11" ry="8.5" fill="#6E6384" fill-opacity="0.45"/>
+    <circle cx="21.5" cy="23" r="3.6" fill="#2A1E3A"/><circle cx="38.5" cy="23" r="3.6" fill="#2A1E3A"/>
+    <circle cx="22.7" cy="21.8" r="1.2" fill="#fff"/><circle cx="39.7" cy="21.8" r="1.2" fill="#fff"/>
+    <ellipse cx="30" cy="27.5" rx="3.4" ry="2.3" fill="#2A1E3A"/>
+    <ellipse cx="30" cy="34" rx="2.1" ry="2.7" fill="#2A1E3A"/>
+    <circle cx="15" cy="31" r="3" fill="#F5A9C6" fill-opacity="0.65"/><circle cx="45" cy="31" r="3" fill="#F5A9C6" fill-opacity="0.65"/>
+  </svg>`;
+  const atticGhost = {host: null, el: null, start: 0, wasIn: false, lastRoom: null, phase: 0};
+  const GHOST_DUR = 7000, GHOST_W = 44, GHOST_H = 48;
+  function atticGhostFrame(ts){
+    const playing = spriteEl && (state.phase === "hiding" || state.phase === "seeking");
+    let inAttic = false;
+    if(playing){
+      const r = state.underground ? "tunnel" : roomAt(state.pos.x, state.pos.y);
+      if(r) atticGhost.lastRoom = r;                  // doorways: keep the last room
+      inAttic = atticGhost.lastRoom === "attic";
+    } else atticGhost.lastRoom = null;
+    const host = atticGhost.host;
+    if(inAttic && !atticGhost.wasIn && host && host.isConnected){
+      if(!atticGhost.el || atticGhost.el.parentNode !== host){
+        atticGhost.el = document.createElement("div");
+        atticGhost.el.className = "attic-ghost";
+        atticGhost.el.innerHTML = GHOST_SVG;
+        host.appendChild(atticGhost.el);
+      }
+      atticGhost.start = ts; atticGhost.phase = Math.random() * Math.PI * 2;
+    }
+    atticGhost.wasIn = inAttic;
+    const el = atticGhost.el;
+    if(!el || !el.isConnected) return;
+    const e = ts - atticGhost.start;
+    if(!atticGhost.start || e > GHOST_DUR || !playing){ el.style.opacity = "0"; return; }
+    const t = e / 1000, ph = atticGhost.phase;
+    const W = ROOMS.attic.rect.w, H = ROOMS.attic.rect.h;
+    const cx = (W - GHOST_W) / 2, cy = (H - GHOST_H) / 2 + 10;
+    // lazy figure-8 loop with a gentle bob
+    const x = cx + (cx - 10) * Math.sin(t * 0.9 + ph);
+    const y = cy + (cy - 30) * Math.sin(t * 1.8 + ph * 2) * 0.8 + Math.sin(t * 6) * 4;
+    const vx = Math.cos(t * 0.9 + ph);                          // sign of horizontal velocity
+    const tilt = -vx * 10;
+    const fade = Math.min(1, e / 600, (GHOST_DUR - e) / 900);
+    el.style.opacity = (0.88 * fade).toFixed(3);
+    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${tilt.toFixed(1)}deg) scaleX(${vx < 0 ? -1 : 1})`;
+  }
+
   function tick(ts){
     if(lastTs == null) lastTs = ts;
     const dt = Math.min(0.05, (ts - lastTs) / 1000);
@@ -1801,6 +1858,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       worldEl.style.transform = `translate(${-state.camX}px, ${-state.camY}px)`;
     }
     if(state.mp) mpFrame(dt);
+    atticGhostFrame(ts);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -1926,6 +1984,7 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
       fog.className = "room-fog";
       roomDiv.appendChild(fog);
       ROOM_FOG[key] = fog;
+      if(key === "attic") atticGhost.host = roomDiv;
       worldEl.appendChild(roomDiv);
     });
 
