@@ -4327,7 +4327,9 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     dbg.el.textContent =
       `fps ${fps.toFixed(0)}  worst frame ${dbg.worst.toFixed(0)}ms\n` +
       `net in ${ev.toFixed(1)}/s  out ${se.toFixed(1)}/s  players ${players}\n` +
-      `delay ${NetStats.age == null ? "-" : NetStats.age.toFixed(0) + "ms"}  jitter ${NetStats.jit == null ? "-" : NetStats.jit.toFixed(0) + "ms"}`;
+      `late ${NetStats.jit == null ? "-" : NetStats.jit.toFixed(0) + "ms"}  worst ${NetStats.lateMax == null ? "-" : NetStats.lateMax.toFixed(0) + "ms"}\n` +
+      `clock+net ${NetStats.clock == null ? "-" : NetStats.clock.toFixed(0) + "ms"}`;
+    NetStats.lateMax = 0;
     dbg.frames = 0; dbg.worst = 0; dbg.t0 = ts; dbg.ev0 = NetStats.events; dbg.se0 = NetStats.sends;
   }
 
@@ -4348,8 +4350,12 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       if(last && Math.hypot(p.x - last.x, p.y - last.y) > 160) buf.length = 0;   // teleport-sized jump: don't glide
       buf.push({t: t + r.minLag, x: p.x, y: p.y});
       if(buf.length > 30) buf.shift();
-      NetStats.age = NetStats.age == null ? lag : NetStats.age * 0.9 + lag * 0.1;
-      NetStats.jit = NetStats.jit == null ? lag - r.minLag : NetStats.jit * 0.9 + (lag - r.minLag) * 0.1;
+      // debug numbers: "late" = extra delay beyond this player's best (real lag); "clock" = their best delivery
+      // time, which also soaks up any disagreement between the two phones' clocks
+      const late = lag - r.minLag;
+      NetStats.jit = NetStats.jit == null ? late : NetStats.jit * 0.9 + late * 0.1;
+      NetStats.lateMax = Math.max(NetStats.lateMax || 0, late);
+      NetStats.clock = r.minLag;
     }
     if(!buf.length){ if(p.x != null){ r.x = p.x; r.y = p.y; } return; }
     const rt = Net.serverNow() - INTERP_DELAY;
