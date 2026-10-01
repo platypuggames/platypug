@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<script>
+  // Tablets (iPad): zoom the whole game up so it fills the screen and shows the same amount of house
+  // as a phone (about 900px tall), instead of a small phone-sized column with empty sides.
+  (function(){
+    var a = Math.min(screen.width, screen.height), b = Math.max(screen.width, screen.height);
+    if(a >= 700){
+      var w = Math.round(a * 900 / b);
+      document.querySelector('meta[name=viewport]').setAttribute('content', 'width=' + w + ', viewport-fit=cover, user-scalable=no');
+    }
+  })();
+</script>
 <title>Platypug: Hide and Seek</title>
 <link href="vendor/fonts.css" rel="stylesheet">
 <style>
