@@ -8,9 +8,9 @@
     if(mp.code){ renderLobby(); return; }
     showJoinCard("Connecting…");
     createBtn.disabled = joinBtn.disabled = true;
-    const ok = await Net.available();
+    const ok = navigator.onLine !== false && await Net.available();
     createBtn.disabled = joinBtn.disabled = !ok;
-    lobbyStatus.textContent = ok ? DEFAULT_NOTE : "Multiplayer couldn't connect on this device. Check your internet connection and reload.";
+    lobbyStatus.textContent = ok ? DEFAULT_NOTE : "Platytag needs an internet connection. Pug and Seek works offline!";
     nickInput.disabled = codeInput.disabled = !ok;
   });
   createBtn.addEventListener("click", () => enterRoom(randCode(), true));
@@ -26,8 +26,16 @@
     try{ localStorage.setItem("platytag_name", myName()); }catch(e){}
     createBtn.disabled = joinBtn.disabled = true;
     lobbyStatus.textContent = "Joining…";
-    try{ await Net.join(code); }
-    catch(e){ createBtn.disabled = joinBtn.disabled = false; lobbyStatus.textContent = "Couldn't connect. Try again."; return; }
+    try{
+      // offline, joining never finishes: give up after 10 seconds instead of hanging on "Joining…"
+      await Promise.race([Net.join(code), new Promise((_, no) => setTimeout(() => no(new Error("timeout")), 10000))]);
+    }
+    catch(e){
+      createBtn.disabled = joinBtn.disabled = false;
+      lobbyStatus.textContent = navigator.onLine === false ? "Platytag needs an internet connection. Pug and Seek works offline!" : "Couldn't connect. Check your internet and try again.";
+      try{ await Net.leave(); }catch(_){}
+      return;
+    }
     createBtn.disabled = joinBtn.disabled = false;
     Object.assign(mp, {code, isHost: asHost, hadHost: false, g: null, lastRid: null, inGame: false});
     mp.joinedAt = Date.now();

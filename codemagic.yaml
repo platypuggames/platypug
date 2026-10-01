@@ -1,0 +1,39 @@
+# Codemagic build recipe: builds the iPhone app on Codemagic's Macs, signs it, and uploads it to TestFlight.
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: platypug          # the API key name entered in Codemagic's Developer Portal integration
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.platypugplay.platypug
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+      - name: Build the game (src/ -> index.html -> www/)
+        script: npm run build:web
+      - name: Copy the game into the iOS project
+        script: npx cap sync ios
+      - name: Use the signing profiles
+        script: xcode-project use-profiles
+      - name: Set build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $(($BUILD_NUMBER + 1))
+      - name: Build the app
+        script: |
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

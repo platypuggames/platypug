@@ -1,0 +1,12 @@
+{
+  "appId": "com.platypugplay.platypug",
+  "appName": "Platypug",
+  "webDir": "www",
+  "backgroundColor": "#FFF4E6",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#FFF4E6",
+    "limitsNavigationsToAppBoundDomains": false
+  }
+}

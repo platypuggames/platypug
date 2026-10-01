@@ -1,0 +1,18 @@
+{
+  "name": "platypug",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Platypug: Hide and Seek",
+  "scripts": {
+    "build": "node build.js",
+    "build:web": "node build.js && node scripts/copy-web.js",
+    "ios:sync": "npm run build:web && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}
