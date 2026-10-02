@@ -98,57 +98,74 @@
 </svg>`;
   }
   function shelfSVG(){
-    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="shelfWood" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#A9805A"/><stop offset="1" stop-color="#8C6A46"/>
-        </linearGradient>
-      </defs>
-      <rect x="12" y="8" width="9" height="88" rx="3" fill="url(#shelfWood)"/>
-      <rect x="79" y="8" width="9" height="88" rx="3" fill="url(#shelfWood)"/>
-      <rect x="8" y="20" width="84" height="7" rx="3" fill="#B08D62"/>
-      <rect x="8" y="50" width="84" height="7" rx="3" fill="#B08D62"/>
-      <rect x="8" y="80" width="84" height="7" rx="3" fill="#B08D62"/>
-      <rect x="8" y="24" width="84" height="3" fill="#00000018"/>
-      <rect x="8" y="54" width="84" height="3" fill="#00000018"/>
-      <rect x="18" y="4" width="20" height="16" rx="4" fill="#F2A65A"/>
-      <rect x="18" y="4" width="20" height="6" rx="3" fill="#ffffff" opacity="0.25"/>
-      <rect x="42" y="2" width="16" height="18" rx="4" fill="#57C4E6"/>
-      <circle cx="70" cy="11" r="9" fill="#4FCB8D"/>
-      <circle cx="67" cy="8" r="2.5" fill="#ffffff" opacity="0.4"/>
-      <rect x="16" y="30" width="24" height="20" rx="5" fill="#FF8FA3"/>
-      <rect x="46" y="28" width="18" height="22" rx="5" fill="#FFD37A"/>
-      <ellipse cx="76" cy="40" rx="11" ry="10" fill="#B5C0C7"/>
-      <ellipse cx="72" cy="36" rx="3" ry="2.5" fill="#ffffff" opacity="0.4"/>
-      <rect x="16" y="60" width="28" height="20" rx="5" fill="#D9BD8E"/>
-      <rect x="52" y="58" width="20" height="22" rx="5" fill="#8C6A46"/>
-      <path d="M18 60 L44 60 L44 65 L18 68Z" fill="#00000012"/>
-    </svg>`;
+    return `<svg viewBox="0 0 68 114" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="gsWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8925A"/><stop offset="1" stop-color="#A9743F"/></linearGradient>
+<linearGradient id="gsPost" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8E99A6"/><stop offset="0.5" stop-color="#C3CBD4"/><stop offset="1" stop-color="#7F8A97"/></linearGradient>
+</defs>
+<ellipse cx="34" cy="111" rx="30" ry="2.6" fill="rgba(0,0,0,0.18)"/>
+<rect x="4" y="3" width="5.5" height="107" rx="2" fill="url(#gsPost)" stroke="#241811" stroke-width="1.8"/>
+<rect x="58.5" y="3" width="5.5" height="107" rx="2" fill="url(#gsPost)" stroke="#241811" stroke-width="1.8"/>
+<g transform="translate(13 15)">
+<rect x="0" y="4" width="24" height="13" rx="2" fill="#E5484D" stroke="#241811" stroke-width="1.7"/>
+<rect x="0" y="4" width="24" height="4.5" rx="1.5" fill="#C73A3F" stroke="#241811" stroke-width="1.4"/>
+<path d="M 8 4 L 8 0.8 L 16 0.8 L 16 4" fill="none" stroke="#241811" stroke-width="1.8" stroke-linejoin="round"/>
+<rect x="10" y="9.5" width="4" height="3" rx="1" fill="#F2D39B" stroke="#241811" stroke-width="0.9"/>
+<path d="M 2 11 L 2 15" stroke="#fff" stroke-width="1.2" opacity="0.35" stroke-linecap="round"/></g>
+<g transform="translate(42 17)"><rect x="0" y="5" width="9" height="10" rx="2" fill="#7CCB6B" stroke="#241811" stroke-width="1.5"/><path d="M 2 5 L 3 1 L 7 1 L 8 5 Z" fill="#FFFFFF" stroke="#241811" stroke-width="1.3" stroke-linejoin="round"/><path d="M 7 2 L 11 2" stroke="#241811" stroke-width="1.5" stroke-linecap="round"/></g>
+<rect x="2" y="32" width="64" height="5" rx="1.8" fill="url(#gsWood)" stroke="#241811" stroke-width="1.8"/>
+<g transform="translate(12 48)">
+<rect x="0" y="0" width="15" height="17" rx="2" fill="#5B9BE0" stroke="#241811" stroke-width="1.7"/>
+<ellipse cx="7.5" cy="0.5" rx="7.5" ry="2.2" fill="#C3CBD4" stroke="#241811" stroke-width="1.4"/>
+<path d="M 3 2.5 L 3 8 Q 3 9.5 4.2 9.5 Q 5.4 9.5 5.4 8 L 5.4 2.5" fill="#5B9BE0" stroke="#3A6FA8" stroke-width="0.6"/>
+<rect x="2.5" y="10" width="10" height="4.5" rx="1" fill="#FFF8EC" opacity="0.85"/></g>
+<g transform="translate(32 50)">
+<rect x="0" y="0" width="13" height="15" rx="2" fill="#FFCF4D" stroke="#241811" stroke-width="1.7"/>
+<ellipse cx="6.5" cy="0.5" rx="6.5" ry="2" fill="#C3CBD4" stroke="#241811" stroke-width="1.4"/>
+<path d="M 9 2.5 L 9 7 Q 9 8.3 10 8.3 Q 11 8.3 11 7 L 11 2.5" fill="#FFCF4D" stroke="#C99A1E" stroke-width="0.6"/>
+<rect x="2" y="8.5" width="9" height="4" rx="1" fill="#FFF8EC" opacity="0.85"/></g>
+<g transform="translate(48 54)"><rect x="0" y="0" width="7" height="11" rx="2.5" fill="#F7A9B8" stroke="#241811" stroke-width="1.4"/><rect x="2" y="-3" width="3" height="3.5" rx="1" fill="#241811"/></g>
+<rect x="2" y="65" width="64" height="5" rx="1.8" fill="url(#gsWood)" stroke="#241811" stroke-width="1.8"/>
+<g transform="translate(20 89)">
+<circle cx="0" cy="0" r="9" fill="#FFFFFF" stroke="#241811" stroke-width="1.7"/>
+<path d="M 0 -3.4 L 3.2 -1 L 2 2.8 L -2 2.8 L -3.2 -1 Z" fill="#241811"/>
+<path d="M 0 -3.4 L 0 -8.8 M 3.2 -1 L 8.4 -2.6 M 2 2.8 L 5.2 7.2 M -2 2.8 L -5.2 7.2 M -3.2 -1 L -8.4 -2.6" stroke="#241811" stroke-width="1.1"/>
+<path d="M -5 -5 Q -3 -7 -1 -7.6" stroke="#fff" stroke-width="1.3" fill="none" opacity="0.7"/></g>
+<g transform="translate(36 84)">
+<path d="M 1 4 L 3 14 L 19 14 L 21 4 Z" fill="#E88A6E" stroke="#241811" stroke-width="1.6" stroke-linejoin="round"/>
+<rect x="0" y="1.5" width="22" height="4" rx="1.5" fill="#D9714F" stroke="#241811" stroke-width="1.5"/>
+<path d="M 11 1.5 C 6 -4 4 -8 7 -10 C 9 -6 10 -3 11 1.5 C 12 -4 15 -9 18 -8 C 16 -4 13 -1 11 1.5" fill="#5FB26A" stroke="#241811" stroke-width="1.3" stroke-linejoin="round"/></g>
+<rect x="2" y="99" width="64" height="5" rx="1.8" fill="url(#gsWood)" stroke="#241811" stroke-width="1.8"/>
+</svg>`;
   }
   function boxesSVG(){
-    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="boxTop" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#EAD3A3"/><stop offset="1" stop-color="#D9BD8E"/>
-        </linearGradient>
-        <linearGradient id="boxBottom" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#DEC495"/><stop offset="1" stop-color="#C7A776"/>
-        </linearGradient>
-      </defs>
-      <ellipse cx="50" cy="94" rx="36" ry="5" fill="rgba(0,0,0,0.16)"/>
-      <rect x="14" y="42" width="74" height="48" rx="7" fill="url(#boxBottom)"/>
-      <path d="M14 49 L88 49" stroke="#00000018" stroke-width="2"/>
-      <line x1="51" y1="42" x2="51" y2="90" stroke="#8C6A46" stroke-width="2.5"/>
-      <rect x="22" y="52" width="20" height="6" fill="#8C6A46" opacity="0.55"/>
-      <rect x="58" y="52" width="20" height="6" fill="#8C6A46" opacity="0.55"/>
-      <path d="M18 64 L44 64" stroke="#ffffff" stroke-width="1.5" opacity="0.3"/>
-      <rect x="28" y="8" width="48" height="40" rx="7" fill="url(#boxTop)"/>
-      <path d="M28 15 L76 15" stroke="#00000018" stroke-width="2"/>
-      <line x1="52" y1="8" x2="52" y2="48" stroke="#8C6A46" stroke-width="2.5"/>
-      <rect x="34" y="18" width="14" height="5" fill="#8C6A46" opacity="0.55"/>
-      <rect x="56" y="18" width="14" height="5" fill="#8C6A46" opacity="0.55"/>
-      <path d="M32 30 L48 30" stroke="#ffffff" stroke-width="1.5" opacity="0.3"/>
-    </svg>`;
+    return `<svg viewBox="0 0 100 97" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="gbFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E2B47A"/><stop offset="1" stop-color="#CC9A5E"/></linearGradient>
+<linearGradient id="gbTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0CB94"/><stop offset="1" stop-color="#E2B47A"/></linearGradient>
+</defs>
+<ellipse cx="50" cy="93" rx="46" ry="4" fill="rgba(0,0,0,0.2)"/>
+<path d="M 6 50 L 14 42 L 94 42 L 86 50 Z" fill="url(#gbTop)" stroke="#241811" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 86 50 L 94 42 L 94 82 L 86 90 Z" fill="#B98448" stroke="#241811" stroke-width="2.4" stroke-linejoin="round"/>
+<rect x="6" y="50" width="80" height="40" rx="2" fill="url(#gbFront)" stroke="#241811" stroke-width="2.4"/>
+<path d="M 41 50 L 49 42 M 41 50 L 41 90" stroke="#B98448" stroke-width="5" stroke-linecap="butt" opacity="0.85"/>
+<path d="M 41 50 L 41 90" stroke="#241811" stroke-width="0.8" opacity="0.35"/>
+<g transform="translate(55 60)"><rect x="0" y="0" width="22" height="14" rx="2" fill="#FFF8EC" stroke="#241811" stroke-width="1.4"/>
+<path d="M 6 11 L 6 4 M 3.5 6.5 L 6 3.5 L 8.5 6.5 M 16 11 L 16 4 M 13.5 6.5 L 16 3.5 L 18.5 6.5" fill="none" stroke="#E5484D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></g>
+<path d="M 11 56 L 11 84" stroke="#fff" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+<g transform="rotate(-6 46 26)">
+<path d="M 18 22 L 24 16 L 74 16 L 68 22 Z" fill="url(#gbTop)" stroke="#241811" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M 68 22 L 74 16 L 74 42 L 68 48 Z" fill="#B98448" stroke="#241811" stroke-width="2.2" stroke-linejoin="round"/>
+<rect x="18" y="22" width="50" height="26" rx="2" fill="url(#gbFront)" stroke="#241811" stroke-width="2.2"/>
+<path d="M 18 22 L 6 12 L 15 9 L 26 18" fill="#F0CB94" stroke="#241811" stroke-width="2" stroke-linejoin="round"/>
+<path d="M 68 22 L 82 13 L 74 9 L 64 17" fill="#E2B47A" stroke="#241811" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="38" cy="16" r="7" fill="#C6E24A" stroke="#241811" stroke-width="1.8"/>
+<path d="M 32 13 Q 38 18 44 13 M 32 19 Q 38 14 44 19" fill="none" stroke="#fff" stroke-width="1.3" opacity="0.9"/>
+<path d="M 50 18 L 49 8 L 58 6 L 60 16" fill="#7BB7E8" stroke="#241811" stroke-width="1.6" stroke-linejoin="round"/>
+<rect x="26" y="30" width="16" height="4" rx="1.5" fill="#241811" opacity="0.55"/>
+<path d="M 22 27 L 22 43" stroke="#fff" stroke-width="1.6" opacity="0.3" stroke-linecap="round"/>
+</g>
+</svg>`;
   }
   function fridgeSVG(){
     return `<svg viewBox="0 0 70 130" xmlns="http://www.w3.org/2000/svg">
