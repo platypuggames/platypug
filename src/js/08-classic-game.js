@@ -46,7 +46,8 @@
     if(roomKey === state.hidingRoom && fid === state.hidingSpot){
       state.busy = true;
       state.target = {x: state.pos.x, y: state.pos.y};
-      setTimeout(() => { el.classList.add("found-here"); endGame(); }, 480);
+      const sess = gameSession;
+      setTimeout(() => { if(sess !== gameSession) return; el.classList.add("found-here"); endGame(); }, 480);
     } else {
       if(!state.checkedIds.has(fid)){
         state.checkedIds.add(fid); state.checkedSpots += 1;
@@ -153,6 +154,8 @@
 
   /* ---------------- Transition to seeking ---------------- */
   function startSeekTransition(){
+    if(state.phase !== "hiding") return;         // the player quit to the menu in the meantime
+    const sess = gameSession;
     plainBtn.classList.remove("show");
     digBtn.classList.remove("show");
     state.phase = "transition";
@@ -160,6 +163,7 @@
     let n = 3;
     interstitial.innerHTML = `<h2>Nicely hidden!</h2><p>The platypus is on the way. Get ready to search...</p><div class="count">${n}</div>`;
     const iv = setInterval(() => {
+      if(sess !== gameSession){ clearInterval(iv); return; }
       n -= 1;
       if(n <= 0){
         clearInterval(iv);
@@ -195,7 +199,9 @@
   /* ---------------- Win / end game ---------------- */
   function endGame(){
     const elapsed = Math.max(1, Math.round((Date.now() - state.startTime)/1000));
+    const sess = gameSession;
     setTimeout(() => {
+      if(sess !== gameSession) return;
       document.getElementById("win-time").textContent = elapsed + "s";
       document.getElementById("win-checks").textContent = state.checkedSpots;
 
@@ -263,6 +269,26 @@
   document.getElementById("dog-back").addEventListener("click", () => switchScreen(document.getElementById("title-screen")));
   document.getElementById("again-btn").addEventListener("click", startHidingPhase);
   document.getElementById("win-home").addEventListener("click", () => switchScreen(titleScreen));
+
+  /* ---------- Menu button: quit a round mid-game (no browser reload in the app) ---------- */
+  let gameSession = 0;                               // bumps on quit so pending timers from the old round do nothing
+  const quitCard = document.getElementById("quit-card");
+  ["pointerdown", "touchstart", "mousedown"].forEach(ev => quitCard.addEventListener(ev, e => e.stopPropagation()));
+  document.getElementById("menu-btn").addEventListener("pointerdown", e => e.stopPropagation());
+  document.getElementById("menu-btn").addEventListener("click", () => {
+    document.getElementById("quit-note").textContent = (state.mp && mp.code) ? "You'll leave the room. The others can keep playing." : "This round will end.";
+    quitCard.style.display = "flex";
+  });
+  document.getElementById("quit-stay").addEventListener("click", () => { quitCard.style.display = "none"; });
+  document.getElementById("quit-leave").addEventListener("click", async () => {
+    quitCard.style.display = "none";
+    gameSession++;
+    state.phase = "title"; state.busy = false; state.target = {x: state.pos.x, y: state.pos.y};
+    interstitial.style.display = "none";
+    plainBtn.classList.remove("show"); digBtn.classList.remove("show"); confirmFab.classList.remove("show");
+    switchScreen(titleScreen);
+    if(state.mp || mp.code){ try{ await leaveRoom(); }catch(e){} }
+  });
 
   document.getElementById("howto-btn").addEventListener("click", () => {
     const card = document.getElementById("howto-card");

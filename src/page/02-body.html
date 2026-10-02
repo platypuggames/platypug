@@ -75,6 +75,7 @@
 
   <div id="game-screen" class="screen hidden">
     <div id="hud">
+      <button class="chip" id="menu-btn" aria-label="Menu">Menu</button>
       <div class="chip" id="phase-pill">🐶 Hiding</div>
       <div class="chip" id="lead-pill" style="display:none"></div>
       <div class="chip" id="stat-pill">Pick a cozy spot</div>
@@ -88,6 +89,14 @@
       <button id="dig-btn" class="confirm-fab dig-fab" aria-label="Dig a hole">⛏️ Dig</button>
       <button id="plain-btn" class="plain-btn" aria-label="Hide under a blanket right here">🧺 Blanket</button>
       <div id="interstitial" style="display:none;"></div>
+      <div id="quit-card" style="display:none;">
+        <div class="quit-box">
+          <h3>Leave this game?</h3>
+          <p id="quit-note">This round will end.</p>
+          <button class="big-btn" id="quit-stay">Keep playing</button>
+          <button class="howto-toggle" id="quit-leave">Leave game</button>
+        </div>
+      </div>
     </div>
   </div>
 
