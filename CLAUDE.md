@@ -29,11 +29,11 @@ src/
   page/01-head.html       <head>, viewport meta, iPad zoom script, fonts link, opens <style>
   page/02-body.html       closes </style>; all screen/HUD markup; vendor <script> tags; opens main <script>
   page/03-tail.html       closes </script></body></html>
-  styles/01-base.css      tokens (:root vars, dark mode), app frame, title screen
+  styles/01-base.css      tokens (:root vars, dark mode), app frame, title screen, HUD bar
   styles/02-room-features.css   flower bed, belly slide, light switch, decoy, attic ghost
   styles/03-pool.css      pool, swimming, tube, slide, splash
   styles/04-furniture-sprites.css  furniture, critter sprites, red platypus outline, sprite shadows
-  styles/05-ui-screens.css  HUD, buttons, menus, lobby, tagover/finale, Menu/quit card
+  styles/05-ui-screens.css  buttons, menus, lobby, tagover/finale, interstitials, Menu button + quit card
   js/01-art.js            all character + furniture SVG art (long lines: grep, don't cat)
   js/02-pool-art.js       pool geometry/art, tube, paw trails, spriteMarkup(), CUSTOM_ART map
   js/03-world-state.js    ROOMS/FURN_LIST layout, `state`, DOM refs, walkability, setTarget, spawnPoint, hideExitSpot
