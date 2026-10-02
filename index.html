@@ -62,7 +62,9 @@
     --ink: #F6EBDD; --ink-soft: #C9B79E;
   }
 
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none;
+      /* iPhone/iPad: no text selection, no long-press callout or magnifier, no dragging images */
+      -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; }
   html, body {
     height: 100vh; height: 100svh; height: calc(var(--vh) * 100);
     margin: 0; overscroll-behavior: none;
@@ -603,7 +605,7 @@
   #title-screen, #win-screen, #lobby-screen, #tagover-screen, #dog-screen { position: absolute; inset: 0; justify-content: safe center; }
   #title-screen, #title-screen *, #win-screen, #win-screen *, #lobby-screen, #lobby-screen *, #tagover-screen, #tagover-screen *, #dog-screen, #dog-screen * { touch-action: pan-y; }
   #title-screen::after { position: fixed; }
-  input { user-select: text; -webkit-user-select: text; touch-action: manipulation; }
+  input { user-select: text; -webkit-user-select: text; -webkit-touch-callout: default; touch-action: manipulation; }
   #lobby-screen::before, #tagover-screen::before, #dog-screen::before { content:""; position:absolute; inset:0; background-image: var(--paw); background-size: 64px 64px; pointer-events:none; }
   #lobby-screen > *, #tagover-screen > *, #dog-screen > * { position: relative; z-index: 1; }
   #lobby-screen h2, #tagover-screen h2, #dog-screen h2 { margin: 0; font-family: var(--font-display); font-size: 28px; }
@@ -3658,6 +3660,12 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   document.getElementById("dog-back").addEventListener("click", () => switchScreen(document.getElementById("title-screen")));
   document.getElementById("again-btn").addEventListener("click", startHidingPhase);
   document.getElementById("win-home").addEventListener("click", () => switchScreen(titleScreen));
+
+  /* ---------- No text selection / long-press menus anywhere except text boxes ---------- */
+  const isTextBox = t => t && t.closest && t.closest("input, textarea");
+  document.addEventListener("selectstart", e => { if(!isTextBox(e.target)) e.preventDefault(); });
+  document.addEventListener("contextmenu", e => { if(!isTextBox(e.target)) e.preventDefault(); });
+  document.addEventListener("dragstart", e => e.preventDefault());
 
   /* ---------- Menu button: quit a round mid-game (no browser reload in the app) ---------- */
   let gameSession = 0;                               // bumps on quit so pending timers from the old round do nothing

@@ -270,6 +270,12 @@
   document.getElementById("again-btn").addEventListener("click", startHidingPhase);
   document.getElementById("win-home").addEventListener("click", () => switchScreen(titleScreen));
 
+  /* ---------- No text selection / long-press menus anywhere except text boxes ---------- */
+  const isTextBox = t => t && t.closest && t.closest("input, textarea");
+  document.addEventListener("selectstart", e => { if(!isTextBox(e.target)) e.preventDefault(); });
+  document.addEventListener("contextmenu", e => { if(!isTextBox(e.target)) e.preventDefault(); });
+  document.addEventListener("dragstart", e => e.preventDefault());
+
   /* ---------- Menu button: quit a round mid-game (no browser reload in the app) ---------- */
   let gameSession = 0;                               // bumps on quit so pending timers from the old round do nothing
   const quitCard = document.getElementById("quit-card");
