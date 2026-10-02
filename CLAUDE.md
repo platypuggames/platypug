@@ -1,0 +1,141 @@
+# CLAUDE.md: Platypug agent guide
+
+Platypug: Hide and Seek. Cute top-down hide-and-seek / tag game: dogs ("pugs") hide, a platypus seeks.
+Plain HTML/CSS/JS, no framework, no bundler. Live web build on GitHub Pages; iPhone/iPad app via Capacitor + Codemagic → TestFlight.
+
+- Web (live): https://platypuggames.github.io/platypug/  (pushing to `main` deploys in ~1–2 min)
+- App: bundle ID `com.platypugplay.platypug`, App Store name "Platypug", universal (iPhone + iPad), portrait only.
+
+## 1. Rules for every agent (read first)
+
+1. **Only fix what was asked.** Don't refactor, rename, restyle, or "improve" anything outside the request. If you spot another problem, mention it in one line at the end. Don't fix it unasked.
+2. **Real solutions, not one-case patches.** Fix the cause, in the system that owns it. No hard-coded coordinates for one room when a rule exists, no `if(id === "couch")` special cases, no magic numbers without a named constant and a comment. A fix should hold for every room, every player count, both modes, phone and iPad.
+3. **Both modes, both roles.** Before finishing, ask: does this affect Pug and Seek (single device) *and* Platytag (multiplayer)? Pug *and* platypus? Host *and* client? If multiplayer state changes, it must sync through the host (see §5).
+4. **Gameplay changes need a request.** Don't change balance (speeds, timers, radii), controls, or rules unless asked. Visual or perf work must leave gameplay identical.
+5. **Emojis:** existing emoji in the UI are intentional. Don't add new ones or remove existing ones unless asked.
+6. **Never edit `index.html` by hand.** It's generated. Edit `src/`, then rebuild (see §3).
+7. **Verify before pushing:** build check, JS syntax check, and a headless test of the thing you changed (see §6). Never push a broken build. `main` is live.
+8. **Talking to the owner:** terse, direct, numbers first, practical. Lead with what changed and its effect. No hedging, no long preambles, no repeated summaries. Disagree honestly when warranted; don't cave unless actually wrong. The owner does real-device testing himself: don't tell him to test on a device.
+
+## 2. Repo layout
+
+```
+CLAUDE.md                 this file
+README.md                 short human readme
+index.html                GENERATED playable game (~500 KB). Do not read or edit; see src/
+build.js                  stitches src/ → index.html in src/manifest.txt order (`--check` verifies)
+src/
+  manifest.txt            build order of the 19 pieces
+  page/01-head.html       <head>, viewport meta, iPad zoom script, fonts link, opens <style>
+  page/02-body.html       closes </style>; all screen/HUD markup; vendor <script> tags; opens main <script>
+  page/03-tail.html       closes </script></body></html>
+  styles/01-base.css      tokens (:root vars, dark mode), app frame, title screen
+  styles/02-room-features.css   flower bed, belly slide, light switch, decoy, attic ghost
+  styles/03-pool.css      pool, swimming, tube, slide, splash
+  styles/04-furniture-sprites.css  furniture, critter sprites, red platypus outline, sprite shadows
+  styles/05-ui-screens.css  HUD, buttons, menus, lobby, tagover/finale, Menu/quit card
+  js/01-art.js            all character + furniture SVG art (long lines: grep, don't cat)
+  js/02-pool-art.js       pool geometry/art, tube, paw trails, spriteMarkup(), CUSTOM_ART map
+  js/03-world-state.js    ROOMS/FURN_LIST layout, `state`, DOM refs, walkability, setTarget, spawnPoint, hideExitSpot
+  js/04-features-movement.js  room features (flowers, belly slide, lights, decoy, ghost) + tick() main loop + camera
+  js/05-build-world.js    buildWorld(): renders rooms, furniture, fog, garage plate, light switch
+  js/06-input.js          pointer/keyboard input, proximity/hide prompts, fog, updateHud()
+  js/07-yard-mechanics.js slide, diving board, tunnel, trellis ladder, secret passage, digging
+  js/08-classic-game.js   Pug and Seek flow, blankets, endGame, screens, selection blocking, Menu/quit
+  js/09-platytag-net.js   NetStats, Net adapters (Firebase + Claude fallback), Platytag constants
+  js/10-platytag-lobby-host.js  lobby, room join/leave, host authority (hostTick, pushHost), onNetChange
+  js/11-platytag-client.js  roles, sendMe, ?debug overlay, interpolation, remote players, HUD, tagover, finale
+vendor/                   local copies, don't edit: Firebase 10.12.2 compat SDK, fonts (Baloo 2, Fredoka, OFL)
+support.html, privacy.html  App Store support + privacy policy pages (standalone, hand-edited)
+ios/                      Capacitor iOS project (Info.plist, icon, splash). ios/App/App/public is generated
+capacitor.config.json     app id/name, webDir www
+package.json              Capacitor deps; scripts: build, build:web, ios:sync
+scripts/copy-web.js       index.html + vendor/ → www/ (what the app bundles)
+scripts/test/             DEV ONLY: fakefb.js (fake Firebase) + harness.js (test build)
+codemagic.yaml            iOS build → sign → upload to TestFlight (workflow "ios-testflight")
+www/, node_modules/       generated, gitignored
+```
+
+## 3. Build, deploy, ship
+
+```bash
+node build.js                     # src/ → index.html
+node build.js --check             # must print "matches"
+# JS syntax check of the built page:
+python3 -c "import re;s=open('index.html').read();open('/tmp/a.js','w').write('\n'.join(re.findall(r'<script>(.*?)</script>',s,re.S)))" && node --check /tmp/a.js
+git -c user.name="platypuggames" -c user.email="platypuggames@users.noreply.github.com" commit -am "<what changed>"
+git push                          # = live web deploy
+```
+
+- **All `src/js` files are one script** (one IIFE scope) after the build. Load order is the manifest order. Top-level `function` declarations are hoisted across files; `const`/`let` are not, so don't touch a const from another file at load time, only at runtime.
+- **App builds** are manual: Codemagic → Apps → platypug → Start new build → `main` → "iOS → TestFlight". Uses about 15–20 of the 500 free macOS minutes per month. Pushing does NOT trigger builds. Build number = Codemagic `$BUILD_NUMBER + 1`. Web changes reach the app only after a new build.
+- Local app prep (rarely needed): `npm run build:web && npx cap sync ios`.
+
+## 4. Token-saving rules
+
+- **Never read `index.html`, `vendor/`, `ios/App/App/public/`, `www/`, `node_modules/`, `package-lock.json`.** Everything you need is in `src/`.
+- Find code with `grep -n` in `src/`, then read only that range (`sed -n 'A,Bp'`). Use §2 and the function index below to pick the file.
+- Art files have very long SVG lines: use `grep -n` / `cut -c1-200`, never dump whole files.
+- Edit with small exact-match replacements, not whole-file rewrites.
+- Keep command output short (`| tail`, `| head`, `--stat`). Redact the token in git output: `| sed 's/github_pat_[A-Za-z0-9_]*/***/g'`.
+- Screenshots: crop/downscale before viewing.
+
+**Function index** (file → main functions):
+- 03-world-state: camTop isWalkable roomAt nearestRoom showToast hideExitSpot spawnPoint setTarget placeSpriteAt clamp attemptMove
+- 04-features-movement: buildFlowers flowersFrame snapToFlowerBed bellySlideUpdate lightsFrame darkAt showDecoy decoyFrame triggerAtticGhost atticGhostFrame tick
+- 06-input: worldPosFromEvent onPointerDown/Move/Up updateKeyboardTarget updateProximity nearestItem updateFog updateHud
+- 07-yard-mechanics: startSlide handleSlide startDive buildTunnel setUnderground buildLadder startLadder buildSecret openSecret digUnder canDigHere checkHoleEntry
+- 08-classic-game: seekerTouch doSearch blanketZ makeBlanketEl startSeekTransition beginSeekPhase endGame switchScreen startHidingPhase
+- 10-platytag-lobby-host: enterRoom leaveRoom roster renderLobby hostStartRound pushHost hostTick onNetChange hostGone mpSync
+- 11-platytag-client: setSpriteRole startTagRound spawnMe becomeRole mpConfirm mpBlanket mpUnhide sendMe debugFrame remoteInterp makeRemote renderRemotes mpFrame mpHud showTagOver playFinale
+
+## 5. Architecture notes
+
+- **World:** fixed world coordinates; `ROOMS` (rects) + `FURN_LIST` (furniture, hide spots) in 03-world-state. `roomAt(x,y)` → room key (`livingroom`, `kitchen`, `bathroom`, `attic`, `garage`, `backyard`, `frontyard`, …). Camera follows `state.pos`; `state.camLag` gives a lagging camera after hide exits.
+- **Main loop:** `tick()` in 04-features-movement runs movement then per-frame features (`flowersFrame`, `decoyFrame`, `lightsFrame`, `atticGhostFrame`, `debugFrame`, `mpFrame`). New per-frame features: early-exit when idle; never write DOM styles unless the value changed.
+- **Pug and Seek** (`state.mp === false`): phases `hiding` → `transition` → `seeking` → win screen. `gameSession` (08) invalidates timers when the player quits.
+- **Platytag** (`state.mp === true`, the `mp` object):
+  - Firebase Realtime DB at `rooms/<CODE>/players/<id>`. Each client writes only its own record via `sendMe()`. Fields: role sp x y f w hid bl chk ug dg dgr tq td dv so ld lsk dq df lq bs t. `t` = server-clock timestamp.
+  - **Host is authoritative**: the host's record carries `g` (game state: ph rid roles tg hl el ld ldn tube dc lt win sv gv). `pushHost()` bumps `gv`. Clients re-sync only when `gv` changes (onNetChange).
+  - Client→host requests use **counters** in the player record (`dq` decoy, `lq` light switch, `tq` tube): the host compares against its last-seen value per player. Follow this pattern for new shared interactions.
+  - Remote players render via `remoteInterp()`, ~100ms in the past (`INTERP_DELAY`), with clock-skew correction.
+  - `?debug` URL flag shows fps, worst frame, net in/out, late/worst, clock.
+- **iPad:** 01-head script sets viewport width so tablets show about 900 CSS px of height, the same field of view as phones (fairness). Don't give tablets more view.
+- **Key constants:** MAX_PLAYERS 10, HEAD_START 15s, TAG_TIME 150s, TAG_R 34, TAG_FREEZE_MS 1800 (09-platytag-net); INTERP_DELAY 100 (11); EXIT_GLIDE_SPEED 380 (03); BELLY_BOOST 1.35 (04).
+
+## 6. Testing (headless; Playwright + Chromium are available in the Claude sandbox)
+
+- Solo: serve the repo (`python3 -m http.server 8766 --bind 127.0.0.1`), open with viewport 390×844, click `#play-btn` → `#dog-go-btn`. To move the player in tests, expose `state` in a temp copy and set `state.pos`/`state.target`.
+- Multiplayer: `node scripts/test/harness.js`, serve `/tmp/platypug-harness` on 8765, open 2+ pages **in the same browser context** (fake Firebase syncs via BroadcastChannel). Click `#tag-btn`, fill `#nick-input`, `#create-btn`; others fill `#code-input` + `#join-btn`; host `#start-btn`. Hooks: `__st()`, `__mp()`, `__furn()`.
+- iPad check: viewport 1032×1376, `is_mobile=True`, `screen` set to the same size.
+- Start the server in the same shell command as the test (sandbox background processes may not survive between commands).
+
+## 7. Product decisions (don't change without asking)
+
+- Platytag is the flagship mode (listed first on the title screen). Pug and Seek = 2-player pass-and-play, works offline.
+- One special feature per room: attic ghost (hint for the platypus that a pug was there), bathroom laundry-basket decoy blanket, living-room light switch, front-yard flower bed, bedroom bed covers, garage door button, backyard pool/slide/trellis, kitchen = platypus spawn + belly slide.
+- Spawns: dogs around the doghouse, platypus in the kitchen between fridge and table.
+- The platypus tends to win more; being a pug is more fun. Prefer making the platypus *more fun*, not stronger.
+- Art style: bold dark outlines (#241811), saturated fills, highlights (match couch / bookshelf / kitchen cabinets).
+- No ads, no accounts today. Privacy policy commits to updating before any ads or purchases ship.
+
+## 8. Credentials and accounts (names and locations only, NEVER values)
+
+This repo is **public** and every file is served on GitHub Pages. **Never commit a secret**: no tokens, keys, `.p8`, `.p12`, passwords. GitHub auto-revokes leaked tokens.
+
+| What | Where it lives | How an agent gets it |
+|---|---|---|
+| GitHub push access | Owner's fine-grained PAT (repo `platypuggames/platypug`, Contents read/write) | claude.ai chat: owner pastes it each session; use it only in the remote URL, redact it in output. Claude Code: the owner's local git credential manager / `gh auth login`, so nothing is needed |
+| Local agent credentials | `.credentials.local.md` in the repo root on the owner's machine (gitignored; template: `credentials.example.md`) | Claude Code may read it if present. Never print, copy, or commit its values |
+| Firebase project | `platypug-99b31` (Realtime DB). Web config is in `src/js/09-platytag-net.js` and is public by design (not a secret) | none needed |
+| Apple developer | Family team account; app in App Store Connect as "Platypug" | owner only (agents can't log in) |
+| App Store Connect API key | Name `platypug`, stored only in Codemagic (Developer Portal integration) | used by codemagic.yaml `integrations: app_store_connect: platypug` |
+| iOS signing | Apple Distribution cert `platypug-dist` + App Store profile `platypug-appstore`, stored in Codemagic | automatic via `ios_signing` in codemagic.yaml |
+| Codemagic | Owner's Individual (free) account via GitHub | owner only |
+| Support email | platypugs@gmail.com (public on support/privacy pages) | n/a |
+
+## 9. Open items
+
+- Tag-triggered app builds (push tag `app-x.y.z` → Codemagic build) not set up yet.
+- Possible nickname bad-word filter if App Review asks.
+- Rendering perf: if `?debug` worst frame stays >35ms, next suspects are pool/tunnel glow effects and off-screen leg animations.
