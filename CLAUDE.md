@@ -134,9 +134,17 @@ This repo is **public** and every file is served on GitHub Pages. **Never commit
 | Codemagic | Owner's Individual (free) account via GitHub | owner only |
 | Support email | platypugs@gmail.com (public on support/privacy pages) | n/a |
 
-## 9. Open items
+## 9. Pending for the first post-approval app update
+
+The build submitted for App Store review was made from commit `5613b99`. When the owner says the app is live, do these, then have him run a Codemagic build:
+
+1. **Already on the website, just needs a new app build (no code work):** garage shelf + boxes art (21ba908), bedroom dresser art, laundry hamper redraw (5f79070), living-room TV stand + bookshelf art (3f2c743), slide repolish (47f1c98). Web-only and invisible to the app: favicon/home-screen icons (b6aa14c).
+2. **Code work to ship in this same update (web + app together, since it changes collisions):** restore the redrawn wardrobe (`closetSVG`) and bathtub (`tubSVG`) from commit `ba87adc`, drawn to fill their boxes, and resize the `closet` and `tub` hitboxes in FURN_LIST (03-world-state) so art and hitbox match and neither crowds the walkway. Show the owner before pushing.
+
+## 10. Open items
 
 - Tag-triggered app builds (push tag `app-x.y.z` → Codemagic build) not set up yet.
 - Possible nickname bad-word filter if App Review asks.
-- Pending art: redrawn bedroom wardrobe (`closetSVG`) and bathtub (`tubSVG`) exist in commit ba87adc but are reverted to the original art because the new ones fill their hitboxes differently. Ship them together with hitbox adjustments in one web + app update.
+- Network payload reduction (send only changed fields in sendMe): discussed, on hold. Protocol-compatible with older app builds.
+- Shared-engine refactor (maps as data, engine vs. modes) for minigames / future apps: on hold. Plan: regression safety net first, then a branch, then small verified steps, keeping the network format frozen.
 - Rendering perf: if `?debug` worst frame stays >35ms, next suspects are pool/tunnel glow effects and off-screen leg animations.
