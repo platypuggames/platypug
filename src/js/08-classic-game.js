@@ -262,6 +262,7 @@
   document.getElementById("dog-go-btn").addEventListener("click", startHidingPhase);
   document.getElementById("dog-back").addEventListener("click", () => switchScreen(document.getElementById("title-screen")));
   document.getElementById("again-btn").addEventListener("click", startHidingPhase);
+  document.getElementById("win-home").addEventListener("click", () => switchScreen(titleScreen));
 
   document.getElementById("howto-btn").addEventListener("click", () => {
     const card = document.getElementById("howto-card");
