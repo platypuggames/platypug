@@ -138,4 +138,5 @@ This repo is **public** and every file is served on GitHub Pages. **Never commit
 
 - Tag-triggered app builds (push tag `app-x.y.z` → Codemagic build) not set up yet.
 - Possible nickname bad-word filter if App Review asks.
+- After App Store approval: shrink the bedroom wardrobe (`closet`) and bathtub (`tub`) hitboxes in FURN_LIST to match their art, which is currently drawn smaller than the box (top 66×99 of 66×150, and top 106×68 of 106×86). Hitbox changes change collisions, so ship them to web and app together.
 - Rendering perf: if `?debug` worst frame stays >35ms, next suspects are pool/tunnel glow effects and off-screen leg animations.
