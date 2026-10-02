@@ -211,18 +211,24 @@ ${part === "full" ? `<ellipse cx="41" cy="29" rx="37" ry="15" fill="#0E4E78" opa
 <g stroke="#A8743F" stroke-width="4.5" stroke-linecap="round"><line x1="15" y1="290" x2="35" y2="290"/><line x1="20" y1="250" x2="40" y2="250"/><line x1="26" y1="210" x2="46" y2="210"/><line x1="31" y1="170" x2="51" y2="170"/><line x1="37" y1="130" x2="57" y2="130"/><line x1="43" y1="90" x2="63" y2="90"/></g>
 <!-- platform + hand rails -->
 <path d="M 44 44 L 104 44 L 104 58 L 48 58 Z" fill="#3486C6" stroke="#241811" stroke-width="3.5" stroke-linejoin="round"/>
+<g stroke="#6CC7F6" stroke-width="2.4" stroke-linecap="round" opacity="0.9"><path d="M 52 48 L 98 48"/><path d="M 54 53 L 98 53"/></g>
 <path d="M 54 44 C 50 22 64 12 78 20" fill="none" stroke="#241811" stroke-width="9" stroke-linecap="round"/>
 <path d="M 54 44 C 50 22 64 12 78 20" fill="none" stroke="#6CC7F6" stroke-width="5" stroke-linecap="round"/>
 <path d="M 92 44 C 90 24 102 16 114 26" fill="none" stroke="#241811" stroke-width="9" stroke-linecap="round"/>
 <path d="M 92 44 C 90 24 102 16 114 26" fill="none" stroke="#6CC7F6" stroke-width="5" stroke-linecap="round"/>
 <!-- chute side wall (profile) -->
 <path d="M 76 56 C 102 78 114 132 122 180 C 130 228 138 274 160 294 L 198 306 L 198 320 L 158 308 C 134 288 124 240 116 190 C 108 142 98 92 76 70 Z" fill="url(#sWall)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
+<!-- side-wall decals: bolts + star -->
+<g fill="#FFD84D" stroke="#241811" stroke-width="1.6"><circle cx="92" cy="80" r="3"/><circle cx="112" cy="140" r="3"/><circle cx="126" cy="214" r="3"/><circle cx="150" cy="276" r="3"/></g>
+<path d="M 127 246 L 130 253 L 137 253 L 131.5 257.5 L 133.5 264.5 L 127 260 L 120.5 264.5 L 122.5 257.5 L 117 253 L 124 253 Z" fill="#FFFFFF" stroke="#241811" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 84 70 C 102 92 110 132 116 170" fill="none" stroke="#fff" stroke-width="3" opacity="0.35" stroke-linecap="round"/>
 <!-- front ladder rail -->
 <path d="M 12 324 L 50 50" stroke="#241811" stroke-width="11" stroke-linecap="round"/>
 <path d="M 12 324 L 50 50" stroke="#4FA6E0" stroke-width="6" stroke-linecap="round"/>
 <!-- chute bed (the sliding surface) -->
 <path d="M 104 44 C 130 66 142 120 150 168 C 158 216 166 262 188 282 L 198 288 L 198 306 L 160 294 C 138 274 130 228 122 180 C 114 132 102 78 76 56 L 76 44 Z" fill="url(#sBed)" stroke="#241811" stroke-width="4" stroke-linejoin="round"/>
 <path d="M 94 54 C 118 78 128 128 136 174 C 144 220 152 262 176 286" fill="none" stroke="#fff" stroke-width="5" opacity="0.55" stroke-linecap="round"/>
+<path d="M 86 58 C 108 82 118 130 126 176 C 134 222 142 266 166 290" fill="none" stroke="#FFF3C4" stroke-width="2.4" opacity="0.8" stroke-linecap="round" stroke-dasharray="10 9"/>
 <path d="M 104 44 C 130 66 142 120 150 168 C 158 216 166 262 188 282 L 198 288" fill="none" stroke="#F0584F" stroke-width="7" stroke-linecap="round"/>
 <path d="M 76 56 C 102 78 114 132 122 180 C 130 228 138 274 160 294 L 198 306" fill="none" stroke="#F0584F" stroke-width="7" stroke-linecap="round"/>
 <path d="M 104 44 C 130 66 142 120 150 168 C 158 216 166 262 188 282 L 198 288" fill="none" stroke="#241811" stroke-width="2"/>
