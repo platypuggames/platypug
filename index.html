@@ -1100,20 +1100,34 @@
   function basketSVG(){
     return `<svg viewBox="0 0 93 93" xmlns="http://www.w3.org/2000/svg">
 <defs>
-<linearGradient id="hpWeave" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C79458"/><stop offset="0.5" stop-color="#E2B47A"/><stop offset="1" stop-color="#B98448"/></linearGradient>
+<linearGradient id="hmBody" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C98F52"/><stop offset="0.45" stop-color="#E6B77C"/><stop offset="1" stop-color="#B98146"/></linearGradient>
+<clipPath id="hmClip"><path d="M 15 33 L 78 33 L 72 83 Q 71 87 66 87 L 27 87 Q 22 87 21 83 Z"/></clipPath>
 </defs>
-<ellipse cx="46.5" cy="88" rx="34" ry="4" fill="rgba(0,0,0,0.18)"/>
-<path d="M 30 26 C 24 14 32 6 40 12 L 44 22 Z" fill="#7BB7E8" stroke="#241811" stroke-width="2" stroke-linejoin="round"/>
-<path d="M 46 24 C 48 10 60 6 66 14 C 70 20 64 26 58 26 Z" fill="#F7A9B8" stroke="#241811" stroke-width="2" stroke-linejoin="round"/>
-<path d="M 62 26 C 72 22 80 26 78 34 L 70 32 Z" fill="#FFD84D" stroke="#241811" stroke-width="2" stroke-linejoin="round"/>
-<path d="M 14 30 L 79 30 L 72 82 Q 71 86 67 86 L 26 86 Q 22 86 21 82 Z" fill="url(#hpWeave)" stroke="#241811" stroke-width="3" stroke-linejoin="round"/>
-<g stroke="#9C6A35" stroke-width="1.6" opacity="0.85"><path d="M 17 44 L 76 44"/><path d="M 19 57 L 74 57"/><path d="M 20 70 L 72 70"/></g>
-<g stroke="#9C6A35" stroke-width="1.6" opacity="0.6"><path d="M 28 32 L 31 84"/><path d="M 40 32 L 41 84"/><path d="M 53 32 L 52 84"/><path d="M 65 32 L 62 84"/></g>
-<path d="M 20 38 L 25 80" stroke="#fff" stroke-width="2.2" opacity="0.3" stroke-linecap="round"/>
-<rect x="9" y="25" width="75" height="9" rx="4.5" fill="#D9A86C" stroke="#241811" stroke-width="2.6"/>
-<g fill="none" stroke="#241811" stroke-width="2.6" stroke-linecap="round"><path d="M 10 38 Q 4 44 10 50"/><path d="M 83 38 Q 89 44 83 50"/></g>
-<path d="M 72 33 Q 82 46 78 60 Q 76 64 72 62 Q 74 50 66 38 Z" fill="#7CCB6B" stroke="#241811" stroke-width="1.8" stroke-linejoin="round"/>
-<path d="M 72 60 Q 76 64 72 66" fill="#FFFFFF" stroke="#241811" stroke-width="1.5"/>
+<ellipse cx="46.5" cy="89" rx="33" ry="3.6" fill="rgba(0,0,0,0.18)"/>
+<path d="M 24 30 Q 26 16 40 15 Q 52 14 56 24 L 56 30 Z" fill="#7FB4E8" stroke="#241811" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M 36 16 L 40 23 L 44 15" fill="none" stroke="#241811" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 48 30 Q 52 18 64 19 Q 74 21 72 30 Z" fill="#F7A9B8" stroke="#241811" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M 56 21 Q 62 25 70 24" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.7" stroke-linecap="round"/>
+<path d="M 15 33 L 78 33 L 72 83 Q 71 87 66 87 L 27 87 Q 22 87 21 83 Z" fill="url(#hmBody)"/>
+<g clip-path="url(#hmClip)" stroke="#A06A33" stroke-width="1.5" fill="none" opacity="0.9">
+<path d="M 10 44 L 84 44 M 10 55 L 84 55 M 10 66 L 84 66 M 10 77 L 84 77"/>
+<path d="M 24 33 L 24 44 M 38 33 L 38 44 M 52 33 L 52 44 M 66 33 L 66 44"/>
+<path d="M 31 44 L 31 55 M 45 44 L 45 55 M 59 44 L 59 55 M 73 44 L 73 55 M 17 44 L 17 55"/>
+<path d="M 24 55 L 24 66 M 38 55 L 38 66 M 52 55 L 52 66 M 66 55 L 66 66"/>
+<path d="M 31 66 L 31 77 M 45 66 L 45 77 M 59 66 L 59 77 M 17 66 L 17 77 M 73 66 L 73 77"/>
+<path d="M 24 77 L 24 88 M 38 77 L 38 88 M 52 77 L 52 88 M 66 77 L 66 88"/>
+</g>
+<path d="M 15 33 L 78 33 L 72 83 Q 71 87 66 87 L 27 87 Q 22 87 21 83 Z" fill="none" stroke="#241811" stroke-width="3" stroke-linejoin="round"/>
+<path d="M 21 38 L 26 82" stroke="#fff" stroke-width="2.4" opacity="0.28" stroke-linecap="round"/>
+<g fill="#5C3A1E" stroke="#241811" stroke-width="1.6"><rect x="22" y="41" width="10" height="5" rx="2.5"/><rect x="61" y="41" width="10" height="5" rx="2.5"/></g>
+<rect x="11" y="27" width="71" height="8" rx="4" fill="#D9A86C" stroke="#241811" stroke-width="2.6"/>
+<path d="M 15 29.5 L 78 29.5" stroke="#fff" stroke-width="1.4" opacity="0.4" stroke-linecap="round"/>
+<g transform="translate(46 30) scale(0.72)">
+<path d="M -4 0 L 4 0 L 4 18 Q 4 23 9 23 L 13 23 Q 16 23 16 27 Q 16 31 12 31 L 6 31 Q -4 31 -4 21 Z" fill="#FFFFFF" stroke="#241811" stroke-width="2" stroke-linejoin="round"/>
+<path d="M -4 6 L 4 6 M -4 12 L 4 12" stroke="#E5484D" stroke-width="2.6"/>
+<path d="M -4 6 L 4 6 M -4 12 L 4 12" stroke="#241811" stroke-width="0.6" opacity="0.4"/>
+<path d="M 12 23 Q 16 23 16 27 Q 16 31 12 31 Z" fill="#E5484D"/>
+</g>
 </svg>`;
   }
   function couchSVG(){
