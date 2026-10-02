@@ -1161,49 +1161,71 @@
 </svg>`;
   }
   function tvStandSVG(){
-    return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="tvGlow" cx="50%" cy="40%" r="70%">
-          <stop offset="0" stop-color="#9FE7F7"/><stop offset="1" stop-color="#57C4E6"/>
-        </radialGradient>
-      </defs>
-      <ellipse cx="60" cy="114" rx="46" ry="5" fill="rgba(0,0,0,0.13)"/>
-      <rect x="8" y="6" width="104" height="60" rx="8" fill="#3A2A20"/>
-      <rect x="16" y="14" width="88" height="44" rx="4" fill="url(#tvGlow)"/>
-      <path d="M20 20 L60 20 L20 46 Z" fill="#ffffff" opacity="0.18"/>
-      <rect x="50" y="66" width="20" height="8" fill="#3A2A20"/>
-      <rect x="6" y="76" width="108" height="36" rx="10" fill="#B98F65"/>
-      <rect x="6" y="76" width="108" height="6" fill="#ffffff" opacity="0.25"/>
-      <rect x="16" y="88" width="34" height="16" rx="4" fill="#8C6A46"/>
-      <rect x="70" y="88" width="34" height="16" rx="4" fill="#8C6A46"/>
-      <circle cx="33" cy="96" r="2" fill="#5A4632"/>
-      <circle cx="87" cy="96" r="2" fill="#5A4632"/>
-    </svg>`;
+    return `<svg viewBox="0 0 114 150" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="tvScreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FD3F7"/><stop offset="1" stop-color="#4FA6E0"/></linearGradient>
+<linearGradient id="tvWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E5AE70"/><stop offset="1" stop-color="#C98A4E"/></linearGradient>
+</defs>
+<ellipse cx="57" cy="146" rx="52" ry="3.5" fill="rgba(0,0,0,0.18)"/>
+<rect x="5" y="8" width="104" height="66" rx="6" fill="#2D2A33" stroke="#241811" stroke-width="3"/>
+<rect x="11" y="13" width="92" height="55" rx="3" fill="url(#tvScreen)"/>
+<rect x="11" y="52" width="92" height="16" fill="#7CCB6B"/>
+<path d="M 11 52 Q 40 46 60 52 T 103 50 L 103 52 Z" fill="#9AD98A"/>
+<circle cx="88" cy="24" r="6" fill="#FFD84D" stroke="#F2B630" stroke-width="1.5"/>
+<g transform="translate(46 44)">
+<ellipse cx="0" cy="6" rx="8" ry="6" fill="#B89CE0" stroke="#241811" stroke-width="1.5"/>
+<circle cx="0" cy="-2" r="6.5" fill="#B89CE0" stroke="#241811" stroke-width="1.5"/>
+<path d="M 4 -1 Q 13 -1 12 3 Q 11 5 5 3.5 Z" fill="#FF9F43" stroke="#241811" stroke-width="1.3" stroke-linejoin="round"/>
+<circle cx="1.5" cy="-4" r="1.3" fill="#241811"/>
+<path d="M -8 8 Q -14 9 -13 4 Q -11 2 -7 4" fill="#8A5A3C" stroke="#241811" stroke-width="1.2"/></g>
+<path d="M 16 18 L 34 18 L 20 36 Z" fill="#fff" opacity="0.22"/>
+<circle cx="102" cy="70" r="1.6" fill="#7CF29A"/>
+<rect x="49" y="74" width="16" height="8" rx="1.5" fill="#3A3640" stroke="#241811" stroke-width="2"/>
+<rect x="36" y="81" width="42" height="5" rx="2.5" fill="#3A3640" stroke="#241811" stroke-width="2"/>
+<g transform="translate(14 81)"><path d="M -5 0 L -4 9 L 4 9 L 5 0 Z" fill="#E88A6E" stroke="#241811" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M 0 0 C -5 -4 -7 -10 -3 -11 C -1 -7 0 -4 0 0 C 1 -6 4 -11 7 -9 C 6 -5 3 -2 0 0" fill="#5FB26A" stroke="#241811" stroke-width="1.3" stroke-linejoin="round"/></g>
+<rect x="4" y="90" width="106" height="7" rx="2.5" fill="#C98A4E" stroke="#241811" stroke-width="2.6"/>
+<rect x="7" y="97" width="100" height="42" rx="3" fill="url(#tvWood)" stroke="#241811" stroke-width="2.6"/>
+<rect x="12" y="102" width="43" height="32" rx="2.5" fill="#F0C48C" stroke="#241811" stroke-width="1.8"/>
+<rect x="59" y="102" width="43" height="32" rx="2.5" fill="#3E5A73" stroke="#241811" stroke-width="1.8"/>
+<rect x="64" y="108" width="33" height="9" rx="2" fill="#E9ECEF" stroke="#241811" stroke-width="1.4"/>
+<circle cx="91" cy="112.5" r="1.4" fill="#5FD38D"/>
+<g transform="translate(71 125)"><rect x="-7" y="-3.5" width="14" height="7" rx="3.5" fill="#F25C54" stroke="#241811" stroke-width="1.3"/><circle cx="-3.5" cy="0" r="1.2" fill="#fff"/><circle cx="3.5" cy="0" r="1.2" fill="#fff"/></g>
+<rect x="28" y="116" width="11" height="3.4" rx="1.7" fill="#F2D39B" stroke="#241811" stroke-width="1.2"/>
+<path d="M 15 105 L 50 105" stroke="#fff" stroke-width="1.4" opacity="0.45" stroke-linecap="round"/>
+<rect x="10" y="139" width="8" height="6" rx="1.5" fill="#A86E3A" stroke="#241811" stroke-width="1.6"/><rect x="96" y="139" width="8" height="6" rx="1.5" fill="#A86E3A" stroke="#241811" stroke-width="1.6"/>
+</svg>`;
   }
   function bookshelfSVG(){
-    return `<svg viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="shelfCase" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#C9A46F"/><stop offset="1" stop-color="#B08A55"/>
-        </linearGradient>
-      </defs>
-      <ellipse cx="50" cy="136" rx="38" ry="5" fill="rgba(0,0,0,0.14)"/>
-      <rect x="8" y="4" width="84" height="128" rx="8" fill="url(#shelfCase)"/>
-      <rect x="14" y="10" width="72" height="34" rx="4" fill="#8C6A46"/>
-      <rect x="14" y="52" width="72" height="34" rx="4" fill="#8C6A46"/>
-      <rect x="14" y="94" width="72" height="30" rx="4" fill="#8C6A46"/>
-      <rect x="18" y="14" width="6" height="26" fill="#FF8FA3"/>
-      <rect x="26" y="14" width="6" height="26" fill="#FFD37A"/>
-      <rect x="34" y="14" width="6" height="26" fill="#4FCB8D"/>
-      <rect x="42" y="14" width="5" height="26" fill="#57C4E6"/>
-      <rect x="18" y="56" width="6" height="26" fill="#57C4E6"/>
-      <rect x="26" y="56" width="6" height="26" fill="#FF8FA3"/>
-      <rect x="34" y="56" width="5" height="26" fill="#FFD37A"/>
-      <circle cx="66" cy="70" r="9" fill="#E3B27C"/>
-      <path d="M60 68 Q66 62 72 68" stroke="#8C6A46" stroke-width="2" fill="none"/>
-      <rect x="20" y="98" width="50" height="6" fill="#FFD37A" opacity="0.8"/>
-      <rect x="20" y="106" width="40" height="6" fill="#FF8FA3" opacity="0.8"/>
-    </svg>`;
+    return `<svg viewBox="0 0 114 168" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="bkWood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C98A4E"/><stop offset="0.5" stop-color="#E0A866"/><stop offset="1" stop-color="#C08048"/></linearGradient>
+</defs>
+<ellipse cx="57" cy="164" rx="52" ry="3.5" fill="rgba(0,0,0,0.18)"/>
+<rect x="5" y="4" width="104" height="154" rx="4" fill="url(#bkWood)" stroke="#241811" stroke-width="3"/>
+<rect x="12" y="11" width="90" height="140" rx="2" fill="#8C5A32" stroke="#241811" stroke-width="2"/>
+<g stroke="#241811" stroke-width="1.6" stroke-linejoin="round">
+<rect x="15" y="20" width="9" height="25" rx="1.5" fill="#F25C54"/><rect x="24" y="16" width="8" height="29" rx="1.5" fill="#FFCF4D"/><rect x="32" y="22" width="10" height="23" rx="1.5" fill="#5B9BE0"/><rect x="42" y="18" width="7" height="27" rx="1.5" fill="#7CCB6B"/>
+<path d="M 50 45 L 58 22 L 65 24 L 57 45 Z" fill="#B89CE0"/>
+<rect x="84" y="20" width="9" height="25" rx="1.5" fill="#F7A9B8"/><rect x="93" y="23" width="7" height="22" rx="1.5" fill="#E88A6E"/></g>
+<g transform="translate(75 33)"><circle cx="0" cy="0" r="7" fill="#7FD3F7" stroke="#241811" stroke-width="1.5"/><path d="M -4 -3 Q -1 -6 2 -3 Q 4 0 1 2 Q -2 1 -4 -3 Z M 2 4 Q 4 3 5 5" fill="#7CCB6B" stroke="#3E8A4A" stroke-width="0.6"/><path d="M 0 7 L 0 11 M -4 12 L 4 12" stroke="#241811" stroke-width="1.8" stroke-linecap="round"/></g>
+<rect x="9" y="45" width="96" height="6" rx="1.5" fill="url(#bkWood)" stroke="#241811" stroke-width="2"/>
+<g transform="translate(30 70)"><path d="M -6 -8 L 6 -8 L 5 0 Q 0 6 -5 0 Z" fill="#FFD84D" stroke="#241811" stroke-width="1.5" stroke-linejoin="round"/><path d="M -6 -6 Q -10 -6 -9 -2 Q -8 0 -5 -1 M 6 -6 Q 10 -6 9 -2 Q 8 0 5 -1" fill="none" stroke="#241811" stroke-width="1.4"/><rect x="-2" y="2" width="4" height="5" fill="#E8C35A" stroke="#241811" stroke-width="1.2"/><rect x="-6" y="7" width="12" height="4" rx="1" fill="#A86E3A" stroke="#241811" stroke-width="1.3"/></g>
+<g stroke="#241811" stroke-width="1.6" stroke-linejoin="round">
+<rect x="46" y="56" width="10" height="27" rx="1.5" fill="#5FB26A"/><rect x="56" y="60" width="8" height="23" rx="1.5" fill="#F25C54"/><rect x="64" y="55" width="9" height="28" rx="1.5" fill="#5B9BE0"/><rect x="73" y="62" width="7" height="21" rx="1.5" fill="#FFCF4D"/>
+<rect x="82" y="73" width="20" height="5" rx="1.2" fill="#B89CE0"/><rect x="83" y="78" width="18" height="5" rx="1.2" fill="#F7A9B8"/></g>
+<rect x="9" y="83" width="96" height="6" rx="1.5" fill="url(#bkWood)" stroke="#241811" stroke-width="2"/>
+<g stroke="#241811" stroke-width="1.6" stroke-linejoin="round">
+<rect x="15" y="96" width="8" height="25" rx="1.5" fill="#E88A6E"/><rect x="23" y="93" width="10" height="28" rx="1.5" fill="#7FD3F7"/><rect x="33" y="98" width="8" height="23" rx="1.5" fill="#FFCF4D"/></g>
+<g transform="translate(57 107)"><rect x="-9" y="-11" width="18" height="22" rx="2" fill="#FFF8EC" stroke="#241811" stroke-width="1.6"/><rect x="-6" y="-8" width="12" height="13" fill="#FFE0C2"/><circle cx="0" cy="-2" r="3.5" fill="#D9B48A" stroke="#241811" stroke-width="0.8"/><path d="M -3.5 -4 L -5 -6.5 M 3.5 -4 L 5 -6.5" stroke="#6B4A2B" stroke-width="1.6" stroke-linecap="round"/></g>
+<g transform="translate(86 112)"><path d="M -7 0 L -6 9 L 6 9 L 7 0 Z" fill="#E88A6E" stroke="#241811" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M 0 0 C -7 -5 -9 -13 -4 -14 C -1 -9 0 -5 0 0 C 1 -8 5 -14 9 -11 C 7 -6 4 -2 0 0" fill="#5FB26A" stroke="#241811" stroke-width="1.3" stroke-linejoin="round"/></g>
+<rect x="9" y="121" width="96" height="6" rx="1.5" fill="url(#bkWood)" stroke="#241811" stroke-width="2"/>
+<g stroke="#241811" stroke-width="1.6"><rect x="16" y="130" width="38" height="18" rx="2" fill="#5B9BE0"/><rect x="60" y="130" width="38" height="18" rx="2" fill="#F7A9B8"/></g>
+<path d="M 20 134 L 50 134 M 64 134 L 94 134" stroke="#fff" stroke-width="1.5" opacity="0.5" stroke-linecap="round"/>
+<rect x="9" y="151" width="96" height="6" rx="1.5" fill="url(#bkWood)" stroke="#241811" stroke-width="2"/>
+<path d="M 9 8 L 9 154" stroke="#fff" stroke-width="1.6" opacity="0.3" stroke-linecap="round"/>
+</svg>`;
   }
   function shedSVG(){ return `<svg viewBox="0 0 170 170" xmlns="http://www.w3.org/2000/svg">
 <defs><linearGradient id="shW" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C98F5E"/><stop offset="1" stop-color="#B07A4C"/></linearGradient></defs>
