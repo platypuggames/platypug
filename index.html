@@ -4974,7 +4974,8 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   const BUNNY_GRAB_SLACK = 70;          // a grab you saw on your screen is accepted if you were this close to where the bunny was recently
   const BUNNY_GRAB_HIST_MS = 900;       // ...within this window (covers your lag + the holder's lag + on-screen smoothing)
   const BUNNY_GRAB_RETRY_MS = 200;      // how often a touching dog re-asks the host for the grab
-  const BUNNY_TAKEBACK_MS = 1500;       // the dog that just lost the bunny can't grab it straight back: it must stop touching first, or wait this long
+  const BUNNY_TAKEBACK_MS = 1500;       // the dog that just lost the bunny can't take it back for this long...
+  const BUNNY_TAKEBACK_MOVE = 40;       // ...and not until it has walked this far from where it lost it (a dog that just stands there never grabs it back)
   const BUNNY_STEAL_LOCK_MS = 500;      // after any grab, nobody can take it for this long
   const BUNNY_FOLLOW_DIST = 30;         // how far behind its holder (along their path) the bunny trots
   const BUNNY_SPEED = 380;              // px/s it can move catching up (dogs walk 300)
@@ -5124,20 +5125,20 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       if(mp.pfaGq[id] !== undefined && q !== mp.pfaGq[id] && id !== B.h && (p.gh || null) === (B.h || null)) asked.add(id);
       mp.pfaGq[id] = q;
     }
-    // who is touching it right now (checked every tick so the robbed dog's "let go first" rule is tracked through the lock too)
+    // who is touching it right now
     const bp = bpNow, locked = now - B.st < BUNNY_STEAL_LOCK_MS || G.el >= PFA_TIME;
     let best = null, bestD = Infinity;
     for(const id of Object.keys(G.roles)){
       if(id === B.h) continue;
       const p = byId.get(id);
-      if(!p || !p.sp || p.x == null || p.hid || p.bl) continue;            // a hidden dog can't grab
+      if(!p || !p.sp || p.x == null) continue;
+      const rob = mp.pfaRob && mp.pfaRob.id === id ? mp.pfaRob : null;       // this dog just lost the bunny
+      if(rob && !rob.moved && Math.hypot(p.x - rob.x, p.y - rob.y) >= BUNNY_TAKEBACK_MOVE) rob.moved = true;
+      if(rob && !(rob.moved && now - rob.t >= BUNNY_TAKEBACK_MS)) continue;  // no taking it straight back
+      if(p.hid || p.bl) continue;                                            // a hidden dog can't grab
       let d;
       if(bp.hid) d = (typeof p.chk === "string" && p.chk.split(",").includes(bp.hid)) ? 0 : Infinity;   // search the holder's hiding spot
       else d = pfaTouchDist(p, bp);
-      if(mp.pfaRob && mp.pfaRob.id === id){
-        if(d >= BUNNY_GRAB_R || now - mp.pfaRob.t >= BUNNY_TAKEBACK_MS) mp.pfaRob = null;   // let go (or waited): free to grab again
-        else continue;
-      }
       // touched it on their own screen: accept if they were close to where it was a moment ago
       if(d >= BUNNY_GRAB_R && asked.has(id) && !bp.hid && mp.pfaHist.some(e => !e.hid && pfaTouchDist(p, e) < BUNNY_GRAB_SLACK)) d = BUNNY_GRAB_R - 1;
       if(d < BUNNY_GRAB_R && d < bestD){ best = id; bestD = d; }
@@ -5146,7 +5147,8 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       const from = B.h;
       pfaCredit(G, now);
       Object.assign(B, {h: best, since: Math.round(now), st: Math.round(now)});
-      mp.pfaRob = from ? {id: from, t: now} : null;
+      const fp = from && byId.get(from);
+      mp.pfaRob = fp && fp.x != null ? {id: from, t: now, x: fp.x, y: fp.y, moved: false} : null;
       G.ev++; G.evn = {to: best, tn: nameOf(best), from: from || null, fn: from ? nameOf(from) : null};
       changed = true;
     }
