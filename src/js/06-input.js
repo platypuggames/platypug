@@ -85,6 +85,7 @@
       seekerTouch();
       return;
     }
+    if(state.mp && isPfa()) pfaTouchSearch();          // Pug for All: bumping furniture searches it for a hidden bunny
     const item = nearestItem();
     const curId = state.pendingSpot ? state.pendingSpot.spotId : null;
     const newId = item ? item.id : null;

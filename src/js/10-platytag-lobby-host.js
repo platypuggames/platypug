@@ -1,18 +1,26 @@
   /* ---------- Lobby flow ---------- */
+  // which game this lobby is for: the room's mode once you're in one, else the button you came from
+  function lobbyMode(){ return (mp.code && mp.g && mp.g.md) || mp.wantMode || "tag"; }
   function showJoinCard(note){
     lobbyJoin.style.display = ""; lobbyRoom.style.display = "none";
-    lobbyStatus.textContent = note || DEFAULT_NOTE;
+    lobbyTitle.textContent = MODE_INFO[lobbyMode()].title;
+    lobbyStatus.textContent = note || MODE_INFO[lobbyMode()].note;
   }
-  document.getElementById("tag-btn").addEventListener("click", async () => {
+  const lobbyTitle = document.getElementById("lobby-title");
+  document.getElementById("tag-btn").addEventListener("click", () => openLobby("tag"));
+  document.getElementById("pfa-btn").addEventListener("click", () => openLobby("pfa"));
+  async function openLobby(mode){
     switchScreen(lobbyScreen);
     if(mp.code){ renderLobby(); return; }
+    mp.wantMode = mode;
+    renderBunnyPicker();
     showJoinCard("Connecting…");
     createBtn.disabled = joinBtn.disabled = true;
     const ok = navigator.onLine !== false && await Net.available();
     createBtn.disabled = joinBtn.disabled = !ok;
-    lobbyStatus.textContent = ok ? DEFAULT_NOTE : "Platytag needs an internet connection. Pug and Seek works offline!";
+    lobbyStatus.textContent = ok ? MODE_INFO[lobbyMode()].note : `${MODE_INFO[lobbyMode()].title} needs an internet connection. Pug and Seek works offline!`;
     nickInput.disabled = codeInput.disabled = !ok;
-  });
+  }
   createBtn.addEventListener("click", () => enterRoom(randCode(), true));
   joinBtn.addEventListener("click", () => {
     const code = codeInput.value.trim().toUpperCase();
@@ -32,16 +40,16 @@
     }
     catch(e){
       createBtn.disabled = joinBtn.disabled = false;
-      lobbyStatus.textContent = navigator.onLine === false ? "Platytag needs an internet connection. Pug and Seek works offline!" : "Couldn't connect. Check your internet and try again.";
+      lobbyStatus.textContent = navigator.onLine === false ? `${MODE_INFO[lobbyMode()].title} needs an internet connection. Pug and Seek works offline!` : "Couldn't connect. Check your internet and try again.";
       try{ await Net.leave(); }catch(_){}
       return;
     }
     createBtn.disabled = joinBtn.disabled = false;
     Object.assign(mp, {code, isHost: asHost, hadHost: false, g: null, lastRid: null, inGame: false});
     mp.joinedAt = Date.now();
-    const me = {n: myName(), dog: dogCode(), jt: mp.joinedAt, h: asHost ? 1 : 0, role: null, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0};
+    const me = {n: myName(), dog: dogCode(), bb: myBunnyPick(), jt: mp.joinedAt, h: asHost ? 1 : 0, role: null, sp: 0, x: null, y: null, hid: null, bl: null, chk: null, ug: 0};
     if(asHost){
-      mp.hostG = {ph: "lobby", rid: 0, roles: {}, tg: [], hl: HEAD_START, el: 0};
+      mp.hostG = {md: mp.wantMode === "pfa" ? "pfa" : "tag", ph: "lobby", rid: 0, roles: {}, tg: [], hl: HEAD_START, el: 0};
       me.g = JSON.parse(JSON.stringify(mp.hostG));
       mp.g = mp.hostG;
       clearInterval(mp.hostTimer);
@@ -57,6 +65,7 @@
     lobbyJoin.style.display = "none"; lobbyRoom.style.display = "";
     lobbyStatus.textContent = asHost ? "Share this code with the other players." : "Joined! Waiting for the host…";
     renderDogPickers();
+    renderBunnyPicker();
     syncLobbyName();
     renderLobby();
   }
@@ -102,6 +111,8 @@
   function renderLobby(){
     if(!mp.code) return;
     roomCodeEl.textContent = mp.code;
+    lobbyTitle.textContent = MODE_INFO[lobbyMode()].title;
+    if(mp.shownMode !== lobbyMode()){ mp.shownMode = lobbyMode(); renderBunnyPicker(); }
     const G = mp.g;
     const peers = roster().slice(0, MAX_PLAYERS);
     playerList.innerHTML = "";
@@ -117,7 +128,8 @@
     const idle = !G || G.ph === "lobby" || G.ph === "over";
     startBtn.style.display = mp.isHost ? "" : "none";
     startBtn.disabled = !(mp.isHost && idle && peers.length >= 2);
-    if(mp.isHost) waitNote.textContent = peers.length < 2 ? "Waiting for players to join…" : `${peers.length}/${MAX_PLAYERS} players. Start when ready. The platypus is picked at random.`;
+    if(mp.isHost) waitNote.textContent = peers.length < 2 ? "Waiting for players to join…" :
+      `${peers.length}/${MAX_PLAYERS} players. Start when ready. ` + (lobbyMode() === "pfa" ? "The bunny is waiting in the front yard." : "The platypus is picked at random.");
     else if(G && !idle && !(G.roles || {})[Net.myId()]) waitNote.textContent = "A round is in progress — you'll join the next one.";
     else waitNote.textContent = "Waiting for the host to start…";
     const others = peers.length - 1;
@@ -131,6 +143,11 @@
     if(!mp.isHost) return;
     const ids = roster().slice(0, MAX_PLAYERS).map(pp => pp.id);
     if(ids.length < 2) return;
+    if(mp.hostG && mp.hostG.md === "pfa"){
+      const pb = {}; roster().forEach(pp => { pb[pp.id] = pp.p; });
+      pfaHostStart(ids, pb);
+      return;
+    }
     const platId = ids[Math.floor(Math.random()*ids.length)];
     const roles = {}, lk = {};
     const peerById = {}; roster().forEach(pp => { peerById[pp.id] = pp.p; });
@@ -141,7 +158,7 @@
       const d = String((peerById[id] || {}).dog || "");
       lk[id] = id === platId ? "purple|-" : (DOG_BREEDS.includes(d.split("|")[0]) ? d : dogCode(randLook("pug")));
     });
-    mp.hostG = {ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, lk, tg: [], hl: HEAD_START, el: 0,
+    mp.hostG = {md: "tag", ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, lk, tg: [], hl: HEAD_START, el: 0,
       ld: platId, ldn: String((peerById[platId] || {}).n || "Platypus").slice(0, 14),
       tube: {x: Math.round(TUBE_HOME.x), y: Math.round(TUBE_HOME.y), h: null}};
     mp.tubeSeenTq = {}; mp.tubeSeenTd = {}; mp.tubeLast = null;
@@ -229,6 +246,11 @@
       const lq = p.lq || 0;                             // living room light switch
       if(mp.hostLq[id] === undefined) mp.hostLq[id] = lq;
       else if(lq !== mp.hostLq[id]){ mp.hostLq[id] = lq; if(G.roles[id]){ G.lt = G.lt ? 0 : 1; changed = true; } }
+    }
+    if(G.md === "pfa"){                                   // Pug for All has its own rules (12-pug-for-all.js)
+      if(pfaHostRules(G, byId, elapsed)) changed = true;
+      if(changed) pushHost();
+      return;
     }
     if(G.ph === "play"){
       const el = Math.floor(elapsed - HEAD_START);

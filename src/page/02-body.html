@@ -15,6 +15,10 @@
         <button class="big-btn" id="tag-btn">Platytag</button>
       </div>
       <div class="mode-card">
+        <div class="mode-tag pfa">Multiplayer · 2–10 players</div>
+        <button class="big-btn pfa" id="pfa-btn">Pug for All</button>
+      </div>
+      <div class="mode-card">
         <div class="mode-tag solo">Pass and play · 2 players</div>
         <button class="big-btn secondary" id="play-btn">Pug and Seek</button>
       </div>
@@ -24,6 +28,7 @@
       <b>Hiding:</b> Drag or tap anywhere and your pug follows your finger around the whole house — just keep walking through doorways from room to room. Touch furniture and your pug walks over — confirm in the corner to hide there.<br><br>
       <b>Seeking:</b> Walk the platypus around the house the same way and touch furniture to check it.<br><br>
       <b>Platytag (multiplayer):</b> One player is the platypus, everyone else is a pug. Pugs get a 15-second head start. The platypus tags pugs by touching them, or by checking the furniture a pug is hiding in. Tagged pugs become platypuses and join the hunt until every pug is caught.<br><br>
+      <b>Pug for All (multiplayer):</b> Everyone's a dog. Grab the baby bunny in the front yard and it follows you everywhere. Touch the bunny to steal it, or bump the furniture its holder is hiding in. Whoever holds it longest in 2:30 wins.<br><br>
       <b>Keyboard:</b> Arrow keys or WASD to move, Space/Enter to confirm, F to dig, B for the blanket.
     </div>
   </div>
@@ -36,7 +41,7 @@
   </div>
 
   <div id="lobby-screen" class="screen hidden">
-    <h2>Platytag</h2>
+    <h2 id="lobby-title">Platytag</h2>
     <p class="lobby-note" id="lobby-status">One platypus, lots of pugs. Tagged pugs join the hunt!</p>
     <div class="lobby-card" id="lobby-join">
       <input class="lobby-input" id="nick-input" maxlength="14" placeholder="Your name" autocomplete="off">
@@ -53,6 +58,8 @@
       <input class="lobby-input" id="lobby-name" maxlength="14" placeholder="Your name" autocomplete="off" enterkeyhint="done">
       <div class="lobby-note" style="font-weight:700;">Your dog</div>
       <div class="dog-picker"></div>
+      <div class="lobby-note" id="bunny-pick-label" style="font-weight:700;display:none;">Your bunny (what it turns into while you hold it)</div>
+      <div class="dog-grid bunny-picker" id="bunny-picker" style="display:none;"></div>
       <ul class="player-list" id="player-list"></ul>
       <button class="big-btn" id="start-btn" style="display:none;">Start game</button>
       <p class="lobby-note" id="wait-note">Waiting for the host to start…</p>
@@ -67,7 +74,7 @@
     <p class="lobby-note" id="tagover-sub"></p>
     <div class="stat-row">
       <div class="stat-card"><div class="num" id="tagover-time">0s</div><div class="lbl">TIME</div></div>
-      <div class="stat-card"><div class="num" id="tagover-count">0</div><div class="lbl">PUGS TAGGED</div></div>
+      <div class="stat-card"><div class="num" id="tagover-count">0</div><div class="lbl" id="tagover-count-lbl">PUGS TAGGED</div></div>
     </div>
     <ol class="player-list" id="tagover-list"></ol>
     <button class="big-btn secondary" id="tagover-btn">Back to lobby</button>

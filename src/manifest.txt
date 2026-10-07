@@ -6,6 +6,7 @@ styles/04-furniture-sprites.css
 styles/05-ui-screens.css
 page/02-body.html
 js/01-art.js
+js/01b-bunny-art.js
 js/02-pool-art.js
 js/03-world-state.js
 js/04-features-movement.js
@@ -16,4 +17,5 @@ js/08-classic-game.js
 js/09-platytag-net.js
 js/10-platytag-lobby-host.js
 js/11-platytag-client.js
+js/12-pug-for-all.js
 page/03-tail.html

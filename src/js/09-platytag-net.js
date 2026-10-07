@@ -195,6 +195,10 @@
   document.getElementById("tagover-critters").innerHTML = pugSVG({b: "pugFawn", g: false}) + platypusSVG({b: "purple"});
 
   const DEFAULT_NOTE = "One platypus, lots of pugs. Tagged pugs join the hunt!";
+  const MODE_INFO = {
+    tag: {title: "Platytag", note: DEFAULT_NOTE},
+    pfa: {title: "Pug for All", note: "Grab the bunny and keep it the longest!"}
+  };
   function fmt(sec){ sec = Math.max(0, sec|0); const m = Math.floor(sec/60), s = sec % 60; return m ? `${m}:${String(s).padStart(2,"0")}` : `${s}s`; }
   function myName(){ return (nickInput.value || "").trim().slice(0, 14) || "Player"; }
   try{ nickInput.value = localStorage.getItem("platytag_name") || ""; }catch(e){}

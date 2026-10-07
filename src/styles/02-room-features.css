@@ -15,6 +15,21 @@
     border-radius: 3px; animation: bellyLines .18s linear infinite; }
   @keyframes bellyLines { from { transform: translateX(0); opacity: .9; } to { transform: translateX(6px); opacity: .5; } }
   .critter-sprite.belly + .foot-shadow { width: 44px; margin-left: -22px; }
+  /* ---------- Pug for All: the baby bunny (art is ~1/4 the size of a dog) ---------- */
+  .bunny-sprite { position: absolute; width: 38px; height: 24px; margin-left: -20px; margin-top: -23px; z-index: 5; pointer-events: none; }
+  .bunny-sprite::before { content: ""; position: absolute; left: 4px; right: 4px; bottom: -3px; height: 6px; z-index: -1;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,.22) 0, rgba(0,0,0,0) 70%); }
+  .bunny-sprite .bn-flip, .bunny-sprite .bn-hop { width: 100%; height: 100%; }
+  .bunny-sprite svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .bunny-sprite.hopping .bn-hop { animation: bunnyHop .3s ease-in-out infinite; }
+  @keyframes bunnyHop { 0%, 100% { transform: translateY(0) scaleY(1); } 40% { transform: translateY(-6px) scaleY(1.06); } 85% { transform: translateY(0) scaleY(.92); } }
+  .bunny-sprite.pop .bn-hop { animation: bunnyPop .35s ease-out; }
+  @keyframes bunnyPop { 0% { transform: scale(.3) translateY(-10px); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+  .bunny-sprite.swim { clip-path: inset(0 0 45% 0); }
+  .bunny-sprite.swim::before { display: none; }
+  .bunny-sprite.xray { z-index: 11 !important; filter: drop-shadow(0 0 3px #8FE8FF); }
+  .bunny-lump { transform: scale(.45); }
+  .bunny-blanket { transform: scale(.45); transform-origin: 50% 80%; }
   /* ---------- Living room light switch ---------- */
   .room-dark { position: absolute; inset: 0; background: rgba(5,4,12,0.95); z-index: 2; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
   .room-dark.on { opacity: 1; }

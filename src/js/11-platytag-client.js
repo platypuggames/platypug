@@ -23,6 +23,7 @@
       hidingSpot: null, pendingSpot: null, busy: false, checkedSpots: 0, checkedIds: new Set(), touchLatch: new Set()});
     confirmFab.classList.remove("show"); digBtn.classList.remove("show"); plainBtn.classList.remove("show");
     mp.remotes = new Map();                 // buildWorld wipes the old remote sprites
+    pfaReset();
     state.phase = "hiding";
     switchScreen(gameScreen);
     measureViewport();
@@ -48,6 +49,7 @@
     spriteEl.style.visibility = ""; footEl.style.visibility = "";
     plainBtn.classList.toggle("show", mp.myRole === "pug"); blanketLabel();
     if(mp.myRole === "plat") showToast("Go find those pugs!", 1600);
+    else if(isPfa()) showToast("The bunny is in the front yard. Go grab it!", 2200);
     sendMe(true);
     updateHud();
   }
@@ -157,6 +159,8 @@
       ld: state.onLadder ? 1 : 0, lsk: mp.lsk || null,
       dq: mp.dq || 0, df: mp.df || null, lq: mp.lq || 0, bs: state.belly ? 1 : 0
     };
+    const holding = isPfa() && mp.g.bn && mp.g.bn.h === Net.myId();   // Pug for All: I carry the bunny's position
+    o.bx = holding ? Math.round(pfa.x) : null; o.by = holding ? Math.round(pfa.y) : null;
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
     mp.lastSent = s;
@@ -351,11 +355,13 @@
     const dx = state.pos.x - mp.lastX;
     if(Math.abs(dx) > 0.6) mp.face = dx < 0 ? 0 : 1;
     mp.lastX = state.pos.x;
+    pfaFrame(dt);
     sendMe(false);
     renderRemotes(dt);
   }
 
   function mpHud(){
+    if(isPfa()){ pfaHud(); return; }
     const G = mp.g || {};
     const pugs = Object.values(G.roles || {}).filter(r => r === "pug").length;
     phasePill.innerHTML = mp.myRole === "pug" ? "🐶 Pug" : "Platypus";
@@ -375,6 +381,13 @@
     mp.inGame = false;
     state.phase = "over";
     plainBtn.classList.remove("show"); confirmFab.classList.remove("show");
+    document.getElementById("tagover-count-lbl").textContent = "PUGS TAGGED";
+    if(G.md === "pfa"){
+      pfaShowOver(G);
+      if(G.win && !G.win.none) playFinale(G, () => { if(!mp.inGame) switchScreen(tagoverScreen); });
+      else setTimeout(() => { if(!mp.inGame) switchScreen(tagoverScreen); }, 900);
+      return;
+    }
     const tg = G.tg || [];
     document.getElementById("tagover-time").textContent = fmt(G.el);
     document.getElementById("tagover-count").textContent = tg.length;
@@ -502,7 +515,8 @@
     actor.style.left = F.x + "px"; actor.style.top = F.y + "px";
     worldEl.appendChild(actor);
     const banner = document.getElementById("finale-banner");
-    banner.textContent = timeUp ? (F.id === me ? "⏰ Time's up! You survived!" : `⏰ Time's up! ${F.n} and the pugs win!`)
+    banner.textContent = G.md === "pfa" ? (F.id === me ? "Time's up! You kept the bunny longest!" : `Time's up! ${F.n} kept the bunny longest!`)
+      : timeUp ? (F.id === me ? "⏰ Time's up! You survived!" : `⏰ Time's up! ${F.n} and the pugs win!`)
       : F.by === me ? "🎉 You got the final tag!" : F.id === me ? `${F.bn} caught you last!` : `🎉 ${F.bn} got the final tag!`;
     banner.classList.add("show");
     const face = document.getElementById("finale-face");
@@ -530,5 +544,3 @@
     });
     mp.finaleTimers = T;
   }
-
-})();
