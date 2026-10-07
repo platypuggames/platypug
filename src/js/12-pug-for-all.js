@@ -11,7 +11,7 @@
   const PFA_TIME = 150;                 // seconds per round
   const BUNNY_GRAB_R = 28;              // how close a dog must get to the bunny (or its tiny blanket) to take it
   const BUNNY_STEAL_LOCK_MS = 500;      // after any grab, nobody can take it for this long
-  const BUNNY_FOLLOW_DIST = 42;         // how far behind its holder (along their path) the bunny trots
+  const BUNNY_FOLLOW_DIST = 30;         // how far behind its holder (along their path) the bunny trots
   const BUNNY_SPEED = 380;              // px/s it can move catching up (dogs walk 300)
   const BUNNY_HOLE_SLOW = 0.55;         // speed multiplier while crossing a dug hole
   const BUNNY_TELEPORT = 140;           // holder jumped further than this in one frame (tunnel/slide/spawn): bunny pops to them

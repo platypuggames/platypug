@@ -169,9 +169,9 @@
     border-radius: 3px; animation: bellyLines .18s linear infinite; }
   @keyframes bellyLines { from { transform: translateX(0); opacity: .9; } to { transform: translateX(6px); opacity: .5; } }
   .critter-sprite.belly + .foot-shadow { width: 44px; margin-left: -22px; }
-  /* ---------- Pug for All: the baby bunny (about half a dog's width) ---------- */
-  .bunny-sprite { position: absolute; width: 76px; height: 47px; margin-left: -40px; margin-top: -45px; z-index: 5; pointer-events: none; }
-  .bunny-sprite::before { content: ""; position: absolute; left: 14px; right: 10px; bottom: -4px; height: 9px; z-index: -1;
+  /* ---------- Pug for All: the baby bunny (about a quarter of a dog) ---------- */
+  .bunny-sprite { position: absolute; width: 38px; height: 24px; margin-left: -20px; margin-top: -23px; z-index: 5; pointer-events: none; }
+  .bunny-sprite::before { content: ""; position: absolute; left: 7px; right: 5px; bottom: -3px; height: 6px; z-index: -1;
     background: radial-gradient(ellipse at center, rgba(0,0,0,.22) 0, rgba(0,0,0,0) 70%); }
   .bunny-sprite .bn-flip, .bunny-sprite .bn-body, .bunny-sprite .bn-hop { position: relative; width: 100%; height: 100%; }
   .bunny-sprite .bn-hop { transform-origin: 52% 95%; }
@@ -180,9 +180,9 @@
   .bunny-sprite.hopping .bn-hop { animation: bunnyHop .42s ease-in-out infinite; }
   @keyframes bunnyHop {
     0%   { transform: translateY(0) rotate(0deg) scaleY(.94); }
-    22%  { transform: translateY(-11px) rotate(-11deg) scaleY(1.05); }
+    22%  { transform: translateY(-6px) rotate(-4deg) scaleY(1.05); }
     45%  { transform: translateY(0) rotate(0deg) scaleY(.92); }
-    70%  { transform: translateY(-8px) rotate(9deg) scaleY(1.04); }
+    70%  { transform: translateY(-4.5px) rotate(3deg) scaleY(1.04); }
     100% { transform: translateY(0) rotate(0deg) scaleY(.94); } }
   /* dragon: wings flap while it walks */
   .bunny-sprite .bn-wing-l, .bunny-sprite .bn-wing-r { transform-box: fill-box; }
@@ -200,14 +200,14 @@
   .bunny-sprite.swim .bn-hop { clip-path: inset(0 0 30% 0); animation: none; }
   .bunny-sprite.swim .bn-body { animation: bunnyBob 1.1s ease-in-out infinite; }
   .bunny-sprite.swim.hopping .bn-body { animation: bunnyPaddle .5s ease-in-out infinite; }
-  @keyframes bunnyBob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(3px) rotate(2deg); } }
+  @keyframes bunnyBob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(1.5px) rotate(2deg); } }
   @keyframes bunnyPaddle { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(2px) rotate(5deg); } }
   .bunny-sprite.swim::before { display: none; }
   .bunny-sprite.xray { z-index: 11 !important; filter: drop-shadow(0 0 3px #8FE8FF); }
   /* sized (not scaled): these elements already animate their transform */
   .bed-lump.bunny-lump { width: 31px; height: 21px; margin-left: -15px; margin-top: -12px; }
-  .blanket-spot.bunny-blanket { width: 49px; height: 32px; margin-left: 10px; margin-top: 14px; }
-  .blanket-spot.cold.bunny-blanket { width: 56px; height: 43px; margin-left: 12px; margin-top: 19px; }
+  .blanket-spot.bunny-blanket { width: 32px; height: 21px; margin-left: 19px; margin-top: 25px; }
+  .blanket-spot.cold.bunny-blanket { width: 36px; height: 28px; margin-left: 22px; margin-top: 34px; }
   /* ---------- Living room light switch ---------- */
   .room-dark { position: absolute; inset: 0; background: rgba(5,4,12,0.95); z-index: 2; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
   .room-dark.on { opacity: 1; }
@@ -4971,7 +4971,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   const PFA_TIME = 150;                 // seconds per round
   const BUNNY_GRAB_R = 28;              // how close a dog must get to the bunny (or its tiny blanket) to take it
   const BUNNY_STEAL_LOCK_MS = 500;      // after any grab, nobody can take it for this long
-  const BUNNY_FOLLOW_DIST = 42;         // how far behind its holder (along their path) the bunny trots
+  const BUNNY_FOLLOW_DIST = 30;         // how far behind its holder (along their path) the bunny trots
   const BUNNY_SPEED = 380;              // px/s it can move catching up (dogs walk 300)
   const BUNNY_HOLE_SLOW = 0.55;         // speed multiplier while crossing a dug hole
   const BUNNY_TELEPORT = 140;           // holder jumped further than this in one frame (tunnel/slide/spawn): bunny pops to them
