@@ -22,6 +22,7 @@ for(const b of BREEDS){
   if(s.match(/viewBox="([^"]+)"/)[1] !== viewBox) throw new Error(b + ": viewBox differs");
   s = inner(s).replace(eyeBlock(s, "l"), "__EYES__").replace(eyeBlock(s, "r"), "");
   s = s.replace(/id="rainbow"/g, 'id="bnr__UID__"').replace(/url\(#rainbow\)/g, "url(#bnr__UID__)");
+  s = s.replace('id="wing-l"', 'class="bn-wing-l"').replace('id="wing-r"', 'class="bn-wing-r"');   // dragon wings flap (CSS)
   s = s.replace(/\s+id="[a-z-]+"/g, "").replace(/\n\s*/g, "");
   bodies[b] = s;
 }

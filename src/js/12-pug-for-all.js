@@ -11,7 +11,7 @@
   const PFA_TIME = 150;                 // seconds per round
   const BUNNY_GRAB_R = 28;              // how close a dog must get to the bunny (or its tiny blanket) to take it
   const BUNNY_STEAL_LOCK_MS = 500;      // after any grab, nobody can take it for this long
-  const BUNNY_FOLLOW_DIST = 30;         // how far behind its holder (along their path) the bunny trots
+  const BUNNY_FOLLOW_DIST = 42;         // how far behind its holder (along their path) the bunny trots
   const BUNNY_SPEED = 380;              // px/s it can move catching up (dogs walk 300)
   const BUNNY_HOLE_SLOW = 0.55;         // speed multiplier while crossing a dug hole
   const BUNNY_TELEPORT = 140;           // holder jumped further than this in one frame (tunnel/slide/spawn): bunny pops to them
@@ -23,6 +23,13 @@
   const BUNNY_PICKS = BUNNY_BREEDS.filter(b => b !== "white");   // white is the wild bunny everyone starts with
   const BUNNY_NAMES = {brown: "Brown", patchy: "Patchy", yellow: "Yellow", pink: "Pink", dragon: "Dragon", unicorn: "Unicorn"};
 
+  // pool ring the bunny paddles around in while swimming
+  const BUNNY_FLOAT_SVG = `<svg viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="50" cy="20" rx="45" ry="14" fill="none" stroke="#241811" stroke-width="13"/>
+<ellipse cx="50" cy="20" rx="45" ry="14" fill="none" stroke="#FF8FB1" stroke-width="9"/>
+<ellipse cx="50" cy="20" rx="45" ry="14" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-dasharray="14 18"/>
+<path d="M 18 12 Q 50 3 82 12" fill="none" stroke="#fff" stroke-width="2.4" opacity="0.7" stroke-linecap="round"/>
+</svg>`;
   function isPfa(){ return !!(mp.g && mp.g.md === "pfa"); }
   function myBunnyPick(){
     let b = null;
@@ -177,7 +184,7 @@
     if(pfa.el && pfa.el.isConnected) return;
     pfa.el = document.createElement("div");
     pfa.el.className = "bunny-sprite";
-    pfa.el.innerHTML = `<div class="bn-flip"><div class="bn-hop"></div></div>`;
+    pfa.el.innerHTML = `<div class="bn-flip"><div class="bn-body"><div class="bn-hop"></div><div class="bn-float">${BUNNY_FLOAT_SVG}</div></div></div>`;
     worldEl.appendChild(pfa.el);
     pfa.lumpEl = document.createElement("div");
     pfa.lumpEl.className = "bed-lump bunny-lump";
