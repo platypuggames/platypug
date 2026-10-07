@@ -14,6 +14,9 @@
        onChange(fn)  -> void               fn() whenever anyone's state/presence changes
        leave()       -> Promise
      Everything below talks only to Net, never to claude.* directly. */
+  // Firebase room path prefix. Live build: "" (rooms/ABCD). The test build (test/) swaps this to "test_"
+  // so test-site players get their own rooms and never mix with live web or App Store players.
+  const ROOM_PREFIX = "";
   // counters for the ?debug overlay
   const NetStats = {events: 0, sends: 0};
   function createClaudeNet(){
@@ -115,8 +118,8 @@
         await this.leave();
         code = c;
         mine = {t: Date.now()};
-        meRef = db.ref(`rooms/${code}/players/${myId}`);
-        playersRef = db.ref(`rooms/${code}/players`);
+        meRef = db.ref(`rooms/${ROOM_PREFIX}${code}/players/${myId}`);
+        playersRef = db.ref(`rooms/${ROOM_PREFIX}${code}/players`);
         await meRef.onDisconnect().remove();
         await meRef.set(mine);
         // one event per player that changed (not the whole room every time)

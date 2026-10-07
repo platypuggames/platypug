@@ -52,6 +52,8 @@ capacitor.config.json     app id/name, webDir www
 package.json              Capacitor deps; scripts: build, build:web, ios:sync
 scripts/copy-web.js       index.html + vendor/ → www/ (what the app bundles)
 scripts/test/             DEV ONLY: fakefb.js (fake Firebase) + harness.js (test build)
+test/index.html           GENERATED test site from the dev branch (scripts/publish-test.sh); never edit by hand
+scripts/build-test.js, scripts/publish-test.sh  test-site build + publish
 codemagic.yaml            iOS build → sign → upload to TestFlight (workflow "ios-testflight")
 www/, node_modules/       generated, gitignored
 ```
@@ -70,6 +72,15 @@ git push                          # = live web deploy
 - **All `src/js` files are one script** (one IIFE scope) after the build. Load order is the manifest order. Top-level `function` declarations are hoisted across files; `const`/`let` are not, so don't touch a const from another file at load time, only at runtime.
 - **App builds** are manual: Codemagic → Apps → platypug → Start new build → `main` → "iOS → TestFlight". Uses about 15–20 of the 500 free macOS minutes per month. Pushing does NOT trigger builds. Build number = Codemagic `$BUILD_NUMBER + 1`. Web changes reach the app only after a new build.
 - Local app prep (rarely needed): `npm run build:web && npx cap sync ios`.
+
+## 3b. Test site (unconfirmed changes)
+
+- **Test URL:** https://platypuggames.github.io/platypug/test/ (red "TEST · commit · time" badge, own Platytag rooms via `ROOM_PREFIX "test_"`, noindex).
+- **Branches:** `dev` = unconfirmed work (all new feature work goes here). `main` = live web + what app builds use.
+- **Publish a test build:** on `dev`, edit `src/`, commit, then `scripts/publish-test.sh`. It builds `test/index.html` from dev and commits only that file to `main`. The live `index.html` is untouched.
+- **Promote to live** when the owner confirms: `git checkout main && git merge dev && node build.js` → check → commit → push. Then add the change to §9 if the app needs it.
+- The iOS app never includes `test/` (scripts/copy-web.js copies only index.html + vendor/).
+- Test and live share one origin, so localStorage (name, dog, best time) is shared. Give any new saved data a key that tolerates both builds.
 
 ## 4. Token-saving rules
 
