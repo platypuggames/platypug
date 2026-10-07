@@ -49,6 +49,8 @@
   @keyframes bunnyBob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(1.5px) rotate(2deg); } }
   @keyframes bunnyPaddle { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(2px) rotate(5deg); } }
   .bunny-sprite.swim::before { display: none; }
+  .bunny-sprite.diving { animation: diveArc .62s cubic-bezier(.3,.6,.5,1) forwards; z-index: 8 !important; }   /* same jump as the dogs (03-pool) */
+  .bunny-sprite.diving::before { opacity: 0; }
   .bunny-sprite.xray { z-index: 11 !important; filter: drop-shadow(0 0 3px #8FE8FF); }
   /* sized (not scaled): these elements already animate their transform */
   .bed-lump.bunny-lump { width: 31px; height: 21px; margin-left: -15px; margin-top: -12px; }

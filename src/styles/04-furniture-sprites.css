@@ -64,9 +64,6 @@
   .critter-sprite svg, .title-badge svg { overflow: visible; }
   svg.nolash .lash { display: none; }
   .dog-picker { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-  .dog-picker .sex-row { display: flex; gap: 8px; justify-content: center; }
-  .dog-picker .sex-row button { font-family: var(--font-display); font-weight: 600; font-size: 15px; border: 2px solid transparent; border-radius: 999px; padding: 6px 18px; background: var(--bg); color: var(--ink); cursor: pointer; }
-  .dog-picker .sex-row button.sel { border-color: var(--accent); background: rgba(255,126,156,0.22); }
   .dog-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .dog-opt { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 2px solid transparent; border-radius: 12px; background: var(--bg); padding: 4px 2px 3px; font: 700 10.5px/1.1 var(--font); color: var(--ink); cursor: pointer; }
   .dog-opt.sel { border-color: var(--accent); background: rgba(255,126,156,0.22); }

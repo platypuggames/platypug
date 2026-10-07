@@ -147,9 +147,10 @@
   /* ---------------- Laundry basket decoy ----------------
      A pug touching the laundry basket makes an empty blanket pop out and land just below-left of it.
      It looks exactly like a pug's blanket. When a platypus touches it, it flattens and disappears.
+     Pug for All (no platypus): any dog that steps onto it squishes it.
      One decoy at a time. Classic: kept in state.decoy. Platytag: the host owns it (G.dc). */
   const DECOY_TOUCH_D = 8, DECOY_FLAT_R = 36;
-  const decoy = {el: null, key: null, latched: false};
+  const decoy = {el: null, key: null, latched: false, stepKey: null, off: false};
   function basketItem(){ return FURN_LIST.find(f => f.id === "basket"); }
   function decoySpot(){
     const b = basketItem();
@@ -206,9 +207,14 @@
       }
       if(near) decoy.latched = true; else if(distToItem(b, px, py) > REARM_D) decoy.latched = false;
     }
-    if(iAmPlat && want != null){
+    const anyDog = inMp && isPfa() && !mp.hide;
+    if((iAmPlat || anyDog) && want != null){
       const sp = decoySpot();
-      if(sp && Math.hypot(px - sp.x, py - (sp.y - 14)) < DECOY_FLAT_R){
+      const on = !!sp && Math.hypot(px - sp.x, py - (sp.y - 14)) < DECOY_FLAT_R;
+      // a dog has to step ONTO it: standing there when it lands (the dog that just made it) doesn't count
+      if(decoy.stepKey !== want){ decoy.stepKey = want; decoy.off = false; }
+      if(!on) decoy.off = true;
+      if(on && (iAmPlat || decoy.off)){
         if(inMp){ mp.df = want; sendMe(true); flattenDecoy(); }
         else { state.decoy = null; flattenDecoy(); }
         showToast("Just laundry!", 1200);

@@ -77,8 +77,9 @@
 
   /* ---------------- Hide in plain sight: blanket ---------------- */
   // Tunnel blanket: the hider's own dog (whatever breed they are) peeks out, shivering a little
-  function coldBlanketSVG(look){
-    const dog = pugSVG(look || {b: "pugFawn", g: false}).replace('width="100%" height="100%"', 'x="21" y="-6" width="48" height="55.5"');
+  // who = markup (an <svg> placed in this 90x70 art) of whoever is under the blanket, if it isn't a pug
+  function coldBlanketSVG(look, who){
+    const dog = who || pugSVG(look || {b: "pugFawn", g: false}).replace('width="100%" height="100%"', 'x="21" y="-6" width="48" height="55.5"');
     return `<svg viewBox="0 0 90 70" xmlns="http://www.w3.org/2000/svg" overflow="visible">
 <ellipse cx="45" cy="66" rx="38" ry="4" fill="rgba(0,0,0,0.3)"/>
 <g class="cold-dog">${dog}</g>
@@ -96,13 +97,13 @@
     const behind = FURN_LIST.some(it => it.id !== "blanket" && x >= it.x && x <= it.x + it.w && y - 10 >= it.y && y - 10 <= it.y + it.h);
     return behind ? "2" : "7";
   }
-  function makeBlanketEl(x, y, look){
+  function makeBlanketEl(x, y, look, who){
     if(state.blanketTunnel){
       const el = document.createElement("div");
       el.className = "furniture illustrated blanket-spot cold";
       el.dataset.id = "blanket";
       el.style.left = (x - 40) + "px"; el.style.top = (y - 58) + "px";
-      el.innerHTML = coldBlanketSVG(look || (state.looks || {}).pug);
+      el.innerHTML = coldBlanketSVG(look || (state.looks || {}).pug, who);
       return el;
     }
     const rk = roomAt(x, y);
@@ -236,7 +237,7 @@
   function startHidingPhase(){
     state.mp = false;
     state.secretOpen = false;
-    state.looks = {pug: {b: myDog.b, g: myDog.g}, plat: {b: "purple", g: false}};   // the dog you picked vs the classic platypus
+    state.looks = {pug: lookFromCode(roundLookCode(dogCode()), "pug"), plat: {b: "purple", g: false}};   // the dog you picked vs the classic platypus
     document.getElementById("win-critters").innerHTML = pugSVG(state.looks.pug) + platypusSVG(state.looks.plat);
     state.phase = "hiding";
     state.underground = false;

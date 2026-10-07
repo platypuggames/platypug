@@ -161,6 +161,7 @@
     };
     const holding = isPfa() && mp.g.bn && mp.g.bn.h === Net.myId();   // Pug for All: I carry the bunny's position
     o.bx = holding ? Math.round(pfa.x) : null; o.by = holding ? Math.round(pfa.y) : null;
+    o.bd = holding && pfa.mode ? pfa.mode : null; // the bunny is on the board/slide (1) or in the air off the diving board (2)
     o.gq = mp.gq || 0; o.gh = mp.gh || null;      // Pug for All: "I'm touching the bunny" requests (counter + whose bunny)
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
@@ -383,6 +384,7 @@
     state.phase = "over";
     plainBtn.classList.remove("show"); confirmFab.classList.remove("show");
     document.getElementById("tagover-count-lbl").textContent = "PUGS TAGGED";
+    document.getElementById("tagover-podium").classList.add("hidden");
     if(G.md === "pfa"){
       pfaShowOver(G);
       if(G.win && !G.win.none) playFinale(G, () => { if(!mp.inGame) switchScreen(tagoverScreen); });

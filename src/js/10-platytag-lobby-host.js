@@ -156,7 +156,7 @@
       // everyone keeps the dog they picked (used if they're a dog now, or once they're tagged);
       // the starting platypus is always the classic purple one
       const d = String((peerById[id] || {}).dog || "");
-      lk[id] = id === platId ? "purple|-" : (DOG_BREEDS.includes(d.split("|")[0]) ? d : dogCode(randLook("pug")));
+      lk[id] = id === platId ? "purple|-" : roundLookCode(d);
     });
     mp.hostG = {md: "tag", ph: "head", rid: (mp.hostG ? mp.hostG.rid : 0) + 1, roles, lk, tg: [], hl: HEAD_START, el: 0,
       ld: platId, ldn: String((peerById[platId] || {}).n || "Platypus").slice(0, 14),
@@ -232,7 +232,7 @@
         if(!T.h && p.sp && p.x != null && !p.ug && inPool(p.x, p.y) && Math.hypot(p.x - T.x, p.y - T.y) < 70){ T.h = id; changed = true; }
       }
     }
-    // laundry decoy: a pug's touch makes one (if none out), a platypus's touch flattens it
+    // laundry decoy: a pug's touch makes one (if none out), a platypus's touch flattens it (Pug for All: any dog's)
     mp.hostDq = mp.hostDq || {}; mp.hostLq = mp.hostLq || {};
     for(const [id, p] of byId){
       if(!p) continue;
@@ -242,7 +242,7 @@
         mp.hostDq[id] = q;
         if(!G.dc && G.roles[id] === "pug"){ G.dcn = (G.dcn || 0) + 1; G.dc = {k: G.rid * 1000 + G.dcn}; changed = true; }
       }
-      if(G.dc && p.df === G.dc.k && G.roles[id] === "plat"){ G.dc = null; changed = true; }
+      if(G.dc && p.df === G.dc.k && (G.roles[id] === "plat" || (G.md === "pfa" && G.roles[id]))){ G.dc = null; changed = true; }
       const lq = p.lq || 0;                             // living room light switch
       if(mp.hostLq[id] === undefined) mp.hostLq[id] = lq;
       else if(lq !== mp.hostLq[id]){ mp.hostLq[id] = lq; if(G.roles[id]){ G.lt = G.lt ? 0 : 1; changed = true; } }

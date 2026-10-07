@@ -24,6 +24,8 @@
   const BUNNY_HOP_MIN = 40, BUNNY_HOP_MAX = 120;         // wander distance per hop run
   const BUNNY_PAUSE_MIN = 500, BUNNY_PAUSE_MAX = 1400;  // ms sitting still between runs
   const BUNNY_YARD_PAD = 40;            // keep the wild bunny this far inside the front yard edges
+  const PODIUM_PLACES = 3;              // how many dogs get a spot on the end-of-round podium
+  const BUNNY_PEEK_BOX = 'x="3" y="-2" width="86.5" height="53.8"';   // the bunny inside the tunnel blanket art (90x70): head centred, peeking over the top edge
   const BUNNY_STORE_KEY = "pfa_bunny";  // the breed you want the bunny to become while you hold it
   const BUNNY_PICKS = BUNNY_BREEDS.filter(b => b !== "white");   // white is the wild bunny everyone starts with
   const BUNNY_NAMES = {brown: "Brown", patchy: "Patchy", yellow: "Yellow", pink: "Pink", dragon: "Dragon", unicorn: "Unicorn"};
@@ -96,7 +98,7 @@
     ids.forEach(id => {
       roles[id] = "pug";
       const d = String((peerById[id] || {}).dog || "");
-      lk[id] = DOG_BREEDS.includes(d.split("|")[0]) ? d : dogCode(randLook("pug"));
+      lk[id] = roundLookCode(d);
       const want = (peerById[id] || {}).bb;
       bb[id] = BUNNY_PICKS.includes(want) ? want : BUNNY_PICKS[Math.floor(Math.random() * BUNNY_PICKS.length)];
       ey[id] = BUNNY_EYES[Math.floor(Math.random() * BUNNY_EYES.length)];
@@ -232,8 +234,8 @@
     const T = pfa.trail, hx = state.pos.x, hy = state.pos.y;
     const last = T[T.length - 1];
     const jump = last ? Math.hypot(hx - last.x, hy - last.y) : Infinity;
-    if(!last || jump > BUNNY_TELEPORT){ pfa.trail = [{x: hx, y: hy, s: 0}]; pfa.bs = 0; pfa.x = hx; pfa.y = hy; return; }
-    if(jump > 2) T.push({x: hx, y: hy, s: last.s + jump});
+    if(!last || jump > BUNNY_TELEPORT){ pfa.trail = [{x: hx, y: hy, s: 0}]; pfa.bs = 0; pfa.x = hx; pfa.y = hy; pfa.mode = 0; pfa.settled = false; return; }
+    if(jump > 2) T.push({x: hx, y: hy, s: last.s + jump, m: state.diving ? 2 : state.sliding ? 1 : 0});   // m: here I was on the board/slide (1) or in the air off the board (2)
     const headS = T[T.length - 1].s;
     const want = Math.max(T[0].s, headS - BUNNY_FOLLOW_DIST);
     const sp = BUNNY_SPEED * (nearDig(pfa.x, pfa.y) ? BUNNY_HOLE_SLOW : 1);
@@ -242,6 +244,11 @@
     while(i < T.length - 1 && T[i].s < pfa.bs) i++;
     const a = T[i - 1], b = T[i] || a, span = (b.s - a.s) || 1, u = Math.max(0, Math.min(1, (pfa.bs - a.s) / span));
     pfa.x = a.x + (b.x - a.x) * u; pfa.y = a.y + (b.y - a.y) * u;
+    // she does what I did at each spot (walks the board, jumps where I jumped) until she has caught up with me in the water
+    const m = b.m || 0;
+    if(!m) pfa.settled = false;
+    else if(!state.sliding && pfa.bs >= want - 0.5) pfa.settled = true;
+    pfa.mode = pfa.settled ? 0 : m;
     if(i > 2) T.splice(0, i - 2);                         // forget path the bunny has already covered
   }
   function pfaFrame(dt){
@@ -254,19 +261,19 @@
       pfa.el.classList.remove("pop"); void pfa.el.offsetWidth; pfa.el.classList.add("pop");
     }
     if((G.ev || 0) !== pfa.ev){ pfa.ev = G.ev || 0; pfaAnnounce(G); }
-    let x, y, ug = false, hid = false, blanket = false, moving = false;
+    let x, y, ug = false, hid = false, blanket = false, moving = false, mode = 0;   // mode: 1 on the board/slide, 2 in the air off the board
     if(!B.h){
       const w = wildPos(B.w, now); x = w.x; y = w.y; moving = w.moving; if(moving && w.dir) pfa.face = w.dir > 0 ? -1 : 1;
     } else if(B.h === me){
       pfaFollow(dt);
-      x = pfa.x; y = pfa.y; ug = !!state.underground;
+      x = pfa.x; y = pfa.y; ug = !!state.underground; mode = pfa.mode || 0;
       hid = !!(mp.hide && mp.hide.type === "furn"); blanket = !!(mp.hide && mp.hide.type === "blanket");
     } else {
       const pp = Net.peers().find(q => q.id === B.h), p = pp && pp.p;
       if(!p || p.x == null) return pfaHide();
       pfa.R = pfa.R || {};
       remoteInterp(pfa.R, {x: p.bx != null ? p.bx : p.x, y: p.by != null ? p.by : p.y, t: p.t});
-      x = pfa.R.x; y = pfa.R.y; ug = !!p.ug; hid = !!p.hid; blanket = !!p.bl;
+      x = pfa.R.x; y = pfa.R.y; ug = !!p.ug; hid = !!p.hid; blanket = !!p.bl; mode = p.bd || 0;
     }
     if(pfa.rx != null){ const dx = x - pfa.rx; if(B.h && Math.abs(dx) > 0.4) pfa.face = dx > 0 ? -1 : 1; if(B.h) moving = Math.hypot(dx, y - pfa.ry) > 0.5; }
     pfa.rx = x; pfa.ry = y;
@@ -290,17 +297,19 @@
     pfa.el.style.visibility = showSprite ? "" : "hidden";
     pfa.el.classList.toggle("hopping", moving);
     pfa.el.classList.toggle("xray", ug);
-    pfa.el.classList.toggle("swim", !ug && inPool(x, y));
+    const dive = mode === 2;
+    if(dive !== !!pfa.dvShown){ if(pfa.dvShown && showSprite) makeSplash(x, y); pfa.dvShown = dive; pfa.el.classList.toggle("diving", dive); }
+    pfa.el.classList.toggle("swim", !ug && !mode && inPool(x, y));
     pfa.el.querySelector(".bn-flip").style.transform = `scaleX(${pfa.face})`;
     pfa.lumpEl.classList.toggle("show", inBed && !invisible && !blanket);
     if(inBed){ pfa.lumpEl.style.left = x + "px"; pfa.lumpEl.style.top = y + "px"; }
     // its own tiny blanket while its holder is under a blanket
-    const bk = blanket && !invisible ? Math.round(x) + "," + Math.round(y) + "," + (ug ? 1 : 0) : null;
+    const bk = blanket && !invisible ? Math.round(x) + "," + Math.round(y) + "," + (ug ? 1 : 0) + "," + key : null;
     if(bk !== pfa.blKey){
       if(pfa.blEl){ pfa.blEl.remove(); pfa.blEl = null; }
       if(bk){
         const save = state.blanketTunnel; state.blanketTunnel = ug;
-        const b = makeBlanketEl(x, y);
+        const b = makeBlanketEl(x, y, null, bunnySVG(breed, eye).replace("<svg ", "<svg " + BUNNY_PEEK_BOX + " "));   // in the tunnel she peeks out as a bunny
         state.blanketTunnel = save;
         b.classList.add("bunny-blanket"); b.removeAttribute("data-id");
         b.style.zIndex = blanketZ(x, y, ug); b.style.pointerEvents = "none";
@@ -365,9 +374,23 @@
     document.getElementById("tagover-time").textContent = fmt(G.el);
     document.getElementById("tagover-count").textContent = G.ev || 0;
     document.getElementById("tagover-count-lbl").textContent = "BUNNY GRABS";
+    // the top 3 stand on a podium (2nd, 1st, 3rd left to right); everyone after that is listed below it
+    const lb = G.lb || [], onPodium = G.win ? Math.min(PODIUM_PLACES, lb.length) : 0;
+    const pod = document.getElementById("tagover-podium");
+    pod.innerHTML = "";
+    pod.classList.toggle("hidden", !onPodium);
+    [1, 0, 2].filter(i => i < onPodium).forEach(i => {
+      const r = lb[i], col = document.createElement("div");
+      col.className = "pod p" + (i + 1) + (r.id === Net.myId() ? " me" : "");
+      col.innerHTML = `<div class="pod-name"></div><div class="pod-dog">${pugSVG(lookFromCode((G.lk || {})[r.id], "pug"))}</div><div class="pod-block"><span class="pod-rank">${i + 1}</span><span class="pod-time"></span></div>`;
+      col.querySelector(".pod-name").textContent = r.n;
+      col.querySelector(".pod-time").textContent = fmt(Math.floor(r.s));
+      pod.appendChild(col);
+    });
     const list = document.getElementById("tagover-list");
     list.innerHTML = "";
-    (G.lb || []).forEach((r, i) => {
+    lb.forEach((r, i) => {
+      if(i < onPodium) return;
       const li = document.createElement("li");
       const a = document.createElement("span"); a.textContent = `${i + 1}. ${r.n}${r.id === Net.myId() ? " (you)" : ""}`;
       const b = document.createElement("span"); b.className = "tag"; b.textContent = fmt(Math.floor(r.s));
