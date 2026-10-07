@@ -161,6 +161,7 @@
     };
     const holding = isPfa() && mp.g.bn && mp.g.bn.h === Net.myId();   // Pug for All: I carry the bunny's position
     o.bx = holding ? Math.round(pfa.x) : null; o.by = holding ? Math.round(pfa.y) : null;
+    o.gq = mp.gq || 0; o.gh = mp.gh || null;      // Pug for All: "I'm touching the bunny" requests (counter + whose bunny)
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
     mp.lastSent = s;
