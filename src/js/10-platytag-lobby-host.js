@@ -180,7 +180,7 @@
   function pushHost(){
     mp.hostG.gv = (mp.hostG.gv || 0) + 1;       // version: lets clients skip work when nothing changed
     mp.g = mp.hostG;
-    Net.setMe({g: JSON.parse(JSON.stringify(mp.hostG))});
+    Net.setMe({g: JSON.parse(JSON.stringify(mp.hostG)), gt: Math.round(Net.serverNow())});
     onNetChange();
   }
   // the platypus has to touch the blanket itself (run behind the object it's tucked behind)

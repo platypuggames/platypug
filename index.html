@@ -4225,7 +4225,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   function pushHost(){
     mp.hostG.gv = (mp.hostG.gv || 0) + 1;       // version: lets clients skip work when nothing changed
     mp.g = mp.hostG;
-    Net.setMe({g: JSON.parse(JSON.stringify(mp.hostG))});
+    Net.setMe({g: JSON.parse(JSON.stringify(mp.hostG)), gt: Math.round(Net.serverNow())});
     onNetChange();
   }
   // the platypus has to touch the blanket itself (run behind the object it's tucked behind)
@@ -4970,9 +4970,11 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
      While held, the bunny's position is simulated on the holder's phone and sent as bx/by.
      ====================================================================== */
   const PFA_TIME = 150;                 // seconds per round
-  const BUNNY_GRAB_R = 40;              // dog-to-bunny distance that counts as touching (a dog's body visibly overlapping the bunny)
-  const BUNNY_GRAB_SLACK = 90;          // a grab you saw on your screen is accepted if the host has you this close (network lag)
-  const BUNNY_GRAB_RETRY_MS = 250;      // how often a touching dog re-asks the host for the grab
+  const BUNNY_GRAB_R = 40;              // distance that counts as touching the bunny or the dog carrying it (bodies visibly overlapping)
+  const BUNNY_GRAB_SLACK = 70;          // a grab you saw on your screen is accepted if you were this close to where the bunny was recently
+  const BUNNY_GRAB_HIST_MS = 900;       // ...within this window (covers your lag + the holder's lag + on-screen smoothing)
+  const BUNNY_GRAB_RETRY_MS = 200;      // how often a touching dog re-asks the host for the grab
+  const BUNNY_TAKEBACK_MS = 1500;       // the dog that just lost the bunny can't grab it straight back: it must stop touching first, or wait this long
   const BUNNY_STEAL_LOCK_MS = 500;      // after any grab, nobody can take it for this long
   const BUNNY_FOLLOW_DIST = 30;         // how far behind its holder (along their path) the bunny trots
   const BUNNY_SPEED = 380;              // px/s it can move catching up (dogs walk 300)
@@ -5068,16 +5070,25 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     mp.hostT0 = Date.now();
     mp.hostDq = {}; mp.hostLq = {};
     mp.pfaGq = {}; roster().forEach(pp => { mp.pfaGq[pp.id] = pp.p.gq || 0; });   // only grab requests made from now on count
+    mp.pfaHist = []; mp.pfaRob = null;
     mp.overShown = false;
     pushHost();
   }
   // where the bunny is as far as the host can tell (for grabs)
+  // hx/hy = the dog carrying it (touching that dog counts too), unless it's under a blanket: then only the bunny's own blanket counts
   function pfaHostBunny(G, byId, now){
     const B = G.bn;
-    if(!B.h){ const w = wildPos(B.w, now); return {x: w.x, y: w.y, ug: 0, hid: null}; }
+    if(!B.h){ const w = wildPos(B.w, now); return {x: w.x, y: w.y, ug: 0, hid: null, hx: null, hy: null}; }
     const hp = byId.get(B.h) || {};
-    if(hp.hid) return {x: hp.x, y: hp.y, ug: 0, hid: hp.hid};
-    return {x: hp.bx != null ? hp.bx : hp.x, y: hp.by != null ? hp.by : hp.y, ug: hp.ug ? 1 : 0, hid: null};
+    if(hp.hid) return {x: hp.x, y: hp.y, ug: 0, hid: hp.hid, hx: null, hy: null};
+    const carry = !hp.bl && hp.x != null;
+    return {x: hp.bx != null ? hp.bx : hp.x, y: hp.by != null ? hp.by : hp.y, ug: hp.ug ? 1 : 0, hid: null, hx: carry ? hp.x : null, hy: carry ? hp.y : null};
+  }
+  // how far a dog is from the bunny or its carrier, whichever is closer (e = a pfaHostBunny result)
+  function pfaTouchDist(p, e){
+    if(!!p.ug !== !!e.ug) return Infinity;
+    const d = Math.hypot(p.x - e.x, p.y - e.y);
+    return e.hx == null ? d : Math.min(d, Math.hypot(p.x - e.hx, p.y - e.hy));
   }
   function pfaCredit(G, now){
     const B = G.bn;
@@ -5100,34 +5111,44 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       changed = true;
     }
     if(!B.h && now >= B.w.t0 + B.w.d + B.w.p){ B.w = nextWildSeg({x: B.w.x1, y: B.w.y1}, now); changed = true; }
-    if(now - B.st >= BUNNY_STEAL_LOCK_MS && G.el < PFA_TIME){
-      const bp = pfaHostBunny(G, byId, now);
-      let best = null, bestD = Infinity;
-      mp.pfaGq = mp.pfaGq || {};
-      for(const id of Object.keys(G.roles)){
-        if(id === B.h) continue;
-        const p = byId.get(id);
-        if(!p) continue;
-        const q = p.gq || 0, asked = mp.pfaGq[id] !== undefined && q !== mp.pfaGq[id];
-        mp.pfaGq[id] = q;
-        if(!p.sp || p.x == null || p.hid || p.bl) continue;          // a hidden dog can't grab
-        // they touched the bunny on their own screen: trust it if it was this holder's bunny and they're close here too
-        if(asked && (p.gh || null) === (B.h || null) && !bp.hid && !!p.ug === !!bp.ug && Math.hypot(p.x - bp.x, p.y - bp.y) < BUNNY_GRAB_SLACK){
-          if(bestD > -1){ best = id; bestD = -1; }
-          continue;
-        }
-        let d;
-        if(bp.hid) d = (typeof p.chk === "string" && p.chk.split(",").includes(bp.hid)) ? 0 : Infinity;   // search the holder's hiding spot
-        else d = (!!p.ug === !!bp.ug) ? Math.hypot(p.x - bp.x, p.y - bp.y) : Infinity;
-        if(d < BUNNY_GRAB_R && d < bestD){ best = id; bestD = d; }
+    // where the bunny has been lately (lag compensation: other phones see it a little in the past)
+    const bpNow = pfaHostBunny(G, byId, now);
+    mp.pfaHist = (mp.pfaHist || []).filter(e => now - e.t < BUNNY_GRAB_HIST_MS && e.h === (B.h || null));
+    mp.pfaHist.push(Object.assign({t: now, h: B.h || null}, bpNow));
+    // "I touched it on my screen" requests: read every tick so stale ones never pile up
+    mp.pfaGq = mp.pfaGq || {};
+    const asked = new Set();
+    for(const id of Object.keys(G.roles)){
+      const p = byId.get(id); if(!p) continue;
+      const q = p.gq || 0;
+      if(mp.pfaGq[id] !== undefined && q !== mp.pfaGq[id] && id !== B.h && (p.gh || null) === (B.h || null)) asked.add(id);
+      mp.pfaGq[id] = q;
+    }
+    // who is touching it right now (checked every tick so the robbed dog's "let go first" rule is tracked through the lock too)
+    const bp = bpNow, locked = now - B.st < BUNNY_STEAL_LOCK_MS || G.el >= PFA_TIME;
+    let best = null, bestD = Infinity;
+    for(const id of Object.keys(G.roles)){
+      if(id === B.h) continue;
+      const p = byId.get(id);
+      if(!p || !p.sp || p.x == null || p.hid || p.bl) continue;            // a hidden dog can't grab
+      let d;
+      if(bp.hid) d = (typeof p.chk === "string" && p.chk.split(",").includes(bp.hid)) ? 0 : Infinity;   // search the holder's hiding spot
+      else d = pfaTouchDist(p, bp);
+      if(mp.pfaRob && mp.pfaRob.id === id){
+        if(d >= BUNNY_GRAB_R || now - mp.pfaRob.t >= BUNNY_TAKEBACK_MS) mp.pfaRob = null;   // let go (or waited): free to grab again
+        else continue;
       }
-      if(best){
-        const from = B.h;
-        pfaCredit(G, now);
-        Object.assign(B, {h: best, since: Math.round(now), st: Math.round(now)});
-        G.ev++; G.evn = {to: best, tn: nameOf(best), from: from || null, fn: from ? nameOf(from) : null};
-        changed = true;
-      }
+      // touched it on their own screen: accept if they were close to where it was a moment ago
+      if(d >= BUNNY_GRAB_R && asked.has(id) && !bp.hid && mp.pfaHist.some(e => !e.hid && pfaTouchDist(p, e) < BUNNY_GRAB_SLACK)) d = BUNNY_GRAB_R - 1;
+      if(d < BUNNY_GRAB_R && d < bestD){ best = id; bestD = d; }
+    }
+    if(best && !locked){
+      const from = B.h;
+      pfaCredit(G, now);
+      Object.assign(B, {h: best, since: Math.round(now), st: Math.round(now)});
+      mp.pfaRob = from ? {id: from, t: now} : null;
+      G.ev++; G.evn = {to: best, tn: nameOf(best), from: from || null, fn: from ? nameOf(from) : null};
+      changed = true;
     }
     if(G.el >= PFA_TIME){
       G.el = PFA_TIME;
@@ -5150,7 +5171,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   /* ---------- Everyone: the bunny on screen ---------- */
   const pfa = {el: null, blEl: null, lumpEl: null, key: null, h: undefined, trail: [], bs: 0, x: 0, y: 0, rx: null, ry: null, R: null, ev: 0, face: 1};
   function pfaReset(){
-    Object.assign(pfa, {el: null, blEl: null, lumpEl: null, key: null, h: undefined, trail: [], bs: 0, R: null, ev: (mp.g && mp.g.ev) || 0});
+    Object.assign(pfa, {el: null, blEl: null, lumpEl: null, key: null, h: undefined, trail: [], bs: 0, R: null, ev: (mp.g && mp.g.ev) || 0, skew: null, hostT: null});
     mp.pfaLatch = new Set();
   }
   function pfaEnsureEls(){
@@ -5185,7 +5206,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   function pfaFrame(dt){
     const G = mp.g;
     if(!G || G.md !== "pfa" || !G.bn) return;
-    const me = Net.myId(), now = Net.serverNow(), B = G.bn;
+    const me = Net.myId(), now = pfaHostNow(), B = G.bn;
     pfaEnsureEls();
     if(B.h !== pfa.h){                                      // new holder: the bunny pops onto them
       pfa.h = B.h; pfa.trail = []; pfa.R = null;
@@ -5208,10 +5229,12 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     }
     if(pfa.rx != null){ const dx = x - pfa.rx; if(B.h && Math.abs(dx) > 0.4) pfa.face = dx > 0 ? -1 : 1; if(B.h) moving = Math.hypot(dx, y - pfa.ry) > 0.5; }
     pfa.rx = x; pfa.ry = y;
-    // I'm touching the bunny on my screen: ask the host for it (it checks the 0.5s lock and that I'm really close)
-    if(B.h !== me && !hid && !mp.hide && !!state.underground === ug && now - B.st >= BUNNY_STEAL_LOCK_MS &&
-       Math.hypot(state.pos.x - x, state.pos.y - y) < BUNNY_GRAB_R && performance.now() - (mp.gqAt || 0) > BUNNY_GRAB_RETRY_MS){
-      mp.gq = (mp.gq || 0) + 1; mp.gh = B.h || null; mp.gqAt = performance.now();
+    // I'm touching the bunny (or the dog carrying it) on my screen: ask the host for it (it checks the lock and that I'm really close)
+    if(B.h !== me && !hid && !mp.hide && !!state.underground === ug && performance.now() - (mp.gqAt || 0) > BUNNY_GRAB_RETRY_MS){
+      const hr = B.h && !blanket ? mp.remotes.get(B.h) : null;             // the carrier as drawn on my screen
+      const touch = Math.hypot(state.pos.x - x, state.pos.y - y) < BUNNY_GRAB_R ||
+                    (hr && hr.x != null && Math.hypot(state.pos.x - hr.x, state.pos.y - hr.y) < BUNNY_GRAB_R);
+      if(touch){ mp.gq = (mp.gq || 0) + 1; mp.gh = B.h || null; mp.gqAt = performance.now(); }
     }
     // what this viewer can see (same rules as other players)
     const inBed = !ug && pointInBed(x, y);
@@ -5245,6 +5268,19 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
       pfa.blKey = bk;
     }
   }
+  // The host's clock as seen from this phone. Phone clocks can disagree by seconds even after Firebase's correction,
+  // and the wild bunny's hops are timed on the host's clock, so estimate the gap from the host's timestamped updates.
+  function pfaHostNow(){
+    if(mp.isHost) return Net.serverNow();
+    const hp = Net.peers().find(q => !q.isMe && q.p && q.p.h);
+    const t = hp && Math.max(hp.p.t || 0, hp.p.gt || 0);
+    if(t && t !== pfa.hostT){
+      const now = Net.serverNow(), lag = now - t;
+      pfa.skew = pfa.skew == null ? lag : Math.min(lag, pfa.skew + (now - (pfa.skewAt || now)) * 0.01);   // fastest delivery ≈ clock gap
+      pfa.skewAt = now; pfa.hostT = t;
+    }
+    return Net.serverNow() - (pfa.skew || 0);
+  }
   function pfaHide(){ if(pfa.el) pfa.el.style.visibility = "hidden"; if(pfa.lumpEl) pfa.lumpEl.classList.remove("show"); }
   function pfaAnnounce(G){
     const E = G.evn, me = Net.myId();
@@ -5271,7 +5307,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   }
   function pfaHeldSeconds(G, id){
     const B = G.bn || {};
-    return (G.ht && G.ht[id] || 0) + (B.h === id ? Math.max(0, Net.serverNow() - B.since) / 1000 : 0);
+    return (G.ht && G.ht[id] || 0) + (B.h === id ? Math.max(0, pfaHostNow() - B.since) / 1000 : 0);
   }
   function pfaHud(){
     const G = mp.g || {}, me = Net.myId(), B = G.bn || {};
