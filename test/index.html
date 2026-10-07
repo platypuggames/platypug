@@ -4576,6 +4576,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     };
     const holding = isPfa() && mp.g.bn && mp.g.bn.h === Net.myId();   // Pug for All: I carry the bunny's position
     o.bx = holding ? Math.round(pfa.x) : null; o.by = holding ? Math.round(pfa.y) : null;
+    o.gq = mp.gq || 0; o.gh = mp.gh || null;      // Pug for All: "I'm touching the bunny" requests (counter + whose bunny)
     const s = JSON.stringify(o);
     if(!force && s === mp.lastSent) return;
     mp.lastSent = s;
@@ -4970,7 +4971,9 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
      While held, the bunny's position is simulated on the holder's phone and sent as bx/by.
      ====================================================================== */
   const PFA_TIME = 150;                 // seconds per round
-  const BUNNY_GRAB_R = 28;              // how close a dog must get to the bunny (or its tiny blanket) to take it
+  const BUNNY_GRAB_R = 40;              // dog-to-bunny distance that counts as touching (a dog's body visibly overlapping the bunny)
+  const BUNNY_GRAB_SLACK = 90;          // a grab you saw on your screen is accepted if the host has you this close (network lag)
+  const BUNNY_GRAB_RETRY_MS = 250;      // how often a touching dog re-asks the host for the grab
   const BUNNY_STEAL_LOCK_MS = 500;      // after any grab, nobody can take it for this long
   const BUNNY_FOLLOW_DIST = 30;         // how far behind its holder (along their path) the bunny trots
   const BUNNY_SPEED = 380;              // px/s it can move catching up (dogs walk 300)
@@ -5065,6 +5068,7 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     roster().forEach(pp => { mp.tubeSeenTq[pp.id] = pp.p.tq || 0; mp.tubeSeenTd[pp.id] = pp.p.td ? pp.p.td.n : 0; });
     mp.hostT0 = Date.now();
     mp.hostDq = {}; mp.hostLq = {};
+    mp.pfaGq = {}; roster().forEach(pp => { mp.pfaGq[pp.id] = pp.p.gq || 0; });   // only grab requests made from now on count
     mp.overShown = false;
     pushHost();
   }
@@ -5100,10 +5104,19 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     if(now - B.st >= BUNNY_STEAL_LOCK_MS && G.el < PFA_TIME){
       const bp = pfaHostBunny(G, byId, now);
       let best = null, bestD = Infinity;
+      mp.pfaGq = mp.pfaGq || {};
       for(const id of Object.keys(G.roles)){
         if(id === B.h) continue;
         const p = byId.get(id);
-        if(!p || !p.sp || p.x == null || p.hid || p.bl) continue;          // a hidden dog can't grab
+        if(!p) continue;
+        const q = p.gq || 0, asked = mp.pfaGq[id] !== undefined && q !== mp.pfaGq[id];
+        mp.pfaGq[id] = q;
+        if(!p.sp || p.x == null || p.hid || p.bl) continue;          // a hidden dog can't grab
+        // they touched the bunny on their own screen: trust it if it was this holder's bunny and they're close here too
+        if(asked && (p.gh || null) === (B.h || null) && !bp.hid && !!p.ug === !!bp.ug && Math.hypot(p.x - bp.x, p.y - bp.y) < BUNNY_GRAB_SLACK){
+          if(bestD > -1){ best = id; bestD = -1; }
+          continue;
+        }
         let d;
         if(bp.hid) d = (typeof p.chk === "string" && p.chk.split(",").includes(bp.hid)) ? 0 : Infinity;   // search the holder's hiding spot
         else d = (!!p.ug === !!bp.ug) ? Math.hypot(p.x - bp.x, p.y - bp.y) : Infinity;
@@ -5196,6 +5209,11 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
     }
     if(pfa.rx != null){ const dx = x - pfa.rx; if(B.h && Math.abs(dx) > 0.4) pfa.face = dx > 0 ? -1 : 1; if(B.h) moving = Math.hypot(dx, y - pfa.ry) > 0.5; }
     pfa.rx = x; pfa.ry = y;
+    // I'm touching the bunny on my screen: ask the host for it (it checks the 0.5s lock and that I'm really close)
+    if(B.h !== me && !hid && !mp.hide && !!state.underground === ug && now - B.st >= BUNNY_STEAL_LOCK_MS &&
+       Math.hypot(state.pos.x - x, state.pos.y - y) < BUNNY_GRAB_R && performance.now() - (mp.gqAt || 0) > BUNNY_GRAB_RETRY_MS){
+      mp.gq = (mp.gq || 0) + 1; mp.gh = B.h || null; mp.gqAt = performance.now();
+    }
     // what this viewer can see (same rules as other players)
     const inBed = !ug && pointInBed(x, y);
     const invisible = hid || (ug && !state.underground) || (B.h !== me && !ug && darkAt(x, y));
@@ -5282,6 +5300,6 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   }
 })();
 </script>
-<div id="test-badge" style="position:fixed;right:6px;bottom:max(6px,env(safe-area-inset-bottom));z-index:9998;background:#E5484D;color:#fff;font:700 11px/1.2 system-ui,sans-serif;padding:4px 8px;border-radius:999px;pointer-events:none;opacity:.9">TEST · e487fee · 10-07 20:52 UTC</div>
+<div id="test-badge" style="position:fixed;right:6px;bottom:max(6px,env(safe-area-inset-bottom));z-index:9998;background:#E5484D;color:#fff;font:700 11px/1.2 system-ui,sans-serif;padding:4px 8px;border-radius:999px;pointer-events:none;opacity:.9">TEST · 91817d2 · 10-07 20:57 UTC</div>
 </body>
 </html>
