@@ -74,3 +74,12 @@
   .tv-tap:disabled { opacity: .6; }
   .tv-tap svg { width: 62%; }
   .tv-tapcount { font-family: var(--font-display); font-weight: 700; font-size: 40px; }
+
+  /* menu screens scroll like the other lobbies (the room card is taller than a phone) */
+  #tv-lobby-screen, #tv-over-screen {
+    align-items: center; justify-content: safe center; text-align: center; gap: 12px; padding: 20px;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: linear-gradient(180deg, #EFE8FF 0%, var(--bg) 60%);
+  }
+  #tv-lobby-screen, #tv-lobby-screen *, #tv-over-screen, #tv-over-screen * { touch-action: pan-y; }
+  #tv-lobby-screen input, #tv-lobby-screen .lobby-input { touch-action: manipulation; }
