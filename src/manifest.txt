@@ -4,6 +4,7 @@ styles/02-room-features.css
 styles/03-pool.css
 styles/04-furniture-sprites.css
 styles/05-ui-screens.css
+styles/06-platytrivia.css
 page/02-body.html
 js/01-art.js
 js/01b-bunny-art.js
@@ -18,4 +19,6 @@ js/09-platytag-net.js
 js/10-platytag-lobby-host.js
 js/11-platytag-client.js
 js/12-pug-for-all.js
+js/13-trivia-bank.js
+js/14-platytrivia.js
 page/03-tail.html

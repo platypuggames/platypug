@@ -22,6 +22,10 @@
         <div class="mode-tag solo">Pass and play · 2 players</div>
         <button class="big-btn secondary" id="play-btn">Pug and Seek</button>
       </div>
+      <div class="mode-card" id="trivia-card" style="display:none;">
+        <div class="mode-tag trivia">Multiplayer · 2–10 players</div>
+        <button class="big-btn trivia" id="trivia-btn">Platytrivia</button>
+      </div>
     </div>
     <button class="howto-toggle" id="howto-btn">How to play</button>
     <div class="howto-card" id="howto-card" style="display:none;">
@@ -79,6 +83,60 @@
     <div class="podium hidden" id="tagover-podium"></div>
     <ol class="player-list" id="tagover-list"></ol>
     <button class="big-btn secondary" id="tagover-btn">Back to lobby</button>
+  </div>
+
+  <!-- Platytrivia screens (self-contained: src/js/14-platytrivia.js, src/styles/06-platytrivia.css). Test site only for now. -->
+  <div id="tv-lobby-screen" class="screen hidden">
+    <h2>Platytrivia</h2>
+    <p class="lobby-note" id="tv-status">Answer trivia on the yard, win treats, survive the challenges.</p>
+    <div class="lobby-card" id="tv-join">
+      <input class="lobby-input" id="tv-nick" maxlength="14" placeholder="Your name" autocomplete="off">
+      <button class="big-btn trivia" id="tv-create">Create game</button>
+      <div class="lobby-row">
+        <input class="lobby-input" id="tv-code" maxlength="4" placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false">
+        <button class="small-btn" id="tv-joinbtn">Join</button>
+      </div>
+    </div>
+    <div class="lobby-card" id="tv-room" style="display:none;">
+      <div class="lobby-note">Room code</div>
+      <div class="room-code" id="tv-room-code">----</div>
+      <div class="lobby-note" style="font-weight:700;">Your name</div>
+      <input class="lobby-input" id="tv-name" maxlength="14" placeholder="Your name" autocomplete="off" enterkeyhint="done">
+      <div class="lobby-note" style="font-weight:700;">Your dog</div>
+      <div class="dog-picker"></div>
+      <div class="lobby-note" style="font-weight:700;">Question level</div>
+      <div class="tv-tiers" id="tv-tiers"></div>
+      <ul class="player-list" id="tv-players"></ul>
+      <button class="big-btn trivia" id="tv-start" style="display:none;">Start game</button>
+      <p class="lobby-note" id="tv-wait">Waiting for the host to start…</p>
+    </div>
+    <button class="howto-toggle" id="tv-back">← Back</button>
+  </div>
+
+  <div id="tv-game-screen" class="screen hidden">
+    <div class="tv-hud">
+      <div class="tv-pill" id="tv-qn">Q 1/10</div>
+      <div class="tv-timer" id="tv-timer">15</div>
+      <div class="tv-pill tv-treats"><span class="tv-treat-ico" id="tv-treat-ico"></span><b id="tv-treat-n">0</b></div>
+    </div>
+    <div class="tv-qcard" id="tv-qcard">
+      <div class="tv-cat" id="tv-cat"></div>
+      <div class="tv-qtext" id="tv-qtext"></div>
+      <div class="tv-don" id="tv-don" style="display:none;">Double or nothing</div>
+    </div>
+    <div class="tv-arena" id="tv-arena">
+      <div class="tv-startzone"></div>
+    </div>
+    <div class="tv-banner" id="tv-banner"></div>
+    <div class="tv-sheet" id="tv-sheet" style="display:none;"></div>
+    <div class="tv-challenge" id="tv-challenge" style="display:none;"></div>
+  </div>
+
+  <div id="tv-over-screen" class="screen hidden">
+    <h2>Treat time!</h2>
+    <p class="lobby-note" id="tv-over-sub"></p>
+    <ol class="player-list tv-final" id="tv-final"></ol>
+    <button class="big-btn trivia" id="tv-over-btn">Back to lobby</button>
   </div>
 
   <div id="game-screen" class="screen hidden">

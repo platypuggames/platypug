@@ -1,0 +1,58 @@
+  /* =====================================================================
+     PLATYTRIVIA question bank: approved v1 (48 questions). Pure data, no logic.
+     id   permanent question number (retired numbers are never reused, so gaps are expected)
+     cat  category    tier  Kid | Tween | Teen | Adult (a lobby picks one tier)
+     q    question    o     exactly 5 answer options (the game shuffles their order every time)
+     a    index (0-4) of the correct option in o
+     To add questions: append rows with the next unused id. Keep >= 10 questions per tier.
+     ===================================================================== */
+  const TRIVIA_BANK = [
+    {"id":1,"cat":"Pop Culture","tier":"Kid","q":"In the movie Frozen, what is the name of the singing snowman?","o":["Olaf","Frosty","Sven","Kristoff","Hans"],"a":0},
+    {"id":2,"cat":"Pop Culture","tier":"Tween","q":"Which Pokémon does Magikarp evolve into?","o":["Dragonite","Gyarados","Blastoise","Lapras","Vaporeon"],"a":1},
+    {"id":3,"cat":"Pop Culture","tier":"Tween","q":"In Minecraft, which block do you need to build a Nether portal frame?","o":["Diamond block","Bedrock","Obsidian","Gold block","Netherrack"],"a":2},
+    {"id":5,"cat":"Pop Culture","tier":"Teen","q":"Which Taylor Swift album includes the song \"Anti-Hero\"?","o":["Lover","Folklore","Reputation","Midnights","1989"],"a":3},
+    {"id":6,"cat":"Pop Culture","tier":"Adult","q":"Who plays Ford's race car driver Ken Miles in Ford v Ferrari?","o":["Matt Damon","Christian Bale","Tom Hardy","Joaquin Phoenix","Brad Pitt"],"a":1},
+    {"id":7,"cat":"Pop Culture","tier":"Adult","q":"Which band released the 1991 album Nevermind?","o":["Pearl Jam","Nirvana","Soundgarden","Alice in Chains","Green Day"],"a":1},
+    {"id":9,"cat":"Sports","tier":"Kid","q":"In basketball, how many points is a free throw worth?","o":["1","2","3","4","5"],"a":0},
+    {"id":10,"cat":"Sports","tier":"Tween","q":"Which country hosted the 2016 Summer Olympics?","o":["China","United Kingdom","Japan","Brazil","Greece"],"a":3},
+    {"id":11,"cat":"Sports","tier":"Tween","q":"In bowling, what is the name for three strikes in a row?","o":["Hole-in-one","Turkey","Eagle","Birdie","Slam dunk"],"a":1},
+    {"id":12,"cat":"Sports","tier":"Teen","q":"Which team won the 2025 NBA Finals?","o":["Indiana Pacers","Boston Celtics","Oklahoma City Thunder","New York Knicks","Denver Nuggets"],"a":2},
+    {"id":13,"cat":"Sports","tier":"Adult","q":"How many Grand Slam singles titles did Serena Williams win?","o":["19","20","21","22","23"],"a":4},
+    {"id":14,"cat":"Sports","tier":"Adult","q":"Who won the Masters golf tournament in 2022?","o":["Rory McIlroy","Jon Rahm","Scottie Scheffler","Cameron Smith","Dustin Johnson"],"a":2},
+    {"id":51,"cat":"Dog Facts","tier":"Kid","q":"What is a group of puppies born together called?","o":["Pack","Litter","Herd","Flock","Brood"],"a":1},
+    {"id":52,"cat":"Dog Facts","tier":"Tween","q":"Which dog breed is widely known as the smallest in the world?","o":["Pomeranian","Yorkshire Terrier","Maltese","Chihuahua","Toy Poodle"],"a":3},
+    {"id":53,"cat":"Dog Facts","tier":"Teen","q":"Which breed tops Stanley Coren's famous ranking of dog intelligence?","o":["Poodle","Golden Retriever","German Shepherd","Doberman Pinscher","Border Collie"],"a":4},
+    {"id":18,"cat":"Dog Facts","tier":"Teen","q":"Which breed's name means \"badger dog\" in German?","o":["Beagle","Basset Hound","Schnauzer","Corgi","Dachshund"],"a":4},
+    {"id":19,"cat":"Dog Facts","tier":"Adult","q":"Which sugar substitute, common in gum, is highly toxic to dogs?","o":["Stevia","Sucralose","Xylitol","Aspartame","Erythritol"],"a":2},
+    {"id":20,"cat":"Dog Facts","tier":"Adult","q":"Which organ in the roof of a dog's mouth helps it detect pheromones?","o":["Tapetum lucidum","Jacobson's organ","Cochlea","Pineal gland","Carotid body"],"a":1},
+    {"id":21,"cat":"Science","tier":"Kid","q":"Which planet is known as the Red Planet?","o":["Venus","Jupiter","Mercury","Mars","Saturn"],"a":3},
+    {"id":22,"cat":"Science","tier":"Tween","q":"Which gas do plants absorb from the air for photosynthesis?","o":["Carbon dioxide","Oxygen","Nitrogen","Hydrogen","Helium"],"a":0},
+    {"id":23,"cat":"Science","tier":"Tween","q":"What is the hardest natural substance on Earth?","o":["Quartz","Diamond","Granite","Topaz","Obsidian"],"a":1},
+    {"id":24,"cat":"Science","tier":"Teen","q":"What is the chemical symbol for gold?","o":["Ag","Gd","Go","Au","Fe"],"a":3},
+    {"id":25,"cat":"Science","tier":"Teen","q":"Which is the longest bone in the human body?","o":["Tibia","Femur","Humerus","Fibula","Radius"],"a":1},
+    {"id":26,"cat":"Science","tier":"Adult","q":"Which large spiral galaxy is nearest to the Milky Way?","o":["Whirlpool","Sombrero","Triangulum","Andromeda","Pinwheel"],"a":3},
+    {"id":27,"cat":"DIY Nature","tier":"Kid","q":"What do bees collect from flowers to make honey?","o":["Sap","Dew","Nectar","Seeds","Water"],"a":2},
+    {"id":54,"cat":"DIY Nature","tier":"Kid","q":"Which animal builds dams out of sticks and mud?","o":["Otter","Raccoon","Muskrat","Beaver","Duck"],"a":3},
+    {"id":29,"cat":"DIY Nature","tier":"Tween","q":"What do you call a pile of kitchen scraps and yard waste that rots into plant food?","o":["Mulch","Compost","Gravel","Silt","Kindling"],"a":1},
+    {"id":30,"cat":"DIY Nature","tier":"Teen","q":"When building a campfire, what is the name for the finest, driest material that catches the first spark?","o":["Kindling","Fuel logs","Firebreak","Tinder","Hearth"],"a":3},
+    {"id":31,"cat":"DIY Nature","tier":"Teen","q":"In the Northern Hemisphere, which star stays nearly fixed in the sky and points toward true north?","o":["Sirius","Betelgeuse","Vega","Rigel","Polaris"],"a":4},
+    {"id":33,"cat":"Elementary School Knowledge","tier":"Kid","q":"What is 7 × 8?","o":["54","56","63","48","64"],"a":1},
+    {"id":34,"cat":"Elementary School Knowledge","tier":"Kid","q":"What is the capital of the United States?","o":["New York City","Philadelphia","Washington, D.C.","Los Angeles","Chicago"],"a":2},
+    {"id":35,"cat":"Elementary School Knowledge","tier":"Tween","q":"What is the largest ocean on Earth?","o":["Atlantic","Indian","Arctic","Pacific","Southern"],"a":3},
+    {"id":36,"cat":"Elementary School Knowledge","tier":"Tween","q":"What do we call words that mean the opposite of each other?","o":["Antonyms","Synonyms","Homophones","Acronyms","Idioms"],"a":0},
+    {"id":37,"cat":"Elementary School Knowledge","tier":"Teen","q":"What is it called when water vapor cools and turns into liquid droplets?","o":["Evaporation","Precipitation","Condensation","Sublimation","Transpiration"],"a":2},
+    {"id":38,"cat":"Elementary School Knowledge","tier":"Adult","q":"Which part of speech is \"quickly\" in the sentence \"She ran quickly\"?","o":["Adjective","Adverb","Preposition","Conjunction","Pronoun"],"a":1},
+    {"id":55,"cat":"Elementary School Knowledge","tier":"Kid","q":"In art class, which three colors are the primary colors of paint?","o":["Orange, green, purple","Red, green, blue","Pink, purple, brown","Yellow, green, orange","Red, yellow, blue"],"a":4},
+    {"id":57,"cat":"Popular Books","tier":"Kid","q":"In Roald Dahl's Matilda, what is the name of the cruel headmistress?","o":["Miss Honey","Mrs. Wormwood","Miss Hardbroom","Professor Umbridge","Miss Trunchbull"],"a":4},
+    {"id":40,"cat":"Popular Books","tier":"Teen","q":"In Harry Potter, which potion is nicknamed \"liquid luck\"?","o":["Polyjuice Potion","Amortentia","Veritaserum","Draught of Living Death","Felix Felicis"],"a":4},
+    {"id":41,"cat":"Popular Books","tier":"Tween","q":"In The Hunger Games series, which bird becomes the symbol of the rebellion?","o":["Mockingbird","Jabberjay","Nightingale","Mockingjay","Raven"],"a":3},
+    {"id":42,"cat":"Popular Books","tier":"Tween","q":"Who wrote the Diary of a Wimpy Kid books?","o":["Rick Riordan","Dav Pilkey","Rachel Renée Russell","Lemony Snicket","Jeff Kinney"],"a":4},
+    {"id":43,"cat":"Popular Books","tier":"Teen","q":"Who wrote the dystopian novel 1984?","o":["George Orwell","Aldous Huxley","Ray Bradbury","H.G. Wells","Kurt Vonnegut"],"a":0},
+    {"id":58,"cat":"Popular Books","tier":"Adult","q":"In Fourth Wing, what is the name of Xaden Riorson's dragon?","o":["Tairn","Andarna","Sgaeyl","Teine","Cath"],"a":2},
+    {"id":45,"cat":"TV Shows","tier":"Kid","q":"In the cartoon Bluey, what is the name of Bluey's dad?","o":["Stripe","Rusty","Chilli","Bandit","Socks"],"a":3},
+    {"id":46,"cat":"TV Shows","tier":"Tween","q":"In Avatar: The Last Airbender, what is the name of Aang's flying bison?","o":["Momo","Naga","Pabu","Appa","Hei Bai"],"a":3},
+    {"id":47,"cat":"TV Shows","tier":"Teen","q":"Which Netflix series is set in the fictional town of Hawkins, Indiana?","o":["Dark","Stranger Things","Wednesday","Riverdale","The Umbrella Academy"],"a":1},
+    {"id":48,"cat":"TV Shows","tier":"Teen","q":"In the sitcom Friends, what is the name of the coffee shop the group hangs out in?","o":["MacLaren's","Luke's Diner","The Bronze","Monk's Café","Central Perk"],"a":4},
+    {"id":49,"cat":"TV Shows","tier":"Adult","q":"In Breaking Bad, what is the name of the car wash where Walter White works part-time?","o":["Sparkle Car Wash","Bubbles Car Wash","A1A Car Wash","Blue Sky Car Wash","Sunshine Car Wash"],"a":2},
+    {"id":50,"cat":"TV Shows","tier":"Adult","q":"In The Office (US), which Dunder Mifflin branch does Jim Halpert transfer to in season 3?","o":["Utica","Nashua","Albany","Stamford","Buffalo"],"a":3},
+  ];
