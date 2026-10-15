@@ -33,11 +33,12 @@
   const TV_SPEED = 300;                            // px/s a pug walks
   // answer pads as fractions of the arena (x, y, w, h). The start zone (y .74-.97) is where everyone spawns.
   const TV_PADS = [
-    {x: .04, y: .03, w: .45, h: .19}, {x: .51, y: .03, w: .45, h: .19},
-    {x: .04, y: .26, w: .45, h: .19}, {x: .51, y: .26, w: .45, h: .19},
-    {x: .275, y: .49, w: .45, h: .19}
+    {x: .05, y: .12, w: .43, h: .19}, {x: .52, y: .12, w: .43, h: .19},
+    {x: .05, y: .345, w: .43, h: .19}, {x: .52, y: .345, w: .43, h: .19},
+    {x: .285, y: .57, w: .43, h: .17}
   ];
-  const TV_BOUNDS = {x0: .04, x1: .96, y0: .05, y1: .97};
+  const TV_BOUNDS = {x0: .05, x1: .95, y0: .13, y1: .96};   // keep pugs off the fence and the yard's border
+  const TV_FLOWERS = [[.1, .84, "#FFFFFF"], [.15, .93, "#FFD1E0"], [.09, .7, "#FFE27A"], [.9, .84, "#FFD1E0"], [.85, .93, "#FFFFFF"], [.91, .7, "#FFE27A"]];   // decoration beside the patio
   // physical challenges. Each id must have a builder/handler in tvChBuild/tvChTick. More are added here over time.
   const TV_CHALLENGES = {
     tippy: {name: "Tippy Taps", kind: "tap", dur: 20, blurb: "Tap the paw as many times as you can before time runs out!"},
@@ -82,8 +83,16 @@
       const d = document.createElement("div");
       d.className = "tv-pad p" + i;
       d.style.cssText = `left:${p.x * 100}%;top:${p.y * 100}%;width:${p.w * 100}%;height:${p.h * 100}%;`;
-      d.innerHTML = `<b>${"ABCDE"[i]}</b><span></span>`;
+      d.innerHTML = `<div class="tv-tag"><b>${"ABCDE"[i]}</b><span></span></div>`;
       tvArena.appendChild(d);
+    });
+    tvArena.style.backgroundImage = floorCss(ROOMS.backyard).replace(/^([^,]*?) 0 0 \/ 36px 30px/, "$1");   // same grass as the Platytag backyard
+    tvArena.style.backgroundSize = "36px 30px, auto";
+    const fence = document.createElement("div"); fence.className = "tv-fence fence-band"; tvArena.prepend(fence);
+    TV_FLOWERS.forEach(([x, y, c]) => {
+      const f = document.createElement("div"); f.className = "tv-flower";
+      f.style.left = (x * 100) + "%"; f.style.top = (y * 100) + "%"; f.innerHTML = flowerSVG(c);
+      tvArena.appendChild(f);
     });
     const me = document.createElement("div");
     me.className = "tv-sprite"; me.style.visibility = "hidden";
@@ -455,12 +464,12 @@
     tvEl("tv-cat").textContent = q.cat; tvEl("tv-qtext").textContent = q.q;
     tvEl("tv-don").style.display = (G.don || {})[me] ? "" : "none";
     tvArena.querySelectorAll(".tv-pad").forEach((pad, i) => {
-      pad.querySelector("span").textContent = q.o[ent.p[i]];
+      pad.querySelector(".tv-tag span").textContent = q.o[ent.p[i]];
       pad.classList.remove("glow", "dim");
     });
     const idx = Math.max(0, (G.pl || []).indexOf(me));                 // spread everyone across the start zone
-    tv.me.x = tv.me.tx = .12 + ((idx * .618) % 1) * .76;
-    tv.me.y = tv.me.ty = .82 + (idx % 3) * .045;
+    tv.me.x = tv.me.tx = .28 + ((idx * .618) % 1) * .44;   // spread across the patio
+    tv.me.y = tv.me.ty = .85 + (idx % 3) * .04;
     tv.me.f = 1; tv.placed = "";
     const meEl = tv.meEl;
     meEl.firstChild.firstChild.innerHTML = pugSVG(tvLook(dogCode()));
