@@ -40,8 +40,10 @@
   const TV_BOUNDS = {x0: .04, x1: .96, y0: .05, y1: .97};
   // physical challenges. Each id must have a builder/handler in tvChBuild/tvChTick. More are added here over time.
   const TV_CHALLENGES = {
-    tippy: {name: "Tippy Taps", dur: 20, blurb: "Tap the paw as many times as you can before time runs out!"}
+    tippy: {name: "Tippy Taps", kind: "tap", dur: 20, blurb: "Tap the paw as many times as you can before time runs out!"},
+    race: {name: "Pug Dash", kind: "race", dur: 75, lead: 3000, blurb: "Race to the finish line, always downhill. Use the slide, the diving board and the tummy slide!", fmt: v => rcFmt(v)}
   };
+  const TV_RACE_WIN = 200000;                      // race result value = this minus finish ms (so faster = bigger); a DNF is just how far you got (px)
   const TV_BANK_BY_ID = new Map(TRIVIA_BANK.map(q => [q.id, q]));
 
   const tvEl = id => document.getElementById(id);
@@ -129,6 +131,7 @@
   function tvFrame(t){
     tv.raf = requestAnimationFrame(tvFrame);
     const dt = Math.min(.05, (t - (tv.lastT || t)) / 1000); tv.lastT = t;
+    if(rc.r && rc.r.on){ rcFrame(dt); return; }
     if(!tv.canMove || !tv.W || !tv.H) return;
     const m = tv.me, k = tv.keys;
     if(k.l || k.r || k.u || k.d){
@@ -197,7 +200,7 @@
     clearInterval(tv.timer); tv.timer = null; clearTimeout(tv.joinTimer);
     cancelAnimationFrame(tv.raf); tv.raf = 0;
     Object.assign(tv, {code: null, isHost: false, hadHost: false, g: null, hostG: null, inGame: false, viewKey: "", canMove: false});
-    tvClearRev(); tv.meEl.style.visibility = "hidden";
+    tvClearRev(); tv.meEl.style.visibility = "hidden"; rcExit();
     try{ await Net.leave(); }catch(e){}
     tvShowJoin();
   }
@@ -311,7 +314,7 @@
   }
   function tvHostBeginCh(ci){
     const G = tv.hostG;
-    G.ph = "ch"; G.ci = ci; G.cid = G.chl[ci]; G.cdur = TV_CHALLENGES[G.cid].dur; G.cs = Math.round(Net.serverNow()) + TV_LEAD_MS; G.cres = null;
+    G.ph = "ch"; G.ci = ci; G.cid = G.chl[ci]; G.cdur = TV_CHALLENGES[G.cid].dur; G.cs = Math.round(Net.serverNow()) + (TV_CHALLENGES[G.cid].lead || TV_LEAD_MS); G.cres = null;
     tvPushHost();
   }
   function tvHostTick(){
@@ -326,8 +329,8 @@
       if(now >= G.rs + TV_REVEAL_MS) tvHostAfterReveal();
     }else if(G.ph === "ch"){
       const end = G.cs + G.cdur * 1000;
-      const allIn = ids.every(id => (tvPeerP(id) || {}).cq === G.ci);
-      if(now >= end && (allIn || now >= end + TV_ANSWER_GRACE_MS)) tvHostResolveCh();
+      const allIn = ids.every(id => (tvPeerP(id) || {}).cq === G.ci);      // everyone has reported (a race can end before the time limit)
+      if((allIn && now >= G.cs) || now >= end + TV_ANSWER_GRACE_MS) tvHostResolveCh();
     }else if(G.ph === "chres"){
       if(now >= G.rs + TV_CH_RESULT_MS) tvHostAfterCh();
     }
@@ -444,7 +447,8 @@
   }
   function tvEnterQ(G){
     const ent = G.ql[G.qn], q = TV_BANK_BY_ID.get(ent.id), me = Net.myId();
-    tvClearRev(); tvBanner("");
+    tvClearRev(); tvBanner(""); rcExit();
+    if(G.qn === 0) Net.setMe({cq: -1, cv: 0, rq: -1});        // forget the last game's challenge results
     tvEl("tv-sheet").style.display = "none"; tvEl("tv-challenge").style.display = "none";
     tv.locked = false; tv.canMove = false; tv.ate = false;
     tvEl("tv-qcard").style.display = "";
@@ -521,6 +525,8 @@
   /* ---------- Challenges ---------- */
   function tvEnterCh(G){
     const c = TV_CHALLENGES[G.cid];
+    if(c.kind === "race"){ rcEnter(G); tvHud(G, `Challenge ${G.ci + 1}/${TV_CHALLENGE_AFTER.length}`); return; }
+    rcExit();
     tvClearRev(); tv.meEl.style.visibility = "hidden"; tv.canMove = false; tvBanner("");
     tvEl("tv-sheet").style.display = "none"; tvEl("tv-qcard").style.display = "none";
     tv.chScore = 0; tv.chSent = false; tv.chCanTap = false;
@@ -537,6 +543,7 @@
     tvEl("tv-timer").textContent = String(c.dur); tvEl("tv-timer").classList.remove("low");
   }
   function tvChTick(G, now){
+    if(TV_CHALLENGES[G.cid].kind === "race"){ rcTick(G, now); return; }
     const start = G.cs, end = start + G.cdur * 1000, t = tvEl("tv-ch-timer"), tap = tvEl("tv-tap");
     if(!t || !tap) return;
     if(now < start){ tv.chCanTap = false; tap.disabled = true; t.textContent = String(G.cdur); tvBanner("Get ready!"); }
@@ -551,8 +558,8 @@
     }
   }
   function tvEnterChRes(G){
-    const me = Net.myId(), cres = G.cres || {}, c = TV_CHALLENGES[G.cid];
-    tvBanner(""); tvEl("tv-challenge").style.display = "none";
+    const me = Net.myId(), cres = G.cres || {}, c = TV_CHALLENGES[G.cid], fv = v => c.fmt ? c.fmt(v) : v;
+    rcExit(); tvBanner(""); tvEl("tv-challenge").style.display = "none";
     const order = (G.pl || []).slice().sort((a, b) => ((cres[b] || {}).v || 0) - ((cres[a] || {}).v || 0));
     const mine = cres[me] || {};
     let html = `<h3>${tvEsc(c.name)} results</h3>`;
@@ -562,7 +569,7 @@
     html += `<div class="tv-chiprow">` + order.map(id => {
       const r = cres[id] || {};
       const tag = r.w ? `<span class="d-good">+${TV_CH_WIN_TREATS}</span>` : r.vm ? `<span class="d-bad">-1</span>` : "";
-      return `<div class="tv-st${id === me ? " me" : ""}">${tvEsc(tvNameOf(G, id))} <b>${r.v || 0}</b> ${tag}</div>`;
+      return `<div class="tv-st${id === me ? " me" : ""}">${tvEsc(tvNameOf(G, id))} <b>${fv(r.v || 0)}</b> ${tag}</div>`;
     }).join("") + `</div>`;
     html += `<div class="tv-msg" style="margin-top:8px;">Treats: ` + tvStandings(G).map(id => `${tvEsc(tvNameOf(G, id))} ${(G.tr || {})[id] || 0}`).join(", ") + `</div>`;
     const sheet = tvEl("tv-sheet"); sheet.innerHTML = html; sheet.style.display = "";

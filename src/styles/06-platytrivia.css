@@ -83,3 +83,26 @@
   }
   #tv-lobby-screen, #tv-lobby-screen *, #tv-over-screen, #tv-over-screen * { touch-action: pan-y; }
   #tv-lobby-screen input, #tv-lobby-screen .lobby-input { touch-action: manipulation; }
+
+  /* ---------- Pug Dash (race challenge) ---------- */
+  .tv-race { position: absolute; inset: 0; z-index: 30; overflow: hidden; background: #5A4332; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
+  .rc-world { position: absolute; left: 0; top: 0; will-change: transform; }
+  .rc-svg { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1; }
+  .rc-label { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font-family: var(--font-display); font-weight: 700; letter-spacing: 6px; font-size: 18px; color: rgba(36,24,17,.4); }
+  .rc-world .tv-sprite { transform: translate(-50%, -82%); }
+  .rc-world .tv-sprite.rc-ghost { opacity: .5; }
+  .rc-world .tv-sprite.rc-me .tv-name { background: #B79CF0; color: #fff; }
+  .rc-world .tv-sprite.rc-sliding .tv-sp { transform: rotate(-90deg) scale(.95); }
+  .rc-world .tv-sprite.rc-diving .tv-sp { animation: rcSpin .95s linear; }
+  .rc-world .tv-sprite.rc-belly .tv-sp { transform: rotate(90deg) scaleX(.8); }
+  .rc-world .tv-sprite.rc-swim .tv-sp { clip-path: inset(0 0 42% 0); transform: translateY(8px); }
+  @keyframes rcSpin { to { transform: rotate(360deg); } }
+  .rc-splash { animation: rcSplash .8s ease-out forwards; }
+  @keyframes rcSplash { from { transform: scale(.3); opacity: 1; } to { transform: scale(2.2); opacity: 0; } }
+  .rc-hud { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 6px; z-index: 5; pointer-events: none; }
+  .rc-bar { position: absolute; right: 8px; top: 30%; height: 44%; width: 10px; background: rgba(255,255,255,.75); border: 3px solid #241811; border-radius: 8px; z-index: 5; pointer-events: none; }
+  .rc-dot { position: absolute; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #FF9A8A; border: 2px solid #241811; transition: top .15s linear; box-sizing: border-box; }
+  .rc-dot.me { width: 18px; height: 18px; margin-left: -9px; background: #B79CF0; }
+  .rc-big { position: absolute; left: 0; right: 0; top: 36%; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 84px; color: #fff; -webkit-text-stroke: 3px #241811; paint-order: stroke fill; text-shadow: 0 6px 0 #241811; pointer-events: none; z-index: 6; opacity: 0; transition: opacity .15s; }
+  .rc-big.show { opacity: 1; }
+  .rc-big.small { font-size: 34px; top: 20%; }

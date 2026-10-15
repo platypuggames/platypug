@@ -21,4 +21,5 @@ js/11-platytag-client.js
 js/12-pug-for-all.js
 js/13-trivia-bank.js
 js/14-platytrivia.js
+js/15-platytrivia-race.js
 page/03-tail.html
