@@ -767,6 +767,15 @@
   .tv-tap:disabled { opacity: .6; }
   .tv-tap svg { width: 62%; }
   .tv-tapcount { font-family: var(--font-display); font-weight: 700; font-size: 40px; }
+
+  /* menu screens scroll like the other lobbies (the room card is taller than a phone) */
+  #tv-lobby-screen, #tv-over-screen {
+    align-items: center; justify-content: safe center; text-align: center; gap: 12px; padding: 20px;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: linear-gradient(180deg, #EFE8FF 0%, var(--bg) 60%);
+  }
+  #tv-lobby-screen, #tv-lobby-screen *, #tv-over-screen, #tv-over-screen * { touch-action: pan-y; }
+  #tv-lobby-screen input, #tv-lobby-screen .lobby-input { touch-action: manipulation; }
 </style>
 <script src="../vendor/firebase-app-compat.js"></script>
 <script src="../vendor/firebase-database-compat.js"></script>
@@ -6173,6 +6182,6 @@ ${[-34, -20, -6, 8, 22, 34].map((dx, i) => `<circle class="sp-drop" style="--dx:
   }
 })();
 </script>
-<div id="test-badge" style="position:fixed;right:6px;bottom:max(6px,env(safe-area-inset-bottom));z-index:9998;background:#E5484D;color:#fff;font:700 11px/1.2 system-ui,sans-serif;padding:4px 8px;border-radius:999px;pointer-events:none;opacity:.9">TEST · bf1a010 · 10-15 20:28 UTC</div>
+<div id="test-badge" style="position:fixed;right:6px;bottom:max(6px,env(safe-area-inset-bottom));z-index:9998;background:#E5484D;color:#fff;font:700 11px/1.2 system-ui,sans-serif;padding:4px 8px;border-radius:999px;pointer-events:none;opacity:.9">TEST · 4a46b5e · 10-15 20:32 UTC</div>
 </body>
 </html>
